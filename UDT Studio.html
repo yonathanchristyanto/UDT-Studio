@@ -1,0 +1,3932 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>UDT Studio — Uji Disolusi Terbanding</title>
+<script src="https://accounts.google.com/gsi/client" async defer onload="window.onGisLoad&&window.onGisLoad()"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<style>
+:root {
+  --bg: #f2f2f7;
+  --card: #ffffff;
+  --card-subtle: #f8f8fa;
+  --fg: #1c1c1e;
+  --muted: #6e6e73;
+  --line: rgba(60, 60, 67, 0.12);
+  --line-strong: rgba(60, 60, 67, 0.22);
+  --accent: #0071e3;
+  --accent-fg: #ffffff;
+  --accent-soft: rgba(0, 113, 227, 0.08);
+  --test-tint: #0f766e;
+  --ref-tint: #475569;
+  --ok: #28a745;
+  --ok-soft: rgba(40, 167, 69, 0.1);
+  --warn: #c26900;
+  --warn-soft: rgba(194, 105, 0, 0.1);
+  --err: #d70015;
+  --err-soft: rgba(215, 0, 21, 0.1);
+  --input: #ffffff;
+  --surface: rgba(118, 118, 128, 0.08);
+  --radius: 12px;
+  --radius-lg: 14px;
+  --radius-sm: 8px;
+  --shadow-subtle: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #000000;
+    --card: #1c1c1e;
+    --card-subtle: #2c2c2e;
+    --fg: #f2f2f7;
+    --muted: #8e8e93;
+    --line: rgba(84, 84, 88, 0.36);
+    --line-strong: rgba(84, 84, 88, 0.56);
+    --accent: #2997ff;
+    --accent-fg: #000000;
+    --accent-soft: rgba(41, 151, 255, 0.16);
+    --test-tint: #2dd4bf;
+    --ref-tint: #94a3b8;
+    --ok: #30d158;
+    --ok-soft: rgba(48, 209, 88, 0.15);
+    --warn: #ff9f0a;
+    --warn-soft: rgba(255, 159, 10, 0.15);
+    --err: #ff453a;
+    --err-soft: rgba(255, 69, 58, 0.15);
+    --input: #2c2c2e;
+    --surface: rgba(118, 118, 128, 0.24);
+    --shadow-subtle: none;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #000000;
+  --card: #1c1c1e;
+  --card-subtle: #2c2c2e;
+  --fg: #f2f2f7;
+  --muted: #8e8e93;
+  --line: rgba(84, 84, 88, 0.36);
+  --line-strong: rgba(84, 84, 88, 0.56);
+  --accent: #2997ff;
+  --accent-fg: #000000;
+  --accent-soft: rgba(41, 151, 255, 0.16);
+  --test-tint: #2dd4bf;
+  --ref-tint: #94a3b8;
+  --ok: #30d158;
+  --ok-soft: rgba(48, 209, 88, 0.15);
+  --warn: #ff9f0a;
+  --warn-soft: rgba(255, 159, 10, 0.15);
+  --err: #ff453a;
+  --err-soft: rgba(255, 69, 58, 0.15);
+  --input: #2c2c2e;
+  --surface: rgba(118, 118, 128, 0.24);
+  --shadow-subtle: none;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-padding-top: 76px; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Header */
+.topbar {
+  position: sticky; top: 0; z-index: 100;
+  background: var(--card);
+  border-bottom: 1px solid var(--line);
+  padding: 0 20px;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 52px;
+}
+.topbar-brand { display: flex; align-items: baseline; gap: 8px; }
+.topbar-brand h1 { font-size: 15px; font-weight: 600; margin: 0; letter-spacing: -0.01em; }
+.topbar-brand .sub { font-size: 12px; color: var(--muted); margin: 0; }
+.topbar-actions { display: flex; align-items: center; gap: 8px; }
+.theme-btn {
+  background: var(--surface); border: none; border-radius: 99px;
+  padding: 5px 12px; cursor: pointer; font-size: 12px; font-weight: 500; color: var(--fg);
+  transition: opacity 0.15s ease;
+}
+.theme-btn:hover { opacity: 0.8; }
+
+/* Stepper - Segmented Control */
+.stepper-wrap {
+  padding: 12px 16px 6px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+nav#steps {
+  display: flex;
+  background: var(--surface);
+  padding: 3px;
+  border-radius: 11px;
+  gap: 2px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+nav#steps::-webkit-scrollbar { display: none; }
+nav#steps button {
+  flex: 1 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+}
+nav#steps button .n {
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  display: inline-grid;
+  place-items: center;
+  font-size: 10px;
+  font-weight: 600;
+  background: rgba(120, 120, 128, 0.16);
+  color: inherit;
+  flex-shrink: 0;
+}
+nav#steps button.active {
+  background: var(--card);
+  color: var(--fg);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 0.5px 1px rgba(0, 0, 0, 0.04);
+}
+nav#steps button.active .n {
+  background: var(--fg);
+  color: var(--card);
+}
+nav#steps button.done {
+  color: var(--fg);
+}
+nav#steps button.done .n {
+  background: var(--ok);
+  color: #ffffff;
+}
+
+/* Layout */
+.wrap { max-width: 900px; margin: 0 auto; padding: 12px 16px 80px; }
+section.panel { display: none; }
+section.panel.active { display: block; }
+
+.section-header { margin: 8px 0 16px; }
+.section-header h2 { font-size: 17px; font-weight: 600; margin: 0 0 3px; letter-spacing: -0.01em; }
+.section-header p { color: var(--muted); font-size: 12.5px; margin: 0; }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow-subtle);
+}
+.card h2 { font-size: 14.5px; font-weight: 600; margin: 0 0 4px; }
+.card h3 { font-size: 13px; font-weight: 600; margin: 14px 0 8px; color: var(--fg); }
+.card h4 { font-size: 12.5px; font-weight: 600; margin: 12px 0 6px; }
+
+/* Badges */
+.badge {
+  display: inline-flex; align-items: center;
+  padding: 2.5px 8px; border-radius: 99px;
+  font-size: 11px; font-weight: 500;
+  letter-spacing: 0.01em;
+}
+.badge.ok { background: var(--ok-soft); color: var(--ok); }
+.badge.warn { background: var(--warn-soft); color: var(--warn); }
+.badge.err { background: var(--err-soft); color: var(--err); }
+.badge.info { background: var(--surface); color: var(--muted); }
+
+/* Dual Dropzone */
+.dual-drop {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+@media (max-width: 680px) {
+  .dual-drop { grid-template-columns: 1fr; }
+}
+
+.drop-box {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+}
+.drop-box-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+.drop-box-header h3 {
+  font-size: 13.5px;
+  font-weight: 600;
+  margin: 0;
+}
+.drop-box-sub {
+  font-size: 11.5px;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+
+.drop {
+  border: 1.5px dashed var(--line-strong);
+  border-radius: var(--radius);
+  padding: 22px 14px;
+  text-align: center;
+  background: var(--card-subtle);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex: 1;
+}
+.drop:hover, .drop.over {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.drop b {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--fg);
+  margin-bottom: 3px;
+}
+.drop .hint {
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+/* Files */
+.files { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+.file {
+  display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center;
+  padding: 8px 12px; border: 1px solid var(--line); border-radius: var(--radius-sm);
+  background: var(--card); font-size: 12.5px;
+}
+.file .nm { font-weight: 500; word-break: break-all; flex: 1 1 180px; }
+
+/* Buttons */
+button.btn {
+  font: inherit;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line-strong);
+  background: var(--card);
+  color: var(--fg);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.12s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+button.btn:hover {
+  background: var(--surface);
+}
+button.btn:active {
+  transform: scale(0.99);
+}
+button.btn.primary {
+  background: var(--accent);
+  color: var(--accent-fg);
+  border: 1px solid transparent;
+  font-weight: 600;
+}
+button.btn.primary:hover {
+  opacity: 0.92;
+}
+button.btn.small {
+  padding: 4px 10px;
+  font-size: 11.5px;
+  border-radius: 6px;
+}
+button.btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+button.link {
+  background: none; border: none; color: var(--accent); cursor: pointer;
+  font: inherit; padding: 0; font-size: 12px; text-decoration: none;
+}
+button.link:hover { text-decoration: underline; }
+
+/* Form inputs */
+input, select, textarea {
+  font: inherit;
+  font-size: 13px;
+  color: var(--fg);
+  background: var(--input);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  padding: 7px 10px;
+  width: 100%;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+textarea { min-height: 70px; resize: vertical; }
+label.f { display: block; font-size: 12px; font-weight: 500; color: var(--muted); margin-bottom: 2px; }
+label.f input, label.f select { margin-top: 4px; }
+.grid { display: grid; gap: 10px 14px; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+input.miss { border-color: var(--err); background: var(--err-soft); }
+input.edited { border-color: var(--warn); }
+input.bad { border-color: var(--err); }
+
+/* Check list */
+.checks { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.checks li { display: flex; gap: 8px; padding: 6px 10px; border-radius: var(--radius-sm); background: var(--surface); font-size: 12.5px; align-items: baseline; }
+.checks .ic { flex: 0 0 16px; font-weight: 600; font-size: 12px; }
+.ic.ok { color: var(--ok); } .ic.warn { color: var(--warn); } .ic.err { color: var(--err); } .ic.info { color: var(--muted); }
+
+/* Tables */
+.tbl { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.tblwrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius-sm); }
+.tbl th, .tbl td { padding: 6px 9px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+.tbl th:first-child, .tbl td:first-child { text-align: left; position: sticky; left: 0; background: var(--card); font-weight: 500; }
+.tbl thead th { background: var(--surface); font-weight: 600; font-size: 11.5px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.02em; }
+.tbl tr.stat td { background: var(--surface); font-weight: 600; }
+.tbl td.bad { color: var(--err); font-weight: 600; }
+.tbl td.miss { background: var(--err-soft); color: var(--err); }
+td input.num, .cellin { width: 84px; text-align: right; padding: 3px 6px; font-variant-numeric: tabular-nums; }
+
+/* Notices */
+.banner { border-radius: var(--radius-sm); padding: 10px 14px; font-size: 12.5px; margin-bottom: 12px; line-height: 1.45; }
+.banner.warn { background: var(--warn-soft); color: var(--warn); }
+.banner.info { background: var(--surface); color: var(--fg); }
+.banner.err  { background: var(--err-soft); color: var(--err); }
+.banner.ok   { background: var(--ok-soft); color: var(--ok); }
+
+/* F2 Box */
+.f2-box {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  background: var(--card-subtle);
+  margin-top: 12px;
+}
+.f2-box h4 { margin: 0 0 6px; font-size: 13px; font-weight: 600; }
+.f2-calc-steps { font-size: 12px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
+
+/* SOP Table */
+.sop-box { background: var(--card-subtle); border-radius: var(--radius-sm); padding: 12px; margin-top: 8px; font-size: 12.5px; }
+.sop-box code { background: var(--card); border: 1px solid var(--line); padding: 1px 5px; border-radius: 4px; font-size: 11.5px; color: var(--accent); }
+.sop-tbl { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12px; }
+.sop-tbl th, .sop-tbl td { padding: 6px 8px; border: 1px solid var(--line); text-align: left; }
+.sop-tbl th { background: var(--surface); font-weight: 600; color: var(--muted); }
+
+/* Navigation footers */
+.nav { display: flex; justify-content: space-between; gap: 10px; margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--line); }
+
+/* Log Console */
+.log {
+  font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  background: var(--card-subtle);
+  color: var(--fg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  max-height: 260px;
+  overflow: auto;
+  white-space: pre-wrap;
+}
+.log .e { color: var(--err); }
+.log .o { color: var(--ok); }
+.log .w { color: var(--warn); }
+
+/* Chart */
+svg.chart { width: 100%; height: auto; max-width: 720px; display: block; }
+svg.chart text { fill: var(--muted); font-size: 11px; }
+svg.chart .ax { stroke: var(--line-strong); }
+svg.chart .gl { stroke: var(--line); stroke-dasharray: 2 4; }
+.legend { display: flex; flex-wrap: wrap; gap: 12px 18px; font-size: 12px; margin-top: 8px; }
+.legend i { display: inline-block; width: 16px; height: 3px; vertical-align: middle; margin-right: 6px; border-radius: 2px; }
+
+/* Misc */
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.mhead { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+.muted { color: var(--muted); }
+.small { font-size: 12px; }
+details summary { cursor: pointer; color: var(--accent); font-weight: 500; font-size: 12.5px; }
+details[open] summary { margin-bottom: 8px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
+.card-test { border-left: 3px solid var(--test-tint); }
+.card-ref { border-left: 3px solid var(--ref-tint); }
+
+@media (max-width: 560px) {
+  .wrap { padding: 10px 12px 64px; }
+  .topbar { padding: 0 14px; }
+  .topbar-brand .sub { display: none; }
+  nav#steps button { padding: 6px 10px; font-size: 11.5px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="topbar">
+  <div class="topbar-brand">
+    <h1>UDT Studio</h1>
+    <span class="sub">Disolusi Terbanding (BPOM / FDA / EMA)</span>
+  </div>
+  <div class="topbar-actions">
+    <button class="theme-btn" onclick="document.documentElement.dataset.theme=document.documentElement.dataset.theme==='dark'?'light':'dark'">Tampilan</button>
+  </div>
+</header>
+
+<!-- Stepper -->
+<div class="stepper-wrap">
+  <nav id="steps"></nav>
+</div>
+
+<div class="wrap">
+
+  <!-- STEP 1: UNGGAH -->
+  <section class="panel" id="p1">
+    <div class="section-header">
+      <h2>Unggah Data HPLC</h2>
+      <p>Unggah file Sequence Summary Report (PDF) atau CSV hasil injeksi instrumen HPLC.</p>
+    </div>
+
+    <div class="dual-drop">
+      <!-- Produk Uji -->
+      <div class="drop-box">
+        <div class="drop-box-header">
+          <h3>Produk Uji</h3>
+          <span class="badge ok">Uji</span>
+        </div>
+        <div class="drop-box-sub">File laporan atau sekuens batch uji</div>
+        <div class="drop" id="dropTest" tabindex="0">
+          <b>Pilih atau seret file ke sini</b>
+          <div class="hint">Format didukung: PDF, CSV, TSV, TXT</div>
+          <input type="file" id="fiTest" accept=".pdf,.csv,.tsv,.txt" multiple hidden>
+        </div>
+        <div class="files" id="fileListTest"></div>
+      </div>
+
+      <!-- Produk Pembanding -->
+      <div class="drop-box">
+        <div class="drop-box-header">
+          <h3>Produk Pembanding</h3>
+          <span class="badge info">Pembanding</span>
+        </div>
+        <div class="drop-box-sub">File laporan atau sekuens inovator</div>
+        <div class="drop" id="dropRef" tabindex="0">
+          <b>Pilih atau seret file ke sini</b>
+          <div class="hint">Format didukung: PDF, CSV, TSV, TXT</div>
+          <input type="file" id="fiRef" accept=".pdf,.csv,.tsv,.txt" multiple hidden>
+        </div>
+        <div class="files" id="fileListRef"></div>
+      </div>
+    </div>
+
+    <!-- Panduan penamaan -->
+    <details class="card">
+      <summary>Panduan Format Penamaan Sampel Sekuens HPLC</summary>
+      <div class="sop-box">
+        <p style="margin:0 0 6px">Gunakan format penamaan baku pada <i>Sequence Table</i> instrumen HPLC agar sistem membaca seluruh variabel otomatis:</p>
+        <table class="sop-tbl">
+          <thead>
+            <tr><th>Jenis Injeksi</th><th>Format Penamaan Baku</th><th>Contoh</th><th>Keterangan</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><b>Standar</b></td><td><code>Standar &lt;pH&gt; &lt;n&gt;</code> atau <code>Standar &lt;n&gt;</code></td><td><code>Standar 6.8 1</code> s/d <code>5</code></td><td>5 injeksi kalibrasi di awal</td></tr>
+            <tr><td><b>BS Mid</b></td><td><code>BS Mid &lt;pH&gt; &lt;n&gt;</code> atau <code>BS Mid &lt;n&gt;</code></td><td><code>BS Mid 6.8 1</code> dan <code>2</code></td><td>2 injeksi bracketing tengah</td></tr>
+            <tr><td><b>BS End</b></td><td><code>BS End &lt;pH&gt; &lt;n&gt;</code> atau <code>BS End &lt;n&gt;</code></td><td><code>BS End 6.8 1</code> dan <code>2</code></td><td>2 injeksi bracketing akhir</td></tr>
+            <tr><td><b>Sampel (Ringkas)</b></td><td><code>&lt;Batch&gt; MD &lt;pH&gt; &lt;Waktu&gt;' &lt;Vessel&gt;</code></td><td><code>24A01 MD 6.8 15' 1</code></td><td>Direkomendasikan</td></tr>
+            <tr><td><b>Sampel (Lengkap)</b></td><td><code>&lt;Produk&gt; &lt;Batch&gt; MD &lt;pH&gt; &lt;Waktu&gt;' &lt;Vessel&gt;</code></td><td><code>Rosuvastatin 24A01 MD 6.8 30' 6</code></td><td>Mendeteksi nama produk</td></tr>
+          </tbody>
+        </table>
+        <p class="small muted" style="margin:8px 0 0">Jika nama standar tidak mencantumkan pH, medium ditentukan otomatis dari sampel atau nama file.</p>
+      </div>
+    </details>
+
+    <!-- Paste manual -->
+    <details class="card">
+      <summary>Tempel Data Tabel Manual (CSV / Teks)</summary>
+      <div class="row" style="margin:8px 0 6px">
+        <label class="small" style="display:flex;align-items:center;gap:6px"><input type="radio" name="pasteRole" value="test" checked style="width:auto"> Produk Uji</label>
+        <label class="small" style="display:flex;align-items:center;gap:6px"><input type="radio" name="pasteRole" value="ref" style="width:auto"> Produk Pembanding</label>
+      </div>
+      <textarea id="paste" placeholder="Sample Name;RT;Area (satu baris per injeksi, pisahkan dengan titik-koma, tab, atau koma)"></textarea>
+      <div class="row" style="margin-top:8px"><button class="btn" id="pasteBtn">Tambahkan Teks</button></div>
+    </details>
+
+    <div class="nav">
+      <span></span>
+      <button class="btn primary" data-go="2">Lanjut ke Verifikasi</button>
+    </div>
+  </section>
+
+  <!-- STEP 2: VERIFIKASI -->
+  <section class="panel" id="p2">
+    <div class="section-header">
+      <h2>Verifikasi &amp; Pemetaan Standar</h2>
+      <p>Periksa data injeksi yang terbaca dan konfirmasi larutan standar yang digunakan tiap batch.</p>
+    </div>
+    <div id="p2body"></div>
+    <div class="nav">
+      <button class="btn" data-go="1">Kembali</button>
+      <button class="btn primary" data-go="3">Lanjut ke Parameter</button>
+    </div>
+  </section>
+
+  <!-- STEP 3: PARAMETER -->
+  <section class="panel" id="p3">
+    <div class="section-header">
+      <h2>Parameter &amp; Perhitungan</h2>
+      <p>Tentukan kondisi disolusi &amp; instrumen, identitas pengujian, konstanta disolusi, serta bobot penimbangan WS.</p>
+    </div>
+
+    <!-- Kondisi Disolusi & Instrumen -->
+    <div class="card" style="margin-bottom:16px">
+      <div class="mhead" style="margin-bottom:10px">
+        <div>
+          <h2>Kondisi Disolusi &amp; Instrumen</h2>
+          <span class="small muted">Terdeteksi otomatis dari sampel/file, dapat dipilih via dropdown atau diketik manual</span>
+        </div>
+      </div>
+      <div id="pCondBox"></div>
+    </div>
+
+    <!-- Produk Uji -->
+    <div class="card card-test">
+      <div class="mhead" style="margin-bottom:10px">
+        <div>
+          <h2>Produk Uji</h2>
+          <span class="small muted">Parameter dan bobot WS untuk sampel uji</span>
+        </div>
+      </div>
+
+      <h3>Identitas Pengujian</h3>
+      <div class="grid" id="pgenTest"></div>
+
+      <h3>Perhitungan</h3>
+      <div class="grid" id="pcalcTest"></div>
+
+      <div id="pwsTest" style="margin-top:14px"></div>
+    </div>
+
+    <!-- Produk Pembanding -->
+    <div class="card card-ref" style="margin-top:16px">
+      <div class="mhead" style="margin-bottom:10px">
+        <div>
+          <h2>Produk Pembanding</h2>
+          <span class="small muted">Parameter dan bobot WS untuk sampel pembanding</span>
+        </div>
+        <button class="btn small" id="copyParamsBtn" type="button">Salin Nilai dari Produk Uji</button>
+      </div>
+
+      <h3>Identitas Pengujian</h3>
+      <div class="grid" id="pgenRef"></div>
+
+      <h3>Perhitungan</h3>
+      <div class="grid" id="pcalcRef"></div>
+
+      <div id="pwsRef" style="margin-top:14px"></div>
+    </div>
+
+    <div class="nav">
+      <button class="btn" data-go="2">Kembali</button>
+      <button class="btn primary" data-go="4">Lanjut ke Hasil &amp; f2</button>
+    </div>
+  </section>
+
+  <!-- STEP 4: HASIL -->
+  <section class="panel" id="p4">
+    <div class="section-header">
+      <h2>Hasil &amp; Evaluasi f2</h2>
+      <p>Profil pelepasan disolusi, keseragaman antar vessel, dan pengujian kemiripan f2 menurut pedoman resmi.</p>
+    </div>
+    <div id="p4body"></div>
+    <div class="nav">
+      <button class="btn" data-go="3">Kembali</button>
+      <button class="btn primary" data-go="5">Lanjut ke Ekspor</button>
+    </div>
+  </section>
+
+  <!-- STEP 5: KIRIM -->
+  <section class="panel" id="p5">
+    <div class="section-header">
+      <h2>Kirim ke Google Sheets</h2>
+      <p>Ekspor bertahap maupun langsung menggunakan tiga Master Template: Calculation, Report, dan Summary.</p>
+    </div>
+
+    <div class="banner info">
+      <b>Catatan:</b> Data hanya ditulis ke salinan baru dari template. File Master Template asli tidak pernah dimodifikasi.
+    </div>
+
+    <div class="card">
+      <h2>Koneksi Google</h2>
+      <div id="conn" class="muted small" style="margin:6px 0">Memeriksa…</div>
+      <div class="row" style="margin-top:8px">
+        <button class="btn" id="testBtn">Uji Koneksi &amp; Master Template</button>
+      </div>
+      <div id="testOut" style="margin-top:8px"></div>
+    </div>
+
+    <div class="card">
+      <h2>Folder Output &amp; File Summary</h2>
+      <p style="font-size:13px;color:var(--muted);margin:0 0 10px">Tentukan folder Google Drive tempat salinan disimpan. Biarkan kosong untuk menggunakan folder default bawaan.</p>
+      <div id="folderStatus" style="margin-bottom:8px"></div>
+      <div style="display:flex;gap:8px;align-items:flex-end">
+        <label class="f" style="flex:1;margin:0">
+          ID Folder Output
+          <input type="text" id="folderIdInput" placeholder="Folder ID dari URL Drive (kosongkan = default)" style="font-family:monospace;font-size:12px">
+        </label>
+        <button class="btn" id="folderVerifyBtn" style="flex-shrink:0;margin-bottom:1px">Verifikasi</button>
+      </div>
+      <div id="folderVerifyOut" style="margin-top:8px"></div>
+      <div class="small muted" style="margin-top:8px;line-height:1.5">
+        Cara mendapatkan ID folder: buka folder di Google Drive → salin bagian ID dari URL<br>
+        <span style="font-family:monospace;font-size:11px;opacity:.7">drive.google.com/drive/folders/<b>ID_FOLDER_DI_SINI</b></span>
+      </div>
+
+      <div style="margin-top:14px;padding-top:12px;border-top:1px dashed var(--line)">
+        <label class="f" style="margin:0">
+          ID / URL File Summary Produk (Opsional — untuk melanjutkan/menambah batch baru pada file Summary yang sudah ada)
+          <input type="text" id="summaryFileInput" placeholder="Kosongkan agar sistem mencari otomatis di Folder Output atau membuat Summary baru" style="font-family:monospace;font-size:12px">
+        </label>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Medium &amp; Perintah Ekspor</h2>
+      <div id="sendList"></div>
+      <label style="display:flex;gap:10px;align-items:flex-start;margin-top:12px;font-size:13px">
+        <input type="checkbox" id="ack" style="width:auto;margin-top:3px">
+        <span>Saya memahami bahwa proses ini membuat/memperbarui salinan dari Master Template dan tidak mengubah file template asli.</span>
+      </label>
+      <div class="row" style="margin-top:14px;gap:10px;flex-wrap:wrap">
+        <button class="btn primary" id="calcBtn" title="Buat file Google Sheet Calculation berisi tab Reference dan Uji">1. Calculation</button>
+        <button class="btn primary" id="reportBtn" title="Generate tab Report pada file Google Sheet Calculation yang sama">2. Report</button>
+        <button class="btn primary" id="summaryBtn" title="Ekspor/tambahkan data ke Master Summary sesuai tanggal dan kelompok batch">3. Summary</button>
+      </div>
+      <div class="small muted" style="margin-top:8px;line-height:1.5">
+        <b>1. Calculation:</b> Membuat file Google Sheet dari Master Calculation berisi 2 tab (Reference &amp; Uji).<br>
+        <b>2. Report:</b> Menambahkan tab Report dari Master Report ke dalam file Google Sheet Calculation yang sama.<br>
+        <b>3. Summary:</b> Memindahkan/menambahkan kelompok data ke file Summary produk berdasarkan tanggal pengerjaan (Kolom A) dan batch (Kolom B), di mana Reference selalu pada urutan pertama dan batch uji baru ditempatkan berurutan di bawahnya.
+      </div>
+      <div class="muted small" id="sendHint" style="margin-top:6px"></div>
+    </div>
+
+    <div class="card">
+      <h2>Log Aktivitas</h2>
+      <div class="log" id="log">Belum ada aktivitas.</div>
+      <div id="sendOut" style="margin-top:10px"></div>
+    </div>
+
+    <div class="nav">
+      <button class="btn" data-go="4">Kembali</button>
+      <span></span>
+    </div>
+  </section>
+
+</div>
+<script>
+// ===== UDT Core: Pure Functions =====
+const MON_EN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function fmtDateEN(d){
+  if(!d) return '';
+  const dt = (d instanceof Date) ? d : new Date(d+'T00:00:00');
+  if(isNaN(dt.getTime())) return String(d);
+  return String(dt.getDate()).padStart(2,'0')+' '+MON_EN[dt.getMonth()]+' '+dt.getFullYear();
+}
+function normMedium(s){ return String(s).replace(/\./g, ',').trim(); }
+function toNum(s){
+  if (typeof s === 'number') return s;
+  let t = String(s).trim().replace(/\s/g,'');
+  if (/^-?\d{1,3}(\.\d{3})+,\d+$/.test(t)) t = t.replace(/\./g,'').replace(',','.');
+  else if (/^-?\d+,\d+$/.test(t)) t = t.replace(',','.');
+  const n = Number(t); return isFinite(n) ? n : NaN;
+}
+function decimalsOf(str){ const m = String(str).match(/\.(\d+)$/); return m ? m[1].length : 0; }
+
+// --- Name grammar with robust regex & medium extractor ---
+function extractMediumFromString(str){
+  if(!str) return null;
+  const m1 = str.match(/(?:MD|pH|ph)\s*([0-9]+[.,][0-9]+|[0-9]+)/i);
+  if(m1) return normMedium(m1[1]);
+  const m2 = str.match(/([0-9]+[.,][0-9]+)/);
+  if(m2) return normMedium(m2[1]);
+  return null;
+}
+
+function classifyName(raw){
+  const n = String(raw).replace(/\s+/g,' ').trim();
+
+  // 1. Deteksi Standar Kalibrasi
+  if (/^(standar|standard|std)\b/i.test(n)){
+    return {type:'std', medium: extractMediumFromString(n), name:n};
+  }
+
+  // 2. Deteksi Bracketing Standard (BS Mid / BS End)
+  if (/^bs\s*[-_]?\s*mid\b/i.test(n)){
+    return {type:'bsMid', medium: extractMediumFromString(n), name:n};
+  }
+  if (/^bs\s*[-_]?\s*end\b/i.test(n)){
+    return {type:'bsEnd', medium: extractMediumFromString(n), name:n};
+  }
+
+  // 3. Deteksi Sampel UDT: [Produk] <Batch> MD <pH> <Waktu>' <Vessel>
+  const sm = n.match(/^(?:(.+?)\s+)?([A-Za-z0-9_-]+)\s+(?:MD|pH|ph)\s*([0-9]+[.,][0-9]+|[0-9]+)\s+(\d+)\s*(?:['\u2019\u2032`\u00B4]|min|m|menit)?\s*(?:V|vessel|v)?\s*(\d+)$/i);
+  if (sm){
+    return {
+      type: 'sample',
+      product: (sm[1]||'').trim(),
+      batch: sm[2].trim(),
+      medium: normMedium(sm[3]),
+      time: parseInt(sm[4], 10),
+      vessel: parseInt(sm[5], 10),
+      name: n
+    };
+  }
+
+  // Pola alternatif: <Batch> <pH desimal> <Waktu>' <Vessel>
+  const sm2 = n.match(/^([A-Za-z0-9_-]+)\s+([0-9]+[.,][0-9]+)\s+(\d+)\s*(?:['\u2019\u2032`\u00B4]|min|m)?\s*(?:V|v)?\s*(\d+)$/i);
+  if (sm2){
+    return {
+      type: 'sample',
+      product: '',
+      batch: sm2[1].trim(),
+      medium: normMedium(sm2[2]),
+      time: parseInt(sm2[3], 10),
+      vessel: parseInt(sm2[4], 10),
+      name: n
+    };
+  }
+
+  // Pola dengan pemisah underscore/dash
+  const sm3 = n.match(/^([A-Za-z0-9]+)[-_](?:MD|pH|ph)?([0-9]+[.,][0-9]+)[-_](\d+)(?:min|m|')?[-_](?:V|v)?(\d+)$/i);
+  if (sm3){
+    return {
+      type: 'sample',
+      product: '',
+      batch: sm3[1].trim(),
+      medium: normMedium(sm3[2]),
+      time: parseInt(sm3[3], 10),
+      vessel: parseInt(sm3[4], 10),
+      name: n
+    };
+  }
+
+  return {type:'other', medium: extractMediumFromString(n), name:n};
+}
+
+// --- PDF parser ---
+function itemsToLines(items){
+  const rows = [];
+  for (const it of items){
+    const s = (it.str||'').replace(/\u00A0/g,' ');
+    if (!s.trim()) continue;
+    const x = it.transform[4], y = it.transform[5];
+    let row = rows.find(r => Math.abs(r.y - y) <= 2.5);
+    if (!row){ row = {y, items:[]}; rows.push(row); }
+    row.items.push({x, s});
+  }
+  rows.sort((a,b)=> b.y - a.y);
+  return rows.map(r => r.items.sort((a,b)=>a.x-b.x).map(i=>i.s.trim()).join(' ').replace(/\s+/g,' ').trim());
+}
+const ROW_RE = /^(.*?)\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.\d+)$/;
+function parseRowsFromLines(lines){
+  const rows = [];
+  for (const ln of lines){
+    const m = ln.match(ROW_RE);
+    if (!m) continue;
+    const name = m[1].trim();
+    if (!name || /^(sum|mean|stddev|rsd)\b/i.test(name)) continue;
+    rows.push({name, rt:parseFloat(m[2]), area:parseFloat(m[3]), areaStr:m[3], tail:parseFloat(m[4]), plates:parseFloat(m[5])});
+  }
+  return rows;
+}
+function parseRowsFromStream(text){
+  const i = text.search(/Plates\s+USP/i);
+  let t = i >= 0 ? text.slice(i).replace(/^Plates\s+USP/i,'') : text;
+  const re = /(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.\d+)(?=\s|$)/g;
+  const rows = []; let last = 0, m;
+  while ((m = re.exec(t))){
+    const name = t.slice(last, m.index).trim();
+    last = m.index + m[0].length;
+    if (!name || /^(sum|mean|stddev|rsd)\b/i.test(name)) continue;
+    rows.push({name, rt:parseFloat(m[1]), area:parseFloat(m[2]), areaStr:m[2], tail:parseFloat(m[3]), plates:parseFloat(m[4])});
+  }
+  return rows;
+}
+function parseHeaderMeta(text){
+  const g = (re) => { const m = text.match(re); return m ? m[1].trim() : null; };
+  const df = g(/Data file:\s*["']?(.+?\.dx)/i) || g(/Data file:\s*([^\r\n]+)/i);
+  const op = g(/Acq\.\s*operator:[, \t]*([^\r\n]+?)(?:\s+Column name|\r|\n|$)/i);
+  const col = g(/Column name:[, \t]*([^\r\n]+?)(?:\s+Serial|\r|\n|$)/i);
+  const ser = g(/Serial\s*\\?#:[, \t]*([^\s,\r\n]+)/i);
+  const cmp = g(/Compound Name[,:\s]+([A-Za-z0-9 _+-]+?)(?:\s+Sample Name|\r|\n|$)/i);
+  return {
+    operator: op ? op.replace(/^["']|["']$/g,'').trim() : null,
+    column: col ? col.replace(/^["']|["']$/g,'').trim() : null,
+    serial: ser ? ser.replace(/^["']|["']$/g,'').trim() : null,
+    compound: cmp ? cmp.replace(/^["']|["']$/g,'').trim() : null,
+    runDate: df ? (df.match(/(\d{4}-\d{2}-\d{2})/)||[])[1] || null : null,
+  };
+}
+function parsePdfText(pagesLines){
+  const all = pagesLines.flat();
+  let rows = parseRowsFromLines(all);
+  let mode = 'lines';
+  if (!rows.length){ rows = parseRowsFromStream(all.join(' ')); mode = 'stream'; }
+  return {rows, meta: parseHeaderMeta(all.join(' ')), mode};
+}
+
+// --- CSV parser (mulai baca data dari baris 11 / indeks 10 pada file CSV CDS) ---
+function detectDelimiter(text, headerLineHint){
+  const lines = text.split(/\r?\n/);
+  const cnt = (l,d) => (l.match(new RegExp(d==='\t'?'\\t':d,'g'))||[]).length;
+  const sampleLine = headerLineHint || lines[10] || lines.find(l=>l.trim()) || '';
+  const cand = ['\t',';',','];
+  const inHead = cand.map(d=>[d,cnt(sampleLine,d)]).sort((x,y)=>y[1]-x[1]);
+  if (inHead[0][1] > 0) return inHead[0][0];
+  return ',';
+}
+function splitCSVLine(line, d){
+  const out = []; let cur = '', q = false;
+  for (let i=0;i<line.length;i++){
+    const c = line[i];
+    if (q){ if (c==='"'){ if (line[i+1]==='"'){cur+='"'; i++;} else q=false; } else cur+=c; }
+    else if (c==='"') q = true;
+    else if (c===d){ out.push(cur); cur=''; }
+    else cur += c;
+  }
+  out.push(cur); return out;
+}
+function parseCSV(text, forceStartRow){
+  text = text.replace(/^\uFEFF/,'');
+  const rawLines = text.split(/\r?\n/);
+  // Secara default pada file CSV instrumen (≥ 11 baris), deteksi tabel dimulai dari baris 11 (indeks 10)
+  let startRow = typeof forceStartRow === 'number' && forceStartRow >= 1 ? forceStartRow : (rawLines.length >= 11 ? 11 : 1);
+  let startIdx = startRow - 1;
+  // Jika baris ke-11 kosong, cari baris isi terdekat mulai dari baris 11
+  while (startIdx < rawLines.length && !rawLines[startIdx].trim()) startIdx++;
+  if (startIdx >= rawLines.length) startIdx = 0;
+
+  const d = detectDelimiter(text, rawLines[startIdx]);
+  const tableLines = rawLines.slice(startIdx).filter(l=>l.trim()!=='');
+  if (!tableLines.length) return {delimiter:d, header:[], rows:[], healed:0, startRow: startIdx+1};
+  const header = splitCSVLine(tableLines[0], d).map(s=>s.trim());
+  let healed = 0;
+  const rows = tableLines.slice(1).map(l=>{
+    let f = splitCSVLine(l, d);
+    if (f.length > header.length && d === ','){
+      const extra = f.length - header.length;
+      f = [f.slice(0, extra+1).join(',')].concat(f.slice(extra+1)); healed++;
+    }
+    return f;
+  });
+  return {delimiter:d, header, rows, healed, startRow: startIdx+1};
+}
+function guessCSVColumns(header){
+  const idx = (re, notRe) => header.findIndex(h => re.test(h) && !(notRe && notRe.test(h)));
+  let name = idx(/sample|nama|name/i, /compound/i);
+  let area = idx(/^area$|\barea\b/i, /%|percent|ratio/i);
+  let rt = idx(/^rt\b|retention|\brt\b/i);
+  return {name: name<0?0:name, area: area<0?-1:area, rt};
+}
+function csvToRows(parsed, map){
+  const rows = [];
+  for (const f of parsed.rows){
+    const name = (f[map.name]||'').trim(); const aStr = (f[map.area]||'').trim();
+    if (!name || !aStr) continue;
+    if (/^(sum|mean|stddev|rsd)\b/i.test(name)) continue;
+    if (f[1] && /^(sum|mean|stddev|rsd)$/i.test(String(f[1]).trim())) continue;
+    const area = toNum(aStr); if (!isFinite(area)) continue;
+    rows.push({name, area, areaStr:aStr, rt: map.rt>=0 ? toNum(f[map.rt]) : NaN});
+  }
+  return rows;
+}
+
+// --- Data Model with Standard Sets, Fail-Proof Inferred Medium, and Auto-Merge BS ---
+function buildUnifiedModel(injections, fileMetaMap){
+  const media = {};
+  const standardSets = {};
+  const unassigned = [];
+
+  const getMed = (m) => media[m] || (media[m] = {
+    id: m,
+    testBatches: {},
+    refBatches: {},
+    times: [],
+    conflicts: [],
+    dupes: 0,
+    files: new Set()
+  });
+
+  // --- LANGKAH A: Analisis Konteks Medium per File ---
+  const fileMediumMap = {};
+  const allDetectedMedia = new Set();
+
+  for (const inj of injections){
+    const c = classifyName(inj.name);
+    if (c.medium){
+      allDetectedMedia.add(c.medium);
+      if (c.type === 'sample' && inj.file){
+        fileMediumMap[inj.file] = c.medium;
+      }
+    }
+  }
+
+  // Jika nama file mengandung identitas pH
+  for (const fName of Object.keys(fileMetaMap)){
+    if (!fileMediumMap[fName]){
+      const fm = extractMediumFromString(fName);
+      if (fm){
+        fileMediumMap[fName] = fm;
+        allDetectedMedia.add(fm);
+      }
+    }
+  }
+
+  const singleGlobalMedium = allDetectedMedia.size === 1 ? [...allDetectedMedia][0] : null;
+
+  // --- LANGKAH B: Kumpulkan Standar & Bracketing dengan Inferred Medium ---
+  const rawStdByMed = {};
+  for (const inj of injections){
+    const c = classifyName(inj.name);
+    let m = c.medium || fileMediumMap[inj.file] || singleGlobalMedium;
+    if (!m && allDetectedMedia.size > 0){
+      m = [...allDetectedMedia][0];
+    }
+
+    if (c.type === 'std' || c.type === 'bsMid' || c.type === 'bsEnd'){
+      if (!m) m = '1,2'; // fallback absolut agar standar tidak pernah dibuang!
+      if (!rawStdByMed[m]) rawStdByMed[m] = [];
+      const fMeta = fileMetaMap[inj.file] || {};
+      rawStdByMed[m].push({
+        type: c.type,
+        area: inj.area,
+        rt: inj.rt,
+        file: inj.file || 'Manual',
+        runDate: fMeta.runDate || null,
+        name: inj.name
+      });
+    }
+  }
+
+  // --- LANGKAH C: Gabungkan BS Otomatis jika Terpencar Lintas File ---
+  for (const m of Object.keys(rawStdByMed)){
+    const entries = rawStdByMed[m];
+    const fileGroups = {};
+    for (const e of entries){
+      const fg = fileGroups[e.file] || (fileGroups[e.file] = {file: e.file, runDate: e.runDate, std:[], bsMid:[], bsEnd:[]});
+      const maxCap = e.type === 'std' ? 5 : 2;
+      if (fg[e.type].length < maxCap){
+        fg[e.type].push(e.area);
+      } else if (!fg[e.type].includes(e.area)){
+        fg[e.type].push(e.area);
+      }
+    }
+
+    const anchorSets = [];
+    const orphanSets = [];
+    for (const f of Object.keys(fileGroups)){
+      const g = fileGroups[f];
+      if (g.std.length > 0) anchorSets.push(g);
+      else orphanSets.push(g);
+    }
+
+    if (!anchorSets.length && orphanSets.length){
+      anchorSets.push(orphanSets.shift());
+    }
+
+    for (const orphan of orphanSets){
+      let bestAnchor = anchorSets[0];
+      if (orphan.runDate){
+        const match = anchorSets.find(a => a.runDate === orphan.runDate);
+        if (match) bestAnchor = match;
+      }
+      if (bestAnchor){
+        orphan.bsMid.forEach(a => { if (bestAnchor.bsMid.length < 2) bestAnchor.bsMid.push(a); });
+        orphan.bsEnd.forEach(a => { if (bestAnchor.bsEnd.length < 2) bestAnchor.bsEnd.push(a); });
+        bestAnchor.mergedFiles = bestAnchor.mergedFiles || [bestAnchor.file];
+        if (!bestAnchor.mergedFiles.includes(orphan.file)) bestAnchor.mergedFiles.push(orphan.file);
+      }
+    }
+
+    standardSets[m] = anchorSets.map((a, idx) => {
+      const fileNames = a.mergedFiles ? a.mergedFiles.join(' + ') : a.file;
+      return {
+        id: 'std_' + m.replace(',','_') + '_' + (idx+1),
+        medium: m,
+        file: fileNames,
+        runDate: a.runDate,
+        name: `Standar pH ${m} (${fileNames})`,
+        std: a.std,
+        bsMid: a.bsMid,
+        bsEnd: a.bsEnd
+      };
+    });
+  }
+
+  // --- LANGKAH D: Proses Injeksi Sampel ---
+  for (const inj of injections){
+    const c = classifyName(inj.name);
+    let m = c.medium || fileMediumMap[inj.file] || singleGlobalMedium;
+    if (c.type === 'sample'){
+      if (!m) m = '1,2';
+      const M = getMed(m);
+      if (inj.file) M.files.add(inj.file);
+      const target = inj.role === 'ref' ? M.refBatches : M.testBatches;
+      const B = target[c.batch] || (target[c.batch] = {
+        name: c.batch,
+        productDetected: c.product || '',
+        role: inj.role,
+        cells: {},
+        file: inj.file
+      });
+      const k = c.vessel + '|' + c.time;
+      if (B.cells[k]){
+        if (B.cells[k].area === inj.area) M.dupes++;
+        else M.conflicts.push({batch: c.batch, vessel: c.vessel, time: c.time, a: B.cells[k].area, b: inj.area});
+        continue;
+      }
+      B.cells[k] = {area: inj.area, file: inj.file};
+    } else if (c.type === 'other'){
+      unassigned.push(inj);
+    }
+  }
+
+  for (const id of Object.keys(media)) refreshModelDims(media[id]);
+  return {media, standardSets, unassigned};
+}
+
+function refreshModelDims(M){
+  const times = new Set();
+  const checkBatch = (B) => {
+    const vs = new Set();
+    for (const k of Object.keys(B.cells)){
+      const [v,t] = k.split('|').map(Number);
+      vs.add(v); times.add(t);
+    }
+    B.vessels = [...vs].sort((a,b)=>a-b);
+  };
+  for (const b of Object.keys(M.testBatches)) checkBatch(M.testBatches[b]);
+  for (const b of Object.keys(M.refBatches)) checkBatch(M.refBatches[b]);
+  M.times = [...times].sort((a,b)=>a-b);
+}
+
+function sortedMediaIds(model){
+  if(!model || !model.media) return [];
+  return Object.keys(model.media).sort((a,b)=>parseFloat(a.replace(',','.'))-parseFloat(b.replace(',','.')));
+}
+
+// --- Validasi & Cek Format ---
+const fin = a => (a||[]).filter(x => typeof x === 'number' && isFinite(x));
+const mean = a => a.length ? a.reduce((s,x)=>s+x,0)/a.length : 0;
+const sdev = a => { if (a.length<2) return NaN; const m=mean(a); return Math.sqrt(a.reduce((s,x)=>s+(x-m)*(x-m),0)/(a.length-1)); };
+
+function checkMediumValidation(M, stdSets){
+  const out = []; const add = (id, level, msg) => out.push({id, level, msg});
+  
+  if (!stdSets || !stdSets.length){
+    add('nostd', 'err', 'Belum ada larutan standar terbaca untuk pH ' + M.id);
+  } else {
+    stdSets.forEach(s => {
+      const sOk = fin(s.std).length >= 5;
+      const bmOk = fin(s.bsMid).length >= 2;
+      const beOk = fin(s.bsEnd).length >= 2;
+      add('std:'+s.id, (sOk&&bmOk&&beOk)?'ok':'err',
+        `${s.name}: Std ${fin(s.std).length}/5, BS Mid ${fin(s.bsMid).length}/2, BS End ${fin(s.bsEnd).length}/2`);
+    });
+  }
+
+  const tBatches = Object.keys(M.testBatches);
+  const rBatches = Object.keys(M.refBatches);
+  add('tbatch', tBatches.length ? 'ok':'err', 'Produk Uji: ' + (tBatches.length ? tBatches.join(', ') : 'Belum ada batch'));
+  add('rbatch', rBatches.length ? 'ok':'warn', 'Produk Pembanding: ' + (rBatches.length ? rBatches.join(', ') : 'Belum ada batch'));
+
+  const T = M.times.length;
+  const inspectBatch = (B, label) => {
+    const miss = [];
+    const V = B.vessels.length ? Math.max(...B.vessels) : 0;
+    for (let v=1; v<=V; v++) for (const t of M.times){ if (!B.cells[v+'|'+t]) miss.push('v'+v+"@"+t+"'"); }
+    add('grid:'+B.name, miss.length ? 'err':'ok', `${label} (${B.name}): ${V} vessel × ${T} titik${miss.length ? '; KOSONG: '+miss.join(', '):''}`);
+    if (V > 12) add('v12:'+B.name, 'err', `${B.name}: >12 vessel tidak didukung template`);
+  };
+
+  tBatches.forEach(b => inspectBatch(M.testBatches[b], 'Uji'));
+  rBatches.forEach(b => inspectBatch(M.refBatches[b], 'Pembanding'));
+
+  if (M.conflicts.length) add('conf','err','Area berbeda untuk sampel yang sama: '+M.conflicts.map(c=>c.batch+' v'+c.vessel+' @'+c.time).join('; '));
+  return out;
+}
+
+// --- Kalkulasi Profil Disolusi Aman ---
+function calcBatchProfile(M, B, p, stdSet){
+  const times = (M && M.times) ? M.times : [];
+  const V = (B && B.vessels && B.vessels.length) ? Math.max(...B.vessels) : 0;
+  
+  if (!stdSet || !stdSet.std || !stdSet.std.length){
+    return {
+      V, times,
+      res: times.length ? Array(V).fill(Array(times.length).fill(NaN)) : [],
+      stats: times.map(() => ({min:NaN, max:NaN, avg:NaN, sd:NaN, rsd:NaN})),
+      stdMean: NaN, stdRSD: NaN, error: 'Larutan standar belum ditentukan'
+    };
+  }
+
+  const st = fin(stdSet.std);
+  const stdMean = mean(st);
+  if (!st.length || stdMean <= 0){
+    return {
+      V, times,
+      res: times.length ? Array(V).fill(Array(times.length).fill(NaN)) : [],
+      stats: times.map(() => ({min:NaN, max:NaN, avg:NaN, sd:NaN, rsd:NaN})),
+      stdMean: NaN, stdRSD: NaN, error: 'Area standar belum valid'
+    };
+  }
+
+  const T = times.length;
+  const wsWeight = (p && isFinite(toNum(p.ws)) && toNum(p.ws) > 0) ? toNum(p.ws) : DEF_CALC.wsDefault;
+  const lc = (p && isFinite(toNum(p.lc)) && toNum(p.lc) > 0) ? toNum(p.lc) : 1;
+  const dilStd = (p && isFinite(toNum(p.dilStd)) && toNum(p.dilStd) > 0) ? toNum(p.dilStd) : 1;
+  const dilSample = (p && isFinite(toNum(p.dilSample)) && toNum(p.dilSample) > 0) ? toNum(p.dilSample) : 1;
+  const volMedia = (p && isFinite(toNum(p.volMedia)) && toNum(p.volMedia) > 0) ? toNum(p.volMedia) : 900;
+  const volRep = (p && isFinite(toNum(p.volRep))) ? toNum(p.volRep) : 0;
+  const pctWS = (p && isFinite(toNum(p.pctWS))) ? toNum(p.pctWS) : 100;
+  const mrCa = (p && isFinite(toNum(p.mrCa)) && toNum(p.mrCa) > 0) ? toNum(p.mrCa) : 1;
+  const mr = (p && isFinite(toNum(p.mr)) && toNum(p.mr) > 0) ? toNum(p.mr) : 1;
+
+  const k = (wsWeight / lc) * (dilSample / dilStd) * (mr / mrCa) * pctWS / stdMean;
+
+  const res = [];
+  for (let v = 1; v <= V; v++){
+    const raw = times.map(t => (B.cells[v+'|'+t] ? B.cells[v+'|'+t].area * k : NaN));
+    if (!B.vessels.includes(v)){ res.push(null); continue; }
+    const corr = []; let cum = 0;
+    for (let i = 0; i < T; i++){
+      const c = raw[i] + (volRep / volMedia) * cum;
+      corr.push(c);
+      cum += c;
+    }
+    res.push(corr);
+  }
+  const used = res.filter(Boolean);
+  const stats = times.map((t, i) => {
+    const col = used.map(r => r[i]).filter(x => isFinite(x));
+    const avg = mean(col);
+    const sd = sdev(col);
+    const rsd = avg > 0 ? (sd / avg) * 100 : 0;
+    return {min: col.length ? Math.min(...col) : NaN, max: col.length ? Math.max(...col) : NaN, avg, sd, rsd};
+  });
+  return {V, times, res, stats, stdMean, stdRSD: sdev(st)/stdMean*100};
+}
+
+// --- Evaluasi f2 Otomatis (FDA / EMA / BPOM) ---
+function evalSimilarityF2(times, refMeans, testMeans, refStats, testStats){
+  const T = Math.min((times||[]).length, (refMeans||[]).length, (testMeans||[]).length);
+  if (T < 1){
+    return {
+      f2: NaN, n: 0, usedTimes: [], usedRef: [], usedTest: [],
+      cutoffIdx: -1, reason: 'Data titik waktu tidak cukup untuk perhitungan f2',
+      both85at15: false, rsdExceeded: false, rsdDetails: [],
+      isSimilar: false, minPointsValid: false
+    };
+  }
+
+  const idx15 = times.indexOf(15);
+  const both85at15 = idx15 >= 0 && refMeans[idx15] >= 85 && testMeans[idx15] >= 85;
+
+  let cutoffIdx = T - 1;
+  let reason = 'Semua titik waktu diikutsertakan';
+
+  for (let i = 0; i < T; i++){
+    if (refMeans[i] >= 85 && testMeans[i] >= 85){
+      cutoffIdx = i;
+      reason = `Dipotong pada menit ${times[i]}' (kedua produk telah mencapai ≥ 85%)`;
+      break;
+    }
+  }
+
+  const n = cutoffIdx + 1;
+  const usedTimes = times.slice(0, n);
+  const usedRef = refMeans.slice(0, n);
+  const usedTest = testMeans.slice(0, n);
+
+  let sumSq = 0;
+  for (let i = 0; i < n; i++){
+    sumSq += Math.pow(usedRef[i] - usedTest[i], 2);
+  }
+  const factor = Math.pow(1 + sumSq / n, -0.5);
+  const f2Val = 50 * Math.log10(factor * 100);
+
+  let rsdExceeded = false;
+  const rsdDetails = [];
+  for (let i = 0; i < n; i++){
+    const t = times[i];
+    const limit = (t <= 15 || i === 0) ? 20 : 10;
+    const rRSD = refStats ? refStats[i].rsd : 0;
+    const tRSD = testStats ? testStats[i].rsd : 0;
+    if (rRSD > limit || tRSD > limit){
+      rsdExceeded = true;
+      rsdDetails.push(`menit ${t}' (Limit ${limit}%: Ref ${fmt(rRSD,1)}%, Uji ${fmt(tRSD,1)}%)`);
+    }
+  }
+
+  return {
+    f2: f2Val,
+    n,
+    usedTimes,
+    usedRef,
+    usedTest,
+    cutoffIdx,
+    reason,
+    both85at15,
+    rsdExceeded,
+    rsdDetails,
+    isSimilar: f2Val >= 50 && f2Val <= 100,
+    minPointsValid: n >= 3
+  };
+}
+
+// --- Sheet write planner (Master Calculation) ---
+const colL = i => String.fromCharCode(68 + i);
+function buildTabWrites(a){
+  const W = []; const F = []; const w = (range, values) => W.push({range, values});
+  const P = a.params, H = a.header;
+  w('E3', [[': '+H.product]]);
+  w('E4', [[': '+H.batch+' ']]);
+  if(H.api !== undefined) w('E5', [[': '+H.api]]);
+  if(H.mediumDesc !== undefined) w('E6', [[': '+H.mediumDesc]]);
+  if(H.apparatus !== undefined) w('E7', [[': '+H.apparatus]]);
+  w('E8', [[': NA']]);
+  if(H.purpose !== undefined) w('E9', [[': '+H.purpose]]);
+  w('E10', [[': '+H.analyst]]);
+  w('E11', [[': '+H.dateStr]]);
+  if(H.instrument !== undefined) w('E12', [[': '+H.instrument]]);
+  w('N8', [[': '+H.dateStr]]);
+  w('N11', [[': '+H.dateStr]]);
+  w('E14:E16', [[P.lc],[P.dilStd],[P.dilSample]]);
+  w('M14:M18', [[P.volRep],[P.volMedia],[P.pctWS],[P.mrCa],[P.mr]]);
+  w('N22', [[P.ws]]);
+  const last = colL(a.T-1);
+  w('D21:'+last+'21', [a.labels.map(String)]);
+  const grid = []; for (let i=0;i<12;i++){ const row=[]; for (let j=0;j<9;j++){ const v = (i<a.V && j<a.T) ? a.areas[i][j] : null; row.push(v==null?'':v);} grid.push(row);} 
+  w('D22:L33', grid);
+  w('M22:M26', a.std.slice(0,5).map(x=>[x]));
+  w('N25:O26', [[a.bsMid[0]??'', a.bsEnd[0]??''],[a.bsMid[1]??'', a.bsEnd[1]??'']]);
+  
+  const calcF = (col,i) => `=(${col}${21+i}/$M$27)*($N$22/$E$14)*($E$16/$E$15)*($M$18/$M$17)*($M$16)`;
+  const resF = (col,k,i) => k===0 ? `=${col}${38+i}` : (k===1 ? `=${col}${38+i}+($M$14/$M$15)*D${54+i}` : `=${col}${38+i}+($M$14/$M$15)*SUM(D${54+i}:${colL(k-1)}${54+i})`);
+  for (let k=0;k<a.T;k++){
+    const col = colL(k);
+    if (k>=7){
+      F.push([col+'38', `=${col}21`]);
+      F.push([col+'54', `=${col}38`]);
+    }
+    // Update rentang statistik (MIN, MAX, AVERAGE, STDEV, RSD) HANYA untuk vessel aktif (55 s/d 54+V)
+    const vRange = `${col}55:${col}${54 + a.V}`;
+    F.push([col+'67', `=MIN(${vRange})`]);
+    F.push([col+'68', `=MAX(${vRange})`]);
+    F.push([col+'69', `=AVERAGE(${vRange})`]);
+    F.push([col+'70', `=STDEV(${vRange})`]);
+    F.push([col+'71', `=${col}70/${col}69*100`]);
+
+    // Tulis formula hanya untuk vessel yang aktif (1 s/d a.V)
+    for (let i=1;i<=a.V;i++){
+      F.push([col+(38+i), calcF(col,i)]);
+      F.push([col+(54+i), resF(col,k,i)]);
+    }
+    // Kosongkan formula & sel vessel yang tidak digunakan (a.V+1 s/d 12) agar tidak terhitung 0.00%
+    for (let i=a.V+1; i<=12; i++){
+      w(col+(38+i), [['']]);
+      w(col+(54+i), [['']]);
+    }
+  }
+  if (a.T>=7 && String(a.labels[6]) !== "60'"){ F.push(['J38','=J21']); F.push(['J54','=J38']); }
+  for (const [cell,f] of F) w(cell, [[f]]);
+  return {writes:W, formulaCount:F.length};
+}
+</script>
+
+<script>
+// ===================== Konfigurasi Aplikasi =====================
+const CONFIG = {
+  root:'1EhaQ7N49y2FZpX1DgnK1-M1VZsOgPDFM',
+  outputFolder:'14MBWKyYRabZKeKoRvd9wp-UGeFkUDyeB',
+  projectFolder:'1hspwVPz4OdxQCc3ddauTFEsE711Y1Qxw',
+  templatesFolder:'1jY0vHec9gtQQp7be7FsSORtGzUWZuvRa',
+  masterCalculation:'16Vh4ygEHprtmE8mhd1tA1LDrsQQu7LwcLaKaUQSZyM4',
+  masterReport:'14IJwB5iRhcAcjEvMBUVPf8Ro2Syl0VEWDr1mYQAp1H4',
+  masterReportSheetId: 1578841241,
+  masterSummary:'1SKCnQb3axpnsNokaO4j6d9eu0-OGAbYMk3GLcbTlvFM',
+  templates:{'1,2':'16Vh4ygEHprtmE8mhd1tA1LDrsQQu7LwcLaKaUQSZyM4','4,5':'16Vh4ygEHprtmE8mhd1tA1LDrsQQu7LwcLaKaUQSZyM4','6,8':'16Vh4ygEHprtmE8mhd1tA1LDrsQQu7LwcLaKaUQSZyM4'},
+  summaryCopy:'1SKCnQb3axpnsNokaO4j6d9eu0-OGAbYMk3GLcbTlvFM'
+};
+const BLOCK = new Set(['1oIB646fsKkpuZY9UTFwylg1D0cTlHhB7Dlppe2SNRdM','1sJeUde1F_2MK-aNHzv5FRTW2SteG07zSsfNOj00bTo0','1EM2kKxUUTl3TKh_8ffbsgSCCZjJM0Ia1LCXPQOFIoIc','1RSR2pPZ4C3kcUx3Om99uwmvz49tuJ6R77xygeftevfY','1b-MXVPyRMj-CGOnmECushfFRvHcMmBhpYYu7ktGQHPI','1HGVh76Q3iY0WXH8BSoDTHObKLAd_V-LCrnJto_trFyo','1qzYU8t_Pgoy7HpPM9WfLzOf0TmtjLHY2b2No74Ygfq4','1XcqVLwbLG3c29sYRPpjKi8nAdUfvwDYM','1SOTUGsN0JAzq2bnS4W52_XRGv01JPF9S','1g873ZBfyKIKXK-23lMtkAlWKGYzED_ZB','1lx6KohefSvZcHtvGEvEM8rhCffWGv3Y','10qaZBVG0IySJG7x-QOeeBnxsbvWVZXmS','1YCsxJ22p3iELo0alxxSqcZAsN2YztlMn']);
+const DRIVE='Google Drive', SHEETS='Google Sheets';
+
+// Preset Media, Apparatus, dan Instrument (mendukung Dropdown + Input Manual)
+const MEDIUM_PRESETS = [
+  { code:'1,2', label:'pH 1,2', desc:'Simulated Gastric Fluid Without Enzyme (Buffer pH 1,2)' },
+  { code:'4,5', label:'pH 4,5', desc:'Buffer Acetate pH 4,5' },
+  { code:'6,8', label:'pH 6,8', desc:'Buffer Phosphate pH 6,8' },
+  { code:'1,0', label:'pH 1,0', desc:'0,1 N HCl (pH 1,0)' },
+  { code:'7,2', label:'pH 7,2', desc:'Buffer Phosphate pH 7,2' },
+  { code:'7,5', label:'pH 7,5', desc:'Buffer Phosphate pH 7,5' },
+  { code:'Air', label:'Air (Water)', desc:'Purified Water (Air)' }
+];
+const APPARATUS_PRESETS = [
+  { value:'2 (Paddle)', label:'2 (Paddle)' },
+  { value:'1 (Basket)', label:'1 (Basket)' },
+  { value:'4 (Flow-through cell)', label:'4 (Flow-through cell)' }
+];
+const INSTRUMENT_PRESETS = [
+  { value:'HPLC', label:'HPLC' },
+  { value:'Spektrofotometer UV', label:'Spektrofotometer UV' }
+];
+
+function defaultMediumConfig(mId){
+  const norm = normMedium(mId);
+  const found = MEDIUM_PRESETS.find(p => p.code.toLowerCase() === norm.toLowerCase());
+  if(found) return { preset: found.code, code: found.code, tabName: found.label, desc: found.desc };
+  const isNum = /^[0-9]+([.,][0-9]+)?$/.test(norm);
+  return {
+    preset: '__custom__',
+    code: norm,
+    tabName: isNum ? ('pH ' + norm) : norm,
+    desc: isNum ? ('Buffer pH ' + norm) : norm
+  };
+}
+
+// ===== Google Identity Services =====
+const GOOGLE_CLIENT_ID = '';
+const GOOGLE_SCOPES = 'https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/spreadsheets';
+
+const DEF_CALC = {
+  lc: 20, dilStd: 500, dilSample: 900, volMedia: 900, volRep: 10,
+  pctWS: 98.23, mrCa: 1001.14, mr: 481.54, wsDefault: 22
+};
+const COLORS = ['#0f766e', '#c2410c', '#6d28d9', '#0369a1', '#be123c', '#4d7c0f'];
+
+const S = {
+  testFiles:[], refFiles:[],
+  model:null,
+  stdMapping:{},
+  wsWeights:{},
+  condParams:{
+    api:'',
+    apparatusPreset:'2 (Paddle)',
+    apparatus:'2 (Paddle)',
+    instrumentPreset:'HPLC',
+    instrument:'HPLC',
+    rpm:'50 rpm',
+    methodRef:'Farmakope Indonesia (FI) VI / USP'
+  },
+  mediaConfig:{}, // mId -> { preset, code, tabName, desc }
+  testParams:{ product:'', batch:'', analyst:'', runDate:'', ...DEF_CALC },
+  refParams:{ product:'', batch:'', analyst:'', runDate:'', ...DEF_CALC },
+  step:1, mcp:null, dl:null, googleToken:'', tokenExp:0, customTemplates:JSON.parse(localStorage.getItem('udt_custom_tpl')||'{}'),
+  outputFolderId: localStorage.getItem('udt_output_folder_id')||'',
+  outputFolderName: localStorage.getItem('udt_output_folder_name')||'',
+  calcSheets: JSON.parse(localStorage.getItem('udt_calc_sheets')||'{}'), // mId -> { id, title, url }
+  summarySheets: JSON.parse(localStorage.getItem('udt_summary_sheets')||'{}'), // productKey -> { id, title, url }
+  created:new Set(JSON.parse(localStorage.getItem('udt_created_ids')||'[]')), busy:false, include:{}, badDec:0
+};
+
+function getMedConfig(mId){
+  if(!S.mediaConfig[mId]) S.mediaConfig[mId] = defaultMediumConfig(mId);
+  return S.mediaConfig[mId];
+}
+function markCreated(id){
+  if(!id) return;
+  S.created.add(id);
+  try{ localStorage.setItem('udt_created_ids', JSON.stringify([...S.created].slice(-100))); }catch(e){}
+}
+
+const $ = (s,r=document)=>r.querySelector(s);
+function h(tag,a,...kids){
+  const e=document.createElement(tag);
+  if(a) for(const k in a){
+    const v=a[k];
+    if(k==='class') e.className=v;
+    else if(k==='html') e.innerHTML=v;
+    else if(k.startsWith('on')) e.addEventListener(k.slice(2),v);
+    else if(v===true) e.setAttribute(k,'');
+    else if(v!==false&&v!=null) e.setAttribute(k,v);
+  }
+  for(const c of kids.flat(Infinity)){
+    if(c==null||c===false) continue;
+    e.append(c.nodeType?c:document.createTextNode(String(c)));
+  }
+  return e;
+}
+const fmt=(n,d=2)=>(typeof n==='number'&&isFinite(n))?n.toFixed(d).replace('.',','):'–';
+
+function store(){
+  try{
+    localStorage.setItem('udt.v3', JSON.stringify({
+      testParams: S.testParams,
+      refParams: S.refParams,
+      condParams: S.condParams,
+      mediaConfig: S.mediaConfig,
+      wsWeights: S.wsWeights,
+      stdMapping: S.stdMapping
+    }));
+  }catch(e){}
+}
+function restore(){
+  try{ localStorage.removeItem('udt_google_token'); }catch(e){}
+  try{
+    const j=JSON.parse(localStorage.getItem('udt.v3')||'null');
+    if(j){
+      Object.assign(S.testParams, j.testParams||{});
+      Object.assign(S.refParams, j.refParams||{});
+      Object.assign(S.condParams, j.condParams||{});
+      delete S.testParams.tabPrefix;
+      delete S.refParams.tabPrefix;
+      if(!S.condParams.methodRef) S.condParams.methodRef = 'Farmakope Indonesia (FI) VI / USP';
+      S.mediaConfig=j.mediaConfig||{};
+      S.wsWeights=j.wsWeights||{};
+      S.stdMapping=j.stdMapping||{};
+    }
+  }catch(e){}
+}
+
+function todayISO(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function suggestedDate(){
+  const ds = [...S.testFiles, ...S.refFiles].map(f => f.meta && f.meta.runDate).filter(Boolean).sort();
+  return ds[0] || todayISO();
+}
+
+// ===================== Navigasi =====================
+const STEPS=['Unggah','Verifikasi & Standar','Parameter & Perhitungan','Hasil & f2','Kirim ke Sheets'];
+function buildNav(){
+  const nav=$('#steps'); nav.innerHTML='';
+  STEPS.forEach((t,i)=>nav.append(h('button',{class:(S.step===i+1?'active ':'')+(S.step>i+1?'done':''),onclick:()=>go(i+1)},h('span',{class:'n'},S.step>i+1?'✓':String(i+1)),t)));
+}
+function go(n){
+  S.step=n;
+  document.querySelectorAll('section.panel').forEach((p,i)=>p.classList.toggle('active',i+1===n));
+  buildNav();
+  if(n===2) renderCheck();
+  if(n===3) renderParams();
+  if(n===4) renderResults();
+  if(n===5){ renderConnStatus(); renderSend(); }
+  window.scrollTo({top:0});
+}
+document.addEventListener('click',e=>{ const b=e.target.closest('[data-go]'); if(b) go(parseInt(b.dataset.go,10)); });
+
+// ===================== Langkah 1: Unggah =====================
+async function readPdf(file, role){
+  if(typeof pdfjsLib==='undefined') throw new Error('Pustaka pembaca PDF tidak termuat.');
+  const doc=await pdfjsLib.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise;
+  const pages=[];
+  for(let i=1;i<=doc.numPages;i++){
+    const pg=await doc.getPage(i);
+    const tc=await pg.getTextContent();
+    pages.push(itemsToLines(tc.items));
+  }
+  const r=parsePdfText(pages);
+  return {role, kind:'pdf', name:file.name, rows:r.rows, meta:r.meta, mode:r.mode, pages:doc.numPages};
+}
+
+function textEntry(name, text, role, isPaste=false){
+  const lines=text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+  const pr=parseRowsFromLines(lines);
+  const meta=parseHeaderMeta(text);
+  if(pr.length>=3 && pr.length>=lines.length*0.5) return {role, kind:'text', name, rows:pr, meta};
+  const parsed=parseCSV(text, isPaste ? 1 : 11);
+  return {role, kind:'csv', name, rawText:text, parsed, map:guessCSVColumns(parsed.header), meta};
+}
+
+const fileRows=f=>f.kind==='csv'?(f.map.area>=0?csvToRows(f.parsed,f.map):[]):f.rows;
+
+async function addFilesForRole(list, role){
+  const arr = role === 'ref' ? S.refFiles : S.testFiles;
+  for(const f of list){
+    try{
+      let entry; const ext=(f.name.split('.').pop()||'').toLowerCase();
+      if(ext==='pdf') entry=await readPdf(f, role);
+      else entry=textEntry(f.name, await f.text(), role, false);
+      entry.id=Math.random().toString(36).slice(2);
+      arr.push(entry);
+    }catch(err){
+      arr.push({role, id:Math.random().toString(36).slice(2), kind:'error', name:f.name, error:String(err.message||err), rows:[]});
+    }
+  }
+  rebuild();
+}
+
+function removeFile(id, role){
+  if(role === 'ref') S.refFiles=S.refFiles.filter(f=>f.id!==id);
+  else S.testFiles=S.testFiles.filter(f=>f.id!==id);
+  rebuild();
+}
+
+function renderFileList(boxEl, files, role){
+  boxEl.innerHTML='';
+  if(!files.length){ boxEl.append(h('span',{class:'muted small'},'Belum ada file.')); return; }
+  for(const f of files){
+    const rows=fileRows(f);
+    const cells=[h('span',{class:'nm'},f.name)];
+    if(f.kind==='error'){
+      cells.push(h('span',{class:'badge err'},'Gagal dibaca'), h('span',{class:'small muted'},f.error));
+    } else {
+      cells.push(h('span',{class:'badge '+(rows.length?'ok':'err')},rows.length+' baris'));
+      cells.push(h('span',{class:'badge info'},f.kind==='pdf'?('PDF · '+f.pages+' hal'):('CSV · mulai baris '+(f.parsed?.startRow||11))));
+      if(f.meta&&f.meta.runDate) cells.push(h('span',{class:'badge info'},f.meta.runDate));
+    }
+    cells.push(h('button',{class:'link',onclick:()=>removeFile(f.id, role)},'hapus'));
+    const div=h('div',{class:'file'},cells);
+    if(f.kind==='csv'){
+      const sel=(key,opt)=>{
+        const s=h('select',{onchange:e=>{f.map[key]=parseInt(e.target.value,10);rebuild();}});
+        if(opt) s.append(h('option',{value:-1},'(tidak ada)'));
+        f.parsed.header.forEach((c,i)=>s.append(h('option',{value:i,selected:f.map[key]===i},c||('kolom '+(i+1)))));
+        return s;
+      };
+      const startRowInp = h('input',{
+        type:'number', min:1, value:f.parsed.startRow||11,
+        onchange:e=>{
+          const sr = Math.max(1, parseInt(e.target.value,10)||11);
+          if(f.rawText){
+            f.parsed = parseCSV(f.rawText, sr);
+            f.map = guessCSVColumns(f.parsed.header);
+            rebuild();
+          }
+        }
+      });
+      div.append(h('div',{class:'grid',style:'flex:1 1 100%;grid-template-columns:repeat(auto-fill,minmax(130px,1fr))'},
+        h('label',{class:'f'},'Mulai Baris',startRowInp),
+        h('label',{class:'f'},'Kolom sampel',sel('name')),
+        h('label',{class:'f'},'Kolom Area',sel('area',true)),
+        h('label',{class:'f'},'Kolom RT',sel('rt',true))));
+    }
+    boxEl.append(div);
+  }
+}
+
+function rebuild(){
+  const allInjections = [];
+  const fileMetaMap = {};
+  S.badDec = 0;
+  
+  const collect = (files, role) => {
+    for(const f of files){
+      fileMetaMap[f.name] = f.meta || {};
+      for(const r of fileRows(f)){
+        allInjections.push({...r, file:f.name, role});
+        if(classifyName(r.name).type!=='other' && decimalsOf(r.areaStr)!==4) S.badDec++;
+      }
+    }
+  };
+  collect(S.testFiles, 'test');
+  collect(S.refFiles, 'ref');
+
+  const model = buildUnifiedModel(allInjections, fileMetaMap);
+  
+  if(!S.testParams.runDate){
+    const d = S.testFiles.map(f=>f.meta&&f.meta.runDate).filter(Boolean).sort()[0];
+    if(d) S.testParams.runDate = d;
+  }
+  if(!S.refParams.runDate){
+    const d = S.refFiles.map(f=>f.meta&&f.meta.runDate).filter(Boolean).sort()[0];
+    if(d) S.refParams.runDate = d;
+  }
+  if(!S.testParams.analyst){
+    const op = S.testFiles.map(f=>f.meta&&f.meta.operator).filter(Boolean)[0];
+    if(op) S.testParams.analyst = op;
+  }
+  if(!S.refParams.analyst){
+    const op = S.refFiles.map(f=>f.meta&&f.meta.operator).filter(Boolean)[0];
+    if(op) S.refParams.analyst = op;
+  }
+  if(!S.condParams.api){
+    const cmp = [...S.testFiles, ...S.refFiles].map(f=>f.meta&&f.meta.compound).filter(Boolean)[0];
+    if(cmp) S.condParams.api = cmp;
+  }
+  // Deteksi otomatis instrumen dari ada/tidaknya RT pada injeksi
+  if(allInjections.length && !S.condParams._userSetInstrument){
+    const hasRT = allInjections.some(inj => isFinite(inj.rt) && inj.rt > 0);
+    S.condParams.instrumentPreset = hasRT ? 'HPLC' : 'Spektrofotometer UV';
+    S.condParams.instrument = S.condParams.instrumentPreset;
+  }
+
+  for(const m of Object.keys(model.media)){
+    // Inisialisasi konfigurasi media otomatis dari sampel yang diinput bila belum ada
+    getMedConfig(m);
+    for(const b of Object.values(model.media[m].testBatches)){
+      if(b.productDetected && !S.testParams.product) S.testParams.product = b.productDetected;
+      if(b.name && !S.testParams.batch) S.testParams.batch = b.name;
+    }
+    for(const b of Object.values(model.media[m].refBatches)){
+      if(b.productDetected && !S.refParams.product) S.refParams.product = b.productDetected;
+      if(b.name && !S.refParams.batch) S.refParams.batch = b.name;
+    }
+  }
+  if(!S.condParams.api && S.testParams.product){
+    S.condParams.api = S.testParams.product.split(/\s+/)[0] || '';
+  }
+
+  // Auto-map larutan standar ke batch secara sinkron dan valid
+  for(const m of Object.keys(model.media)){
+    const sets = model.standardSets[m] || [];
+    if(!sets.length) continue;
+    const assign = (batchDict) => {
+      for(const b of Object.keys(batchDict)){
+        const k = m + '|' + b;
+        const curId = S.stdMapping[k];
+        const isValid = sets.some(s => s.id === curId);
+        if(!isValid){
+          const match = sets.find(s => s.file.includes(batchDict[b].file));
+          S.stdMapping[k] = match ? match.id : sets[0].id;
+        }
+      }
+    };
+    assign(model.media[m].testBatches);
+    assign(model.media[m].refBatches);
+
+    sets.forEach(s => {
+      if(S.wsWeights[s.id] === undefined || !isFinite(toNum(S.wsWeights[s.id]))) {
+        S.wsWeights[s.id] = DEF_CALC.wsDefault;
+      }
+    });
+  }
+
+  S.model = model;
+  renderFileList($('#fileListTest'), S.testFiles, 'test');
+  renderFileList($('#fileListRef'), S.refFiles, 'ref');
+
+  if(S.step===2) renderCheck();
+  if(S.step===3) renderParams();
+  if(S.step===4) renderResults();
+  if(S.step===5) renderSend();
+}
+
+// ===================== Langkah 2: Verifikasi & Pemetaan =====================
+const ICON={ok:'✓',warn:'!',err:'✕',info:'i'};
+function statusOf(list){ return list.some(c=>c.level==='err')?'err':list.some(c=>c.level==='warn')?'warn':'ok'; }
+
+function numInput(targetArr, i, label, onChangeCallback){
+  const v = targetArr[i];
+  return h('input',{
+    class:'cellin'+((v===undefined||!isFinite(v))?' miss':''),
+    inputmode:'decimal',
+    value:(v!==undefined&&isFinite(v))?String(v):'',
+    placeholder:label,
+    onchange:e=>{
+      const t = e.target.value.trim();
+      const n = t===''?null:toNum(t);
+      if(t!==''&&!isFinite(n)){ e.target.classList.add('bad'); return; }
+      targetArr[i] = (n===null?NaN:n);
+      e.target.classList.remove('bad');
+      e.target.classList.toggle('miss', n===null);
+      e.target.classList.toggle('edited', n!==null);
+      if(onChangeCallback) onChangeCallback();
+    }
+  });
+}
+
+function renderCheck(){
+  const root = $('#p2body'); root.innerHTML = '';
+  if(!S.model || !sortedMediaIds(S.model).length){
+    root.append(h('div',{class:'card'},h('h2',null,'Belum ada data terbaca'),
+      h('p',{class:'muted'},'Silakan unggah PDF atau CSV Produk Uji dan Produk Pembanding di Langkah 1.')));
+    return;
+  }
+  if(S.badDec) root.append(h('div',{class:'banner warn'},S.badDec+' nilai area tidak berformat 4 desimal. Periksa file ekspor CDS.'));
+
+  for(const id of sortedMediaIds(S.model)){
+    root.append(renderMediumSection(id));
+  }
+  if(S.model.unassigned.length) root.append(renderUnassignedSection());
+}
+
+function renderMediumSection(id){
+  const M = S.model.media[id];
+  const stdSets = S.model.standardSets[id] || [];
+  const list = checkMediumValidation(M, stdSets);
+  const st = statusOf(list);
+
+  const card = h('div',{class:'card'});
+  card.append(h('div',{class:'mhead'},
+    h('h2',null,'Medium pH ' + id),
+    h('span',{class:'badge ' + st}, st==='ok'?'Siap':st==='warn'?'Perlu konfirmasi':'Ada masalah')));
+
+  const ul = h('ul',{class:'checks'});
+  list.forEach(c=>ul.append(h('li',null,h('span',{class:'ic '+c.level},ICON[c.level]),h('span',null,c.msg))));
+  card.append(ul);
+
+  // Larutan Standar & Bracketing
+  card.append(h('h3',null,'Larutan Standar & Bracketing (pH ' + id + ')'));
+  if(!stdSets.length){
+    card.append(h('div',{class:'banner err'},'Tidak ada larutan standar terdeteksi untuk pH '+id+'. Pastikan sequence memuat injeksi standar.'));
+  } else {
+    stdSets.forEach(s => {
+      const sBox = h('div',{style:'border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:10px;background:var(--card)'});
+      sBox.append(h('div',{class:'row',style:'justify-content:space-between;margin-bottom:8px'},
+        h('b',null,s.name),
+        h('span',{class:'small muted'},(s.runDate ? 'Tanggal CDS: '+s.runDate+' · ' : '') + 'Sumber: ' + s.file)));
+
+      const grid = h('div',{class:'grid',style:'grid-template-columns:repeat(auto-fill,minmax(110px,1fr))'});
+      [['std',5,'Std'],['bsMid',2,'BS Mid'],['bsEnd',2,'BS End']].forEach(([arrName,n,lab])=>{
+        for(let i=0;i<n;i++){
+          grid.append(h('label',{class:'f'},lab+' '+(i+1), numInput(s[arrName], i, 'area', ()=>{ renderCheck(); renderResults(); })));
+        }
+      });
+      sBox.append(grid);
+      card.append(sBox);
+    });
+  }
+
+  // Konfirmasi Pemetaan Standar ke Sampel
+  if(stdSets.length > 0){
+    card.append(h('h3',null,'Konfirmasi Penggunaan Larutan Standar'));
+    const mapGrid = h('div',{class:'grid',style:'grid-template-columns:repeat(auto-fill,minmax(280px,1fr));margin-bottom:14px'});
+    
+    const renderAssign = (bName, roleBadge) => {
+      const k = id + '|' + bName;
+      let cur = S.stdMapping[k];
+      if(!stdSets.some(s => s.id === cur)){
+        cur = stdSets[0] ? stdSets[0].id : '';
+        S.stdMapping[k] = cur;
+      }
+      const sel = h('select',{
+        onchange: e => {
+          S.stdMapping[k] = e.target.value;
+          store();
+          renderParams();
+          renderResults();
+        }
+      },
+        stdSets.map(s => h('option', {value:s.id, selected:s.id===cur}, s.name)));
+      return h('label',{class:'f'},h('span',null,roleBadge,' ',h('b',null,bName)),sel);
+    };
+
+    Object.keys(M.testBatches).forEach(b => mapGrid.append(renderAssign(b, h('span',{class:'badge ok small'},'Uji'))));
+    Object.keys(M.refBatches).forEach(b => mapGrid.append(renderAssign(b, h('span',{class:'badge info small'},'Ref'))));
+    card.append(mapGrid);
+  }
+
+  // Grid Sampel Produk Uji
+  Object.keys(M.testBatches).forEach(b => {
+    card.append(renderBatchTable(M, M.testBatches[b], 'Area Produk Uji · Batch ' + b, id));
+  });
+
+  // Grid Sampel Produk Pembanding
+  Object.keys(M.refBatches).forEach(b => {
+    card.append(renderBatchTable(M, M.refBatches[b], 'Area Produk Pembanding · Batch ' + b, id));
+  });
+
+  return card;
+}
+
+function renderBatchTable(M, B, title, mId){
+  const V = Math.max(3, B.vessels.length ? Math.max(...B.vessels) : 0);
+  const times = M.times.slice();
+  const wrap = h('div');
+  wrap.append(h('h3',null,title));
+
+  const tbl = h('table',{class:'tbl'});
+  tbl.append(h('thead',null,h('tr',null,h('th',null,'Vessel'), times.map(t=>h('th',null,t+"'")))));
+  const tb = h('tbody');
+  
+  for(let v=1; v<=V; v++){
+    const tr = h('tr',null,h('td',null,'Vessel '+v));
+    times.forEach(t=>{
+      const k = v + '|' + t;
+      const c = B.cells[k];
+      const inp = h('input',{
+        class:'num'+(c?(c.edited?' edited':''):' miss'),
+        inputmode:'decimal',
+        value:c?String(c.area):'',
+        onchange:e=>{
+          const s = e.target.value.trim();
+          const n = s===''?null:toNum(s);
+          if(s!==''&&!isFinite(n)){ e.target.classList.add('bad'); return; }
+          if(n===null) delete B.cells[k];
+          else B.cells[k]={area:n, edited:true};
+          refreshModelDims(M);
+          e.target.classList.remove('bad');
+          e.target.classList.toggle('miss', n===null);
+          e.target.classList.toggle('edited', n!==null);
+          renderResults();
+        }
+      });
+      tr.append(h('td',null,inp));
+    });
+    tb.append(tr);
+  }
+  tbl.append(tb);
+  wrap.append(h('div',{class:'tblwrap'},tbl));
+  return wrap;
+}
+
+function renderUnassignedSection(){
+  const u = S.model.unassigned;
+  return h('details',{class:'card'},
+    h('summary',null,u.length+' baris diabaikan (bukan format sampel atau standar yang dikenali)'),
+    h('p',{class:'muted small'},'Baris-baris ini tidak diikutsertakan dalam kalkulasi. Pastikan nama sampel mengikuti kaidah baku pada panduan di Langkah 1.'),
+    h('div',{class:'small'}, u.slice(0,30).map(x=>h('div',null,`${x.name} · area ${x.area} (${x.file||''})`))));
+}
+
+// ===================== Langkah 3: Parameter & Perhitungan =====================
+function paramField(paramsObj, label, key, opts={}){
+  const v = paramsObj[key];
+  const inp = h('input',{
+    type: opts.type||'text',
+    inputmode: opts.num?'decimal':null,
+    value: v===undefined?'':String(v).replace('.', opts.num?',':'.'),
+    placeholder: opts.ph||'',
+    oninput: e => {
+      const t = e.target.value;
+      paramsObj[key] = opts.num ? toNum(t) : t;
+      store();
+      if(opts.num) e.target.classList.toggle('bad', t.trim()!=='' && !isFinite(toNum(t)));
+      renderResults();
+    }
+  });
+  return h('label',{class:'f'},label,inp,opts.hint?h('span',{class:'small muted'},opts.hint):null);
+}
+
+function renderCondSection(){
+  const box = $('#pCondBox');
+  if(!box) return;
+  box.innerHTML = '';
+
+  // 1. Apparatus (Dropdown + Input Manual) & Instrument (Dropdown + Input Manual) & API & RPM
+  const topGrid = h('div',{class:'grid',style:'grid-template-columns:repeat(auto-fill,minmax(220px,1fr));margin-bottom:14px'});
+
+  // Apparatus dropdown + manual input
+  const appKnown = APPARATUS_PRESETS.some(p => p.value === S.condParams.apparatus);
+  const appPresetVal = appKnown ? S.condParams.apparatus : '__custom__';
+  const appManualInp = h('input',{
+    type:'text',
+    value: S.condParams.apparatus || '',
+    placeholder:'Ketik apparatus manual (mis. 2 (Paddle))',
+    oninput: e => {
+      S.condParams.apparatus = e.target.value;
+      S.condParams.apparatusPreset = APPARATUS_PRESETS.some(p=>p.value===e.target.value) ? e.target.value : '__custom__';
+      store();
+    }
+  });
+  const appSelect = h('select',{
+    onchange: e => {
+      const val = e.target.value;
+      S.condParams.apparatusPreset = val;
+      if(val !== '__custom__'){
+        S.condParams.apparatus = val;
+        appManualInp.value = val;
+      } else {
+        appManualInp.focus();
+      }
+      store();
+    }
+  },
+    APPARATUS_PRESETS.map(p => h('option',{value:p.value, selected:appPresetVal===p.value}, p.label)),
+    h('option',{value:'__custom__', selected:appPresetVal==='__custom__'},'Input Manual...')
+  );
+  topGrid.append(
+    h('label',{class:'f'},'Apparatus (Pilihan)', appSelect),
+    h('label',{class:'f'},'Apparatus (Nilai pada Sheet / Input Manual)', appManualInp)
+  );
+
+  // Instrument dropdown + manual input
+  const instKnown = INSTRUMENT_PRESETS.some(p => p.value === S.condParams.instrument);
+  const instPresetVal = instKnown ? S.condParams.instrument : '__custom__';
+  const instManualInp = h('input',{
+    type:'text',
+    value: S.condParams.instrument || '',
+    placeholder:'Ketik instrumen manual (mis. HPLC / Spektro UV)',
+    oninput: e => {
+      S.condParams._userSetInstrument = true;
+      S.condParams.instrument = e.target.value;
+      S.condParams.instrumentPreset = INSTRUMENT_PRESETS.some(p=>p.value===e.target.value) ? e.target.value : '__custom__';
+      store();
+    }
+  });
+  const instSelect = h('select',{
+    onchange: e => {
+      const val = e.target.value;
+      S.condParams._userSetInstrument = true;
+      S.condParams.instrumentPreset = val;
+      if(val !== '__custom__'){
+        S.condParams.instrument = val;
+        instManualInp.value = val;
+      } else {
+        instManualInp.focus();
+      }
+      store();
+    }
+  },
+    INSTRUMENT_PRESETS.map(p => h('option',{value:p.value, selected:instPresetVal===p.value}, p.label)),
+    h('option',{value:'__custom__', selected:instPresetVal==='__custom__'},'Input Manual...')
+  );
+  topGrid.append(
+    h('label',{class:'f'},'Instrument (Pilihan)', instSelect),
+    h('label',{class:'f'},'Instrument (Nilai pada Sheet / Input Manual)', instManualInp)
+  );
+
+  // Zat Aktif (API), Kecepatan Putar, & Method Reference (Report E15)
+  topGrid.append(
+    paramField(S.condParams, 'Zat Aktif (API)', 'api', {ph:'mis. Empagliflozin / Rosuvastatin Calcium', hint:'Terdeteksi otomatis dari Compound Name / Nama Produk'}),
+    paramField(S.condParams, 'Kecepatan Putar (Rotation Speed)', 'rpm', {ph:'mis. 50 rpm / 75 rpm / 100 rpm'}),
+    paramField(S.condParams, 'Method Reference (Report E15)', 'methodRef', {ph:'mis. Farmakope Indonesia (FI) VI / USP', hint:'Dituliskan ke sel E15 pada tab Report'})
+  );
+
+  box.append(topGrid);
+
+  // 2. Jenis Media per Medium yang Terdeteksi (Dropdown + Input Manual)
+  const mIds = S.model ? sortedMediaIds(S.model) : [];
+  if(mIds.length){
+    box.append(h('h3',{style:'margin-top:8px'},'Jenis Media Disolusi (Deteksi Otomatis + Opsi Dropdown & Input Manual)'));
+    mIds.forEach(mId => {
+      const cfg = getMedConfig(mId);
+      const medRow = h('div',{class:'grid',style:'grid-template-columns:repeat(auto-fill,minmax(220px,1fr));padding:10px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;background:var(--surface)'});
+
+      const codeInp = h('input',{
+        type:'text',
+        value: cfg.tabName || ('pH '+mId),
+        placeholder:'mis. pH 1,2 / pH 4,5 / Air',
+        oninput: e => {
+          cfg.tabName = e.target.value;
+          cfg.preset = '__custom__';
+          store();
+        }
+      });
+      const descInp = h('input',{
+        type:'text',
+        value: cfg.desc || '',
+        placeholder:'mis. Simulated Gastric Fluid Without Enzyme (Buffer pH 1,2)',
+        oninput: e => {
+          cfg.desc = e.target.value;
+          cfg.preset = '__custom__';
+          store();
+        }
+      });
+
+      const presetSel = h('select',{
+        onchange: e => {
+          const val = e.target.value;
+          cfg.preset = val;
+          const found = MEDIUM_PRESETS.find(p => p.code === val);
+          if(found){
+            cfg.code = found.code;
+            cfg.tabName = found.label;
+            cfg.desc = found.desc;
+            codeInp.value = found.label;
+            descInp.value = found.desc;
+          } else {
+            descInp.focus();
+          }
+          store();
+        }
+      },
+        MEDIUM_PRESETS.map(p => h('option',{value:p.code, selected:cfg.preset===p.code}, `${p.label} — ${p.desc}`)),
+        h('option',{value:'__custom__', selected:cfg.preset==='__custom__'},'Input Manual...')
+      );
+
+      medRow.append(
+        h('label',{class:'f'},`Jenis Media (Terdeteksi: pH ${mId})`, presetSel),
+        h('label',{class:'f'},'Label Media / Nama Tab Summary (Input Manual)', codeInp),
+        h('label',{class:'f'},'Deskripsi Media pada Sheet (Input Manual)', descInp)
+      );
+      box.append(medRow);
+    });
+  }
+}
+
+function renderParams(){
+  renderCondSection();
+
+  // --- A. Produk Uji ---
+  const gTest = $('#pgenTest'); gTest.innerHTML = '';
+  gTest.append(
+    paramField(S.testParams, 'Nama Produk Uji', 'product', {ph:'mis. Rosuvastatin 20 mg Tablet'}),
+    paramField(S.testParams, 'Nomor Batch Uji', 'batch', {ph:'mis. F0048J26A', hint:'Terdeteksi otomatis dari nama sampel CDS'}),
+    paramField(S.testParams, 'Nama Analis (AD Scientist)', 'analyst', {ph:'mis. Kania'}),
+    h('label',{class:'f'},'Tanggal Pengujian Produk Uji',
+      h('input',{type:'date', value:S.testParams.runDate||suggestedDate(), oninput:e=>{S.testParams.runDate=e.target.value; store(); renderResults();}}),
+      h('span',{class:'small muted'},S.testParams.runDate?'diatur manual':'otomatis dari CDS'))
+  );
+
+  const cTest = $('#pcalcTest'); cTest.innerHTML = '';
+  cTest.append(
+    paramField(S.testParams, 'Label Claim (mg)', 'lc', {num:1}),
+    paramField(S.testParams, 'Pengenceran Standar (mL)', 'dilStd', {num:1}),
+    paramField(S.testParams, 'Pengenceran Sampel (mL)', 'dilSample', {num:1}),
+    paramField(S.testParams, 'Volume Media Disolusi (mL)', 'volMedia', {num:1}),
+    paramField(S.testParams, 'Volume Pengganti Media (mL)', 'volRep', {num:1}),
+    paramField(S.testParams, '% Potensi WS (% Purity)', 'pctWS', {num:1}),
+    paramField(S.testParams, 'Mr Bentuk Garam (bila garam)', 'mrCa', {num:1}),
+    paramField(S.testParams, 'Mr Zat Aktif Bebas', 'mr', {num:1})
+  );
+
+  renderWeightsForRole($('#pwsTest'), 'test');
+
+  // --- B. Produk Pembanding ---
+  const gRef = $('#pgenRef'); gRef.innerHTML = '';
+  gRef.append(
+    paramField(S.refParams, 'Nama Produk Pembanding', 'product', {ph:'mis. Crestor 20 mg Tablet (Inovator)'}),
+    paramField(S.refParams, 'Nomor Batch Pembanding', 'batch', {ph:'mis. F0006H26A', hint:'Terdeteksi otomatis dari nama sampel CDS'}),
+    paramField(S.refParams, 'Nama Analis (AD Scientist)', 'analyst', {ph:'mis. Kania'}),
+    h('label',{class:'f'},'Tanggal Pengujian Pembanding',
+      h('input',{type:'date', value:S.refParams.runDate||suggestedDate(), oninput:e=>{S.refParams.runDate=e.target.value; store(); renderResults();}}),
+      h('span',{class:'small muted'},S.refParams.runDate?'diatur manual':'otomatis dari CDS'))
+  );
+
+  const cRef = $('#pcalcRef'); cRef.innerHTML = '';
+  cRef.append(
+    paramField(S.refParams, 'Label Claim (mg)', 'lc', {num:1}),
+    paramField(S.refParams, 'Pengenceran Standar (mL)', 'dilStd', {num:1}),
+    paramField(S.refParams, 'Pengenceran Sampel (mL)', 'dilSample', {num:1}),
+    paramField(S.refParams, 'Volume Media Disolusi (mL)', 'volMedia', {num:1}),
+    paramField(S.refParams, 'Volume Pengganti Media (mL)', 'volRep', {num:1}),
+    paramField(S.refParams, '% Potensi WS (% Purity)', 'pctWS', {num:1}),
+    paramField(S.refParams, 'Mr Bentuk Garam (bila garam)', 'mrCa', {num:1}),
+    paramField(S.testParams === S.refParams ? S.refParams : S.refParams, 'Mr Zat Aktif Bebas', 'mr', {num:1})
+  );
+
+  renderWeightsForRole($('#pwsRef'), 'ref');
+
+  $('#copyParamsBtn').onclick = () => {
+    ['lc','dilStd','dilSample','volMedia','volRep','pctWS','mrCa','mr'].forEach(k => {
+      S.refParams[k] = S.testParams[k];
+    });
+    store();
+    renderParams();
+    renderResults();
+  };
+}
+
+function renderWeightsForRole(containerEl, role){
+  containerEl.innerHTML = '';
+  if(!S.model) return;
+
+  const ids = sortedMediaIds(S.model);
+  const usedStdSetIds = new Set();
+
+  ids.forEach(mId => {
+    const M = S.model.media[mId];
+    const bDict = role === 'ref' ? M.refBatches : M.testBatches;
+    Object.keys(bDict).forEach(b => {
+      const sId = S.stdMapping[mId+'|'+b];
+      if(sId) usedStdSetIds.add(sId);
+    });
+  });
+
+  const allSets = ids.flatMap(mId => S.model.standardSets[mId] || []);
+  let relevantSets = allSets.filter(s => usedStdSetIds.has(s.id));
+
+  if(!relevantSets.length && allSets.length){
+    relevantSets = allSets;
+  }
+
+  if(!relevantSets.length) return;
+
+  const box = h('div',{style:'border-top:1px dashed var(--line);padding-top:12px'});
+  box.append(h('h4',{style:'margin:0 0 6px;font-size:13.5px'},'Bobot WS yang ditimbang'));
+  const grid = h('div',{class:'grid'});
+
+  relevantSets.forEach(s => {
+    const curW = S.wsWeights[s.id] !== undefined ? S.wsWeights[s.id] : DEF_CALC.wsDefault;
+    const inp = h('input',{
+      inputmode:'decimal',
+      value:String(curW).replace('.',','),
+      oninput:e=>{
+        const val = toNum(e.target.value);
+        S.wsWeights[s.id] = isFinite(val) ? val : 0;
+        store();
+        renderResults();
+      }
+    });
+    grid.append(h('label',{class:'f'},`Bobot WS (mg) — ${s.name}`, inp));
+  });
+
+  box.append(grid);
+  containerEl.append(box);
+}
+
+// ===================== Langkah 4: Hasil & Evaluasi f2 =====================
+function renderResults(){
+  const root = $('#p4body'); root.innerHTML = '';
+  if(!S.model || !sortedMediaIds(S.model).length){
+    root.append(h('div',{class:'card'},h('p',{class:'muted'},'Belum ada data untuk dihitung. Unggah data di Langkah 1.')));
+    return;
+  }
+
+  root.append(h('div',{class:'row',style:'margin-bottom:12px;gap:8px'},
+    h('button',{class:'btn primary',onclick:()=>exportPDF()},'Unduh Laporan (PDF)'),
+    h('button',{class:'btn',onclick:()=>exportCSV()},'Unduh CSV Hasil'),
+    h('button',{class:'btn',onclick:()=>showTSV()},'Salin sebagai Tabel (TSV)')));
+
+  for(const mId of sortedMediaIds(S.model)){
+    try {
+      const M = S.model.media[mId];
+      const stdSets = S.model.standardSets[mId] || [];
+      const card = h('div',{class:'card'});
+      card.append(h('h2',null,'Medium pH ' + mId));
+
+      if(!stdSets.length){
+        card.append(h('div',{class:'banner err'},'Tidak ada larutan standar terdeteksi untuk pH '+mId+'. Periksa Langkah 2.'));
+        root.append(card);
+        continue;
+      }
+
+      // 1. Kalkulasi Produk Pembanding
+      const refBatches = Object.keys(M.refBatches);
+      let refCalculated = null;
+      let refBatchName = refBatches[0] || '';
+
+      if(refBatches.length){
+        const rB = M.refBatches[refBatchName];
+        let sId = S.stdMapping[mId+'|'+refBatchName];
+        let sObj = stdSets.find(s=>s.id===sId);
+        if(!sObj){ sObj = stdSets[0]; S.stdMapping[mId+'|'+refBatchName] = sObj.id; }
+        const p = {...S.refParams, ws: S.wsWeights[sObj.id] !== undefined ? S.wsWeights[sObj.id] : S.refParams.wsDefault};
+        refCalculated = calcBatchProfile(M, rB, p, sObj);
+
+        const rProdName = S.refParams.product || 'Produk Pembanding';
+        card.append(h('h3',null,`Profil Pembanding: ${rProdName} (${refBatchName})`));
+        card.append(renderProfileTable(refCalculated, 'Pembanding'));
+      } else {
+        card.append(h('div',{class:'banner warn'},'Data Produk Pembanding belum diunggah untuk pH '+mId+'. Unggah di kotak Produk Pembanding (Langkah 1) untuk evaluasi f2.'));
+      }
+
+      // 2. Kalkulasi Tiap Batch Produk Uji
+      const testBatches = Object.keys(M.testBatches);
+      const seriesForChart = [];
+      if(refCalculated && refCalculated.stats && refCalculated.stats.length){
+        seriesForChart.push({name: 'Pembanding ('+refBatchName+')', vals: refCalculated.stats.map(x=>x.avg), color: '#475569', dash: true});
+      }
+
+      if(!testBatches.length){
+        card.append(h('div',{class:'banner warn'},'Belum ada batch Produk Uji yang terdeteksi untuk pH '+mId+'.'));
+      }
+
+      testBatches.forEach((tName, tIdx) => {
+        const tB = M.testBatches[tName];
+        let sId = S.stdMapping[mId+'|'+tName];
+        let sObj = stdSets.find(s=>s.id===sId);
+        if(!sObj){ sObj = stdSets[0]; S.stdMapping[mId+'|'+tName] = sObj.id; }
+        const p = {...S.testParams, ws: S.wsWeights[sObj.id] !== undefined ? S.wsWeights[sObj.id] : S.testParams.wsDefault};
+        const tCalc = calcBatchProfile(M, tB, p, sObj);
+
+        const tProdName = S.testParams.product || 'Produk Uji';
+        card.append(h('h3',{style:'margin-top:18px'},`Profil Produk Uji: ${tProdName} · Batch ${tName}`));
+        card.append(renderProfileTable(tCalc, 'Uji'));
+        
+        if(tCalc.stats && tCalc.stats.length){
+          seriesForChart.push({name: 'Uji ('+tName+')', vals: tCalc.stats.map(x=>x.avg), color: COLORS[tIdx % COLORS.length]});
+        }
+
+        // 3. Evaluasi f2
+        if(refCalculated && refCalculated.stats && refCalculated.stats.length && tCalc.stats && tCalc.stats.length){
+          const f2Res = evalSimilarityF2(
+            M.times,
+            refCalculated.stats.map(x=>x.avg),
+            tCalc.stats.map(x=>x.avg),
+            refCalculated.stats,
+            tCalc.stats
+          );
+
+          const f2Box = h('div',{class:'f2-box'});
+          f2Box.append(h('h4',null,`Evaluasi Kemiripan f2 (Batch ${tName} vs Pembanding ${refBatchName})`));
+          
+          if(f2Res.both85at15){
+            f2Box.append(h('div',{class:'banner ok',style:'margin:6px 0'},
+              h('b',null,'Very Rapid Dissolution / Profil Serupa'),
+              h('div',{class:'small'},'Kedua produk terdisolusi ≥ 85% dalam 15 menit. Berdasarkan pedoman FDA, EMA, dan BPOM, kurva disolusi dianggap serupa tanpa perlu evaluasi statistik f2.')));
+          }
+
+          const badgeClass = f2Res.isSimilar ? 'ok' : (isFinite(f2Res.f2) ? 'warn' : 'info');
+          const badgeText = isFinite(f2Res.f2)
+            ? `f2 = ${fmt(f2Res.f2, 2)} (${f2Res.isSimilar ? '50 – 100: Ekivalen / Serupa' : '< 50: Tidak Ekivalen'})`
+            : 'f2: Belum dapat dihitung (data tidak cukup)';
+
+          f2Box.append(h('div',{class:'row',style:'margin:8px 0'},
+            h('span',{class:'badge ' + badgeClass}, badgeText),
+            f2Res.usedTimes && f2Res.usedTimes.length ? h('span',{class:'small muted'}, `Titik waktu diikutsertakan: ${f2Res.usedTimes.map(t=>t+"'").join(', ')} (${f2Res.n} titik)`) : null));
+
+          f2Box.append(h('div',{class:'f2-calc-steps'},
+            `Kaidah Cutoff BPOM/FDA: ${f2Res.reason}.` +
+            (f2Res.n > 0 ? (f2Res.minPointsValid ? '' : ' Peringatan: Regulasi mensyaratkan minimal 3 titik waktu.') : '')
+          ));
+
+          if(f2Res.rsdExceeded){
+            f2Box.append(h('div',{class:'banner warn',style:'margin-top:8px'},
+              h('b',null,'Perhatian Batas Variabilitas (% RSD):'),
+              h('div',{class:'small'},'RSD melebihi batas regulasi (maks. 20% pada titik awal ≤ 15\' dan maks. 10% pada titik berikutnya): ' + f2Res.rsdDetails.join('; '))));
+          }
+
+          card.append(f2Box);
+        }
+      });
+
+      // 4. Grafik Kurva Disolusi
+      if(seriesForChart.length && M.times && M.times.length){
+        card.append(h('h3',{style:'margin-top:20px'},'Kurva Profil Disolusi'));
+        card.append(h('div',{html:lineChart(seriesForChart, M.times)}));
+        card.append(h('div',{class:'legend'},
+          seriesForChart.map(s=>h('span',null,h('i',{style:'background:'+s.color}),s.name))));
+      }
+
+      root.append(card);
+    } catch(err) {
+      console.error('Error rendering medium pH ' + mId, err);
+      root.append(h('div',{class:'card'},
+        h('h2',null,'Medium pH ' + mId),
+        h('div',{class:'banner err'},'Terjadi kesalahan saat kalkulasi: ' + (err.message||err))));
+    }
+  }
+}
+
+function renderProfileTable(calc, roleLab){
+  const tbl = h('table',{class:'tbl'});
+  tbl.append(h('thead',null,h('tr',null,h('th',null,'% Terlarut'), calc.times.map(t=>h('th',null,t+"'")))));
+  const tb = h('tbody');
+  
+  calc.res.forEach((row, i) => {
+    if(!row) return;
+    tb.append(h('tr',null,
+      h('td',null,'Vessel ' + (i+1)),
+      row.map(v => h('td',{class:isFinite(v)?'':'miss'}, isFinite(v)?fmt(v,2):'–'))));
+  });
+
+  [['Min','min'],['Max','max'],['Rata-rata','avg'],['SD','sd'],['RSD (%)','rsd']].forEach(([lab,k])=>{
+    tb.append(h('tr',{class:'stat'},
+      h('td',null,lab),
+      calc.stats.map((x,i)=>{
+        const bad = k==='rsd' && (i===0 ? x.rsd>20 : x.rsd>10);
+        return h('td',{class:bad?'bad':''}, fmt(x[k],2));
+      })));
+  });
+  tbl.append(tb);
+  return h('div',{class:'tblwrap'},tbl);
+}
+
+function lineChart(series, times){
+  if (!times || !times.length) return '<div class="muted small">Tidak ada titik waktu.</div>';
+  const W=640, Hh=260, L=46, R=16, T=14, B=36;
+  const xs = times;
+  const xmax = Math.max(...xs, 60);
+  const validVals = series.flatMap(s=>s.vals.filter(isFinite));
+  const ymax = Math.max(110, ...(validVals.length ? validVals.map(v=>Math.ceil((v+5)/10)*10) : [100]));
+  const X = t => L + (t/xmax) * (W-L-R);
+  const Y = v => Hh - B - (v/ymax) * (Hh-B-T);
+
+  let svg = `<svg class="chart" viewBox="0 0 ${W} ${Hh}" role="img" aria-label="Profil Disolusi">`;
+  for(let v=0; v<=ymax; v+=20){
+    svg += `<line class="gl" x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}"/><text x="${L-6}" y="${Y(v)+4}" text-anchor="end">${v}</text>`;
+  }
+  // Titik 0 pada sumbu X
+  svg += `<text x="${X(0)}" y="${Hh-B+16}" text-anchor="middle">0</text>`;
+  xs.forEach(t => svg += `<text x="${X(t)}" y="${Hh-B+16}" text-anchor="middle">${t}</text>`);
+  svg += `<line class="ax" x1="${L}" x2="${W-R}" y1="${Hh-B}" y2="${Hh-B}"/><line class="ax" x1="${L}" x2="${L}" y1="${T}" y2="${Hh-B}"/><text x="${(L+W-R)/2}" y="${Hh-4}" text-anchor="middle">Waktu (menit)</text><text x="12" y="${(T+Hh-B)/2}" transform="rotate(-90 12 ${(T+Hh-B)/2})" text-anchor="middle">% Terlarut</text>`;
+
+  series.forEach(s => {
+    // Kurva selalu mulai dari titik nol (0,0) di pojok kiri bawah
+    const pts = [`${X(0)},${Y(0)}`];
+    s.vals.forEach((v, i) => {
+      if(isFinite(v)) pts.push(`${X(xs[i])},${Y(v)}`);
+    });
+    if(pts.length <= 1) return;
+    svg += `<polyline fill="none" stroke="${s.color}" stroke-width="2.2" ${s.dash?'stroke-dasharray="6 4"':''} points="${pts.join(' ')}"/>`;
+    // Titik marker di (0,0)
+    svg += `<circle cx="${X(0)}" cy="${Y(0)}" r="3" fill="${s.color}"/>`;
+    s.vals.forEach((v,i) => {
+      if(isFinite(v)) svg += `<circle cx="${X(xs[i])}" cy="${Y(v)}" r="3.5" fill="${s.color}"/>`;
+    });
+  });
+  return svg + '</svg>';
+}
+
+function tableExportText(sep){
+  const lines = [['Medium','Tipe','Batch','Baris'].concat([]).join(sep)];
+  const rows = [];
+  if(!S.model) return '';
+  for(const id of sortedMediaIds(S.model)){
+    const M = S.model.media[id];
+    const stdSets = S.model.standardSets[id] || [];
+    if(!stdSets.length) continue;
+
+    const exportGroup = (batches, role) => {
+      for(const b of Object.keys(batches)){
+        let sId = S.stdMapping[id+'|'+b];
+        let sObj = stdSets.find(s=>s.id===sId) || stdSets[0];
+        const pObj = role === 'Pembanding' ? S.refParams : S.testParams;
+        const p = {...pObj, ws: S.wsWeights[sObj.id] !== undefined ? S.wsWeights[sObj.id] : pObj.wsDefault};
+        const r = calcBatchProfile(M, batches[b], p, sObj);
+
+        rows.push(['pH '+id, role, b, 'Vessel \\ menit'].concat(r.times).join(sep));
+        r.res.forEach((row,i)=>{ if(row) rows.push(['pH '+id, role, b, 'Vessel '+(i+1)].concat(row.map(v=>isFinite(v)?v:'')).join(sep)); });
+        [['Min','min'],['Max','max'],['Rata-rata','avg'],['SD','sd'],['RSD','rsd']].forEach(([l,k])=>{
+          rows.push(['pH '+id, role, b, l].concat(r.stats.map(x=>x[k])).join(sep));
+        });
+      }
+    };
+    exportGroup(M.refBatches, 'Pembanding');
+    exportGroup(M.testBatches, 'Uji');
+  }
+  return [lines, ...rows].join('\n');
+}
+
+async function exportCSV(){
+  const text = tableExportText(';').replace(/(\d)\.(\d)/g,'$1,$2');
+  if(!S.dl){ showTSV(); return; }
+  try{ await S.dl.save({filename:'hasil-disolusi-terbanding.csv', data:'\uFEFF'+text}); }
+  catch(e){ showTSV(); }
+}
+
+function showTSV(){
+  const t = tableExportText('\t');
+  const box = h('textarea',{style:'min-height:180px'}, t);
+  const dlg = h('div',{class:'card'},
+    h('h2',null,'Tabel Hasil (TSV)'),
+    h('p',{class:'small muted'},'Salin tabel di bawah untuk ditempel ke Google Sheets atau Excel.'),
+    box,
+    h('div',{class:'row',style:'margin-top:8px'}, h('button',{class:'btn',onclick:()=>dlg.remove()},'Tutup')));
+  $('#p4body').prepend(dlg);
+  box.select();
+  try{ navigator.clipboard&&navigator.clipboard.writeText(t); }catch(e){}
+}
+
+function printReportWindow(){
+  const win = window.open('', '_blank');
+  if(!win){
+    alert('Pop-up terblokir. Harap izinkan pop-up peramban untuk mencetak/menyimpan PDF.');
+    return;
+  }
+  const content = document.getElementById('p4body') ? document.getElementById('p4body').innerHTML : '';
+  const tProd = S.testParams.product || 'Produk Uji';
+  const tBatch = S.testParams.batch || '-';
+  const rProd = S.refParams.product || 'Produk Pembanding';
+  const rBatch = S.refParams.batch || '-';
+
+  win.document.write(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Laporan Uji Disolusi Terbanding - ${tProd}</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 24px; color: #111; font-size: 13px; line-height: 1.45; }
+    h1 { font-size: 18px; margin: 0 0 4px; color: #0f766e; }
+    .meta-sub { font-size: 11px; color: #64748b; margin-bottom: 14px; }
+    .cond-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 18px; font-size: 12px; }
+    .cond-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; }
+    .cond-item { display: flex; justify-content: space-between; }
+    .cond-item b { color: #475569; }
+    h2 { font-size: 14px; margin: 18px 0 6px; border-bottom: 2px solid #0f766e; padding-bottom: 4px; color: #0f766e; }
+    h3 { font-size: 12.5px; margin: 12px 0 4px; color: #334155; }
+    table { border-collapse: collapse; width: 100%; margin: 6px 0 12px; font-size: 11.5px; }
+    th, td { border: 1px solid #cbd5e1; padding: 5px 8px; text-align: right; }
+    th:first-child, td:first-child { text-align: left; }
+    th { background: #f1f5f9; font-weight: 600; color: #1e293b; }
+    .stat { font-weight: 600; background: #f8fafc; }
+    .f2-box { border: 1px solid #99f6e4; background: #f0fdfa; border-radius: 6px; padding: 10px 12px; margin: 8px 0 16px; }
+    .f2-box h4 { margin: 0 0 4px; font-size: 12px; color: #0f766e; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 99px; font-weight: 600; font-size: 11px; background: #ccfbf1; color: #0f766e; }
+    .btn, button, .row:first-child { display: none !important; }
+    svg { max-width: 100%; height: auto; }
+    @media print {
+      body { padding: 0; }
+      .card { page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <h1>LAPORAN UJI DISOLUSI TERBANDING (UDT)</h1>
+  <div class="meta-sub">Dicetak pada: ${new Date().toLocaleDateString('id-ID', {year:'numeric',month:'long',day:'numeric'})}</div>
+  <div class="cond-box">
+    <div class="cond-grid">
+      <div class="cond-item"><b>Produk Uji:</b> <span>${tProd} (Batch: ${tBatch})</span></div>
+      <div class="cond-item"><b>Aparatus:</b> <span>${S.condParams.apparatus || '2 (Paddle)'}</span></div>
+      <div class="cond-item"><b>Produk Pembanding:</b> <span>${rProd} (Batch: ${rBatch})</span></div>
+      <div class="cond-item"><b>Kecepatan Putar:</b> <span>${S.condParams.rpm || '50 rpm'}</span></div>
+      <div class="cond-item"><b>Zat Aktif (API):</b> <span>${S.condParams.api || '-'}</span></div>
+      <div class="cond-item"><b>Instrumen:</b> <span>${S.condParams.instrument || 'HPLC'}</span></div>
+      <div class="cond-item"><b>Method Reference:</b> <span>${S.condParams.methodRef || '-'}</span></div>
+      <div class="cond-item"><b>Label Claim:</b> <span>${S.testParams.lc || 20} mg</span></div>
+    </div>
+  </div>
+  ${content}
+` + '<' + 'script>window.onload = function(){ window.print(); };<' + '/script><' + '/body><' + '/html>');
+  win.document.close();
+}
+
+async function exportPDF(){
+  if(!S.model || !sortedMediaIds(S.model).length){
+    alert('Belum ada data disolusi untuk diekspor ke PDF. Silakan unggah dan proses data terlebih dahulu.');
+    return;
+  }
+
+  const jsPDFClass = window.jspdf && window.jspdf.jsPDF;
+  if(!jsPDFClass){
+    printReportWindow();
+    return;
+  }
+
+  try {
+    const doc = new jsPDFClass({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    let curY = 15;
+
+    // Header Laporan
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(15, 118, 110);
+    doc.text('LAPORAN UJI DISOLUSI TERBANDING (UDT)', 14, curY);
+    curY += 6;
+
+    doc.setFontSize(8.5);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100, 116, 139);
+    const dateStr = new Date().toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' });
+    doc.text(`Dicetak pada: ${dateStr}`, 14, curY);
+    curY += 5;
+
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.4);
+    doc.line(14, curY, 196, curY);
+    curY += 5;
+
+    // Ringkasan Parameter & Kondisi Pengujian
+    const tProd = S.testParams.product || 'Produk Uji';
+    const tBatch = S.testParams.batch || '-';
+    const rProd = S.refParams.product || 'Produk Pembanding';
+    const rBatch = S.refParams.batch || '-';
+
+    const condRows = [
+      ['Produk Uji', `${tProd} (Batch: ${tBatch})`, 'Aparatus', S.condParams.apparatus || '2 (Paddle)'],
+      ['Produk Pembanding', `${rProd} (Batch: ${rBatch})`, 'Kecepatan Putar', S.condParams.rpm || '50 rpm'],
+      ['Zat Aktif (API)', S.condParams.api || '-', 'Instrumen', S.condParams.instrument || 'HPLC'],
+      ['Method Reference', S.condParams.methodRef || '-', 'Analis', `Uji: ${S.testParams.analyst || '-'} | Ref: ${S.refParams.analyst || '-'}`],
+      ['Label Claim', `${S.testParams.lc || 20} mg`, 'Vol. Media', `${S.testParams.volMedia || 900} mL`]
+    ];
+
+    if(doc.autoTable){
+      doc.autoTable({
+        startY: curY,
+        body: condRows,
+        theme: 'plain',
+        styles: { fontSize: 8, cellPadding: 1.5, textColor: [51, 65, 85] },
+        columnStyles: {
+          0: { fontStyle: 'bold', cellWidth: 32, textColor: [100, 116, 139] },
+          1: { cellWidth: 64 },
+          2: { fontStyle: 'bold', cellWidth: 32, textColor: [100, 116, 139] },
+          3: { cellWidth: 54 }
+        },
+        margin: { left: 14, right: 14 }
+      });
+      curY = doc.lastAutoTable.finalY + 6;
+    }
+
+    const mIds = sortedMediaIds(S.model);
+    for(const mId of mIds){
+      const M = S.model.media[mId];
+      const cfg = getMedConfig(mId);
+      const stdSets = S.model.standardSets[mId] || [];
+      if(!stdSets.length) continue;
+
+      if(curY > 220){ doc.addPage(); curY = 15; }
+
+      // Judul Blok Media Disolusi
+      doc.setFontSize(11.5);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(15, 118, 110);
+      doc.text(`Medium: ${cfg.desc || ('Buffer pH ' + mId)}`, 14, curY);
+      curY += 4.5;
+
+      // 1. Data Pembanding
+      const refBatches = Object.keys(M.refBatches);
+      let refCalculated = null;
+      let refBatchName = refBatches[0] || '';
+      if(refBatches.length){
+        const rB = M.refBatches[refBatchName];
+        let sId = S.stdMapping[mId+'|'+refBatchName];
+        let sObj = stdSets.find(s=>s.id===sId) || stdSets[0];
+        const p = {...S.refParams, ws: S.wsWeights[sObj.id] !== undefined ? S.wsWeights[sObj.id] : S.refParams.wsDefault};
+        refCalculated = calcBatchProfile(M, rB, p, sObj);
+
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(71, 85, 105);
+        doc.text(`1. Produk Pembanding: ${rProd} (Batch: ${refBatchName})`, 14, curY);
+        curY += 2;
+
+        const refHead = [['Vessel \\ Menit', ...M.times.map(t => t + "'")]];
+        const refBody = [];
+        refCalculated.res.forEach((row, i) => {
+          if(row) refBody.push([`Vessel ${i+1}`, ...row.map(v => isFinite(v) ? fmt(v,2) : '–')]);
+        });
+        refBody.push(['Rata-rata', ...refCalculated.stats.map(x => fmt(x.avg, 2))]);
+        refBody.push(['SD', ...refCalculated.stats.map(x => fmt(x.sd, 2))]);
+        refBody.push(['% RSD', ...refCalculated.stats.map(x => fmt(x.rsd, 2))]);
+
+        doc.autoTable({
+          startY: curY,
+          head: refHead,
+          body: refBody,
+          theme: 'striped',
+          headStyles: { fillColor: [71, 85, 105], textColor: [255, 255, 255], fontSize: 7.5, fontStyle: 'bold' },
+          bodyStyles: { fontSize: 7, cellPadding: 1.1 },
+          alternateRowStyles: { fillColor: [248, 250, 252] },
+          margin: { left: 14, right: 14 }
+        });
+        curY = doc.lastAutoTable.finalY + 5;
+      }
+
+      // 2. Data Produk Uji
+      const testBatches = Object.keys(M.testBatches);
+      for(let tIdx = 0; tIdx < testBatches.length; tIdx++){
+        const tName = testBatches[tIdx];
+        const tB = M.testBatches[tName];
+        let sId = S.stdMapping[mId+'|'+tName];
+        let sObj = stdSets.find(s=>s.id===sId) || stdSets[0];
+        const p = {...S.testParams, ws: S.wsWeights[sObj.id] !== undefined ? S.wsWeights[sObj.id] : S.testParams.wsDefault};
+        const tCalc = calcBatchProfile(M, tB, p, sObj);
+
+        if(curY > 220){ doc.addPage(); curY = 15; }
+
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(15, 118, 110);
+        doc.text(`2. Produk Uji: ${tProd} (Batch: ${tName})`, 14, curY);
+        curY += 2;
+
+        const testHead = [['Vessel \\ Menit', ...M.times.map(t => t + "'")]];
+        const testBody = [];
+        tCalc.res.forEach((row, i) => {
+          if(row) testBody.push([`Vessel ${i+1}`, ...row.map(v => isFinite(v) ? fmt(v,2) : '–')]);
+        });
+        testBody.push(['Rata-rata', ...tCalc.stats.map(x => fmt(x.avg, 2))]);
+        testBody.push(['SD', ...tCalc.stats.map(x => fmt(x.sd, 2))]);
+        testBody.push(['% RSD', ...tCalc.stats.map(x => fmt(x.rsd, 2))]);
+
+        doc.autoTable({
+          startY: curY,
+          head: testHead,
+          body: testBody,
+          theme: 'striped',
+          headStyles: { fillColor: [15, 118, 110], textColor: [255, 255, 255], fontSize: 7.5, fontStyle: 'bold' },
+          bodyStyles: { fontSize: 7, cellPadding: 1.1 },
+          alternateRowStyles: { fillColor: [240, 253, 250] },
+          margin: { left: 14, right: 14 }
+        });
+        curY = doc.lastAutoTable.finalY + 5;
+
+        // Evaluasi Kemiripan f2 Box
+        if(refCalculated && refCalculated.stats.length && tCalc.stats.length){
+          const f2Res = evalSimilarityF2(
+            M.times,
+            refCalculated.stats.map(x=>x.avg),
+            tCalc.stats.map(x=>x.avg),
+            refCalculated.stats,
+            tCalc.stats
+          );
+
+          if(curY > 245){ doc.addPage(); curY = 15; }
+
+          doc.setDrawColor(204, 251, 241);
+          doc.setFillColor(240, 253, 250);
+          doc.roundedRect(14, curY, 182, 21, 2, 2, 'FD');
+
+          doc.setFontSize(8.5);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(15, 118, 110);
+          const f2Label = isFinite(f2Res.f2) ? `f2 = ${fmt(f2Res.f2, 2)} (${f2Res.isSimilar ? 'Serupa / Ekivalen' : 'Tidak Serupa'})` : 'f2: Belum Cukup Data';
+          doc.text(`Evaluasi Kemiripan f2 (Batch ${tName} vs ${refBatchName}): ${f2Label}`, 18, curY + 5.5);
+
+          doc.setFontSize(7.5);
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(71, 85, 105);
+          const cutoffNote = `Kaidah Cutoff BPOM/FDA: ${f2Res.reason}. Titik waktu: ${f2Res.usedTimes?.map(t=>t+"'").join(', ')} (n=${f2Res.n})`;
+          doc.text(cutoffNote, 18, curY + 10.5);
+          if(f2Res.both85at15){
+            doc.text('Very Rapid Dissolution: Kedua produk >=85% dalam 15 menit (profil serupa tanpa syarat f2).', 18, curY + 15.5);
+          } else if(f2Res.rsdExceeded){
+            doc.setTextColor(194, 65, 12);
+            doc.text(`Perhatian RSD: ${f2Res.rsdDetails?.join('; ') || 'Melebihi batas toleransi regulasi'}`, 18, curY + 15.5);
+          }
+          curY += 25;
+        }
+      }
+      curY += 3;
+    }
+
+    // Nomor Halaman di Bagian Footer
+    const pageCount = doc.internal.getNumberOfPages();
+    for(let p = 1; p <= pageCount; p++){
+      doc.setPage(p);
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(148, 163, 184);
+      doc.text(`Halaman ${p} dari ${pageCount}`, 196, 287, { align: 'right' });
+      doc.text('UDT Studio — Disolusi Terbanding', 14, 287);
+    }
+
+    const safeName = (tProd + '_' + (tBatch !== '-' ? tBatch : 'UDT')).replace(/[^a-zA-Z0-9_-]/g, '_');
+    window.__lastPdfFilename = `Laporan_UDT_${safeName}.pdf`;
+    doc.save(`Laporan_UDT_${safeName}.pdf`);
+  } catch(err) {
+    window.__pdfError = err ? (err.stack || err.toString()) : 'unknown error';
+    console.error('Error saat exportPDF:', err);
+    printReportWindow();
+  }
+}
+
+// ===================== Langkah 5: Kirim ke Google Sheets =====================
+const logEl=()=>$('#log'); let logStarted=false;
+function log(msg,cls){
+  const el=logEl();
+  if(!logStarted){ el.textContent=''; logStarted=true; }
+  const d=document.createElement('div');
+  if(cls) d.className=cls;
+  d.textContent=new Date().toLocaleTimeString('id-ID')+'  '+msg;
+  el.append(d);
+  el.scrollTop=el.scrollHeight;
+}
+function errMsg(e){
+  const c=e&&e.code;
+  const m={needs_reauth:'Koneksi Google perlu dihubungkan ulang di Pengaturan.',server_not_connected:'Konektor Google Sheets/Drive belum terhubung.',token_expired:'Token Google kedaluwarsa atau ditolak. Hubungkan ulang akun Google di panel Koneksi Google.',auth_failed:'Login Google gagal atau dibatalkan (periksa popup yang diblokir browser).',tool_error:'Google menolak perintah: '+(e&&e.message||'')};
+  return (m[c]||('Kesalahan: '+((e&&e.message)||String(e))))+(c?' ['+c+']':'');
+}
+function unwrap(res){
+  if(res&&res.payload!==undefined&&res.payload!==null){
+    if(typeof res.payload==='string'){ try{return JSON.parse(res.payload);}catch(e){return res.payload;} }
+    return res.payload;
+  }
+  const t=res&&res.content&&res.content.find(c=>c.type==='text');
+  if(t){ try{return JSON.parse(t.text);}catch(e){return t.text;} }
+  return res;
+}
+async function callGoogleRestAPI(server, tool, input, token){
+  if(tool === 'copy_file'){
+    const url = `https://www.googleapis.com/drive/v3/files/${input.fileId}/copy?supportsAllDrives=true`;
+    let bodyObj = {
+      name: input.title,
+      parents: input.parentId ? [input.parentId] : []
+    };
+    let res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(bodyObj)
+    });
+
+    if(!res.ok && input.parentId){
+      const errPeek = await res.json().catch(()=>({}));
+      log('PERINGATAN: tidak dapat menyalin ke folder output ('+((errPeek.error&&errPeek.error.message)||('HTTP '+res.status))+'). File disimpan di My Drive akun yang login.','w');
+      // Jika parent folder gagal / tidak diizinkan, coba salin langsung ke My Drive pengguna
+      res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ name: input.title })
+      });
+    }
+
+    if(!res.ok){
+      const err = await res.json().catch(()=>({}));
+      const msg = err.error?.message || `HTTP ${res.status}`;
+      if(msg.toLowerCase().includes('file not found')){
+        throw new Error(`File not found: ${input.fileId}. Akun Google yang terhubung belum memiliki akses Lihat/Salin ke file template ini. Buka Google Drive dengan akun tersebut dan pastikan file template dapat diakses, atau sesuaikan ID template.`);
+      }
+      throw new Error(msg);
+    }
+    const data = await res.json();
+    return { id: data.id, title: data.name, viewUrl: `https://docs.google.com/spreadsheets/d/${data.id}/edit` };
+  }
+
+  if(tool === 'get_spreadsheet'){
+    let url = `https://sheets.googleapis.com/v4/spreadsheets/${input.spreadsheetId}`;
+    const params = new URLSearchParams();
+    if(input.fields) params.append('fields', Array.isArray(input.fields) ? input.fields.join(',') : input.fields);
+    if(input.includeGridData) params.append('includeGridData', 'true');
+    if(input.ranges){ input.ranges.forEach(r => params.append('ranges', r)); }
+    const qs = params.toString();
+    if(qs) url += '?' + qs;
+
+    const res = await fetch(url, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if(!res.ok){
+      const err = await res.json().catch(()=>({}));
+      throw new Error(err.error?.message || `Gagal membaca spreadsheet (HTTP ${res.status})`);
+    }
+    return await res.json();
+  }
+
+  if(tool === 'update_spreadsheet'){
+    const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${input.spreadsheetId}:batchUpdate`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ requests: input.requests })
+    });
+    if(!res.ok){
+      const err = await res.json().catch(()=>({}));
+      throw new Error(err.error?.message || `Gagal memperbarui spreadsheet (HTTP ${res.status})`);
+    }
+    return await res.json();
+  }
+
+    if(tool === 'batch_update_values'){
+    const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${input.spreadsheetId}/values:batchUpdate`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        valueInputOption: 'USER_ENTERED',
+        data: input.data
+      })
+    });
+    if(!res.ok){
+      const err = await res.json().catch(()=>({}));
+      throw new Error(err.error?.message || `Gagal menulis batch data (HTTP ${res.status})`);
+    }
+    return await res.json();
+  }
+
+  if(tool === 'update_values'){
+    const encodedRange = encodeURIComponent(input.range);
+    const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${input.spreadsheetId}/values/${encodedRange}?valueInputOption=USER_ENTERED`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ range: input.range, values: input.values })
+    });
+    if(!res.ok){
+      const err = await res.json().catch(()=>({}));
+      throw new Error(err.error?.message || `Gagal menulis data ${input.range} (HTTP ${res.status})`);
+    }
+    return await res.json();
+  }
+
+  if(tool === 'get_values'){
+    const encodedRange = encodeURIComponent(input.range);
+    const vo = input.valueRenderOption || 'FORMATTED_VALUE';
+    const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${input.spreadsheetId}/values/${encodedRange}?valueRenderOption=${vo}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if(!res.ok){
+      const err = await res.json().catch(()=>({}));
+      throw new Error(err.error?.message || `Gagal membaca rentang ${input.range} (HTTP ${res.status})`);
+    }
+    return await res.json();
+  }
+
+  if(tool === 'copy_sheet_to'){
+    const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${input.sourceSpreadsheetId}/sheets/${input.sourceSheetId}:copyTo`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ destinationSpreadsheetId: input.destinationSpreadsheetId })
+    });
+    if(!res.ok){
+      const err = await res.json().catch(()=>({}));
+      throw new Error(err.error?.message || `Gagal menyalin tab ke spreadsheet tujuan (HTTP ${res.status})`);
+    }
+    return await res.json();
+  }
+
+  if(tool === 'find_file'){
+    const qParts = [
+      `name = '${String(input.title||'').replace(/'/g, "\\'")}'`,
+      `mimeType = 'application/vnd.google-apps.spreadsheet'`,
+      `trashed = false`
+    ];
+    if(input.parentId) qParts.push(`'${input.parentId}' in parents`);
+    const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(qParts.join(' and '))}&fields=files(id,name,webViewLink)&pageSize=5&supportsAllDrives=true&includeItemsFromAllDrives=true`;
+    const res = await fetch(url, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if(!res.ok) return { files: [] };
+    return await res.json();
+  }
+
+  throw new Error(`Alat ${tool} tidak dikenali pada adaptor REST Google.`);
+}
+
+async function call(server,tool,input){
+    if(S.mcp){
+    if(tool === 'batch_update_values'){
+      for(const item of input.data){
+        await unwrap(await S.mcp.callTool(server, 'update_values', {
+          spreadsheetId: input.spreadsheetId,
+          range: item.range,
+          values: item.values
+        }));
+      }
+      return { ok: true };
+    }
+    return unwrap(await S.mcp.callTool(server, tool, input));
+  }
+  if(!S.googleToken && !gisReady()) throw Object.assign(new Error('Koneksi Google belum aktif. Silakan hubungkan akun Google pada panel di Langkah 5.'),{code:'server_not_connected'});
+  const token = await ensureToken();
+  try{
+    return await callGoogleRestAPI(server,tool,input,token);
+  }catch(e){
+    if(/invalid authentication credentials|invalid credentials|invalid_token|UNAUTHENTICATED|HTTP 401/i.test(String(e&&e.message))){
+      S.googleToken=''; S.tokenExp=0; renderConnStatus();
+      throw Object.assign(new Error('Token Google kedaluwarsa atau ditolak.'),{code:'token_expired'});
+    }
+    throw e;
+  }
+}
+
+// ===== Token Google (disimpan di memori saja) =====
+let tokenClient=null, tokenWaiter=null, tokenPromise=null;
+function gisReady(){ return Boolean(GOOGLE_CLIENT_ID && window.google && google.accounts && google.accounts.oauth2); }
+function connAvailable(){ return Boolean(S.mcp || S.googleToken || gisReady()); }
+function initGoogleAuth(){
+  if(tokenClient || !gisReady()) return;
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: GOOGLE_CLIENT_ID,
+    scope: GOOGLE_SCOPES,
+    callback: r => {
+      const w = tokenWaiter; tokenWaiter = null;
+      if(!w) return;
+      if(r.error){ w.reject(Object.assign(new Error(r.error_description||r.error),{code:'auth_failed'})); return; }
+      S.googleToken = r.access_token;
+      S.tokenExp = Date.now() + Math.max(0,(Number(r.expires_in)||3600)-120)*1000;
+      renderConnStatus();
+      if(S.step===5) renderSend();
+      w.resolve(S.googleToken);
+    },
+    error_callback: e => {
+      const w = tokenWaiter; tokenWaiter = null;
+      if(w) w.reject(Object.assign(new Error('Login Google dibatalkan atau popup diblokir'+(e&&e.type?' ('+e.type+')':'')+'.'),{code:'auth_failed'}));
+    }
+  });
+}
+window.onGisLoad = function(){ initGoogleAuth(); if(typeof renderConnStatus==='function'){ renderConnStatus(); if(S.step===5) renderSend(); } };
+function ensureToken(){
+  if(S.googleToken && (!S.tokenExp || Date.now() < S.tokenExp)) return Promise.resolve(S.googleToken);
+  if(tokenPromise) return tokenPromise;
+  initGoogleAuth();
+  if(!tokenClient) return Promise.reject(Object.assign(new Error('Koneksi Google belum aktif.'),{code:'server_not_connected'}));
+  tokenPromise = new Promise((resolve,reject)=>{
+    tokenWaiter = {resolve,reject};
+    tokenClient.requestAccessToken({prompt: ''});
+  }).finally(()=>{ tokenPromise = null; });
+  return tokenPromise;
+}
+function disconnectGoogle(){
+  const t = S.googleToken;
+  S.googleToken = ''; S.tokenExp = 0;
+  try{ if(t && window.google && google.accounts && google.accounts.oauth2) google.accounts.oauth2.revoke(t, ()=>{}); }catch(e){}
+  renderConnStatus(); renderSend();
+}
+const MASTER_TEMPLATE_IDS = new Set([
+  CONFIG.masterCalculation,
+  CONFIG.masterReport,
+  CONFIG.masterSummary,
+  ...Object.values(CONFIG.templates||{})
+]);
+function assertTemplate(id){
+  if(BLOCK.has(id)) throw new Error('DITOLAK: ID template adalah file asli.');
+  if(!MASTER_TEMPLATE_IDS.has(id) && !Object.values(S.customTemplates||{}).includes(id)) throw new Error('DITOLAK: ID template tidak terdaftar.');
+}
+function assertWritable(id){
+  if(BLOCK.has(id) || MASTER_TEMPLATE_IDS.has(id)) throw new Error('DITOLAK: file Master Template asli terlindungi.');
+  if(!S.created.has(id)) throw new Error('DITOLAK: file bukan salinan yang dibuat/terdaftar pada aplikasi ini.');
+}
+const safeTab=s=>String(s).replace(/[\[\]\*\?:\/\\]/g,'').slice(0,99);
+
+function readiness(mId){
+  const M = S.model.media[mId];
+  const r = [];
+  const stdSets = S.model.standardSets[mId] || [];
+  if(!stdSets.length) r.push('tidak ada larutan standar');
+  if(!Object.keys(M.testBatches).length) r.push('tidak ada batch produk uji');
+  return r;
+}
+
+function renderConnStatus(){
+  const c = $('#conn');
+  if(!c) return;
+  c.innerHTML = '';
+
+  if(S.mcp){
+    c.append(
+      h('div',{class:'row',style:'align-items:center;justify-content:space-between'},
+        h('div',null,
+          h('span',{class:'badge ok'},'Terhubung (MCP)'),
+          h('span',{class:'small muted',style:'margin-left:8px'},'Konektor Google Sheets & Drive aktif melalui MCP.')),
+        h('button',{class:'btn small',onclick:()=>testConn()},'Uji Ulang Koneksi')));
+  } else if(S.googleToken && gisReady()){
+    c.append(
+      h('div',{class:'row',style:'align-items:center;justify-content:space-between'},
+        h('div',null,
+          h('span',{class:'badge ok'},'Terhubung (Google)'),
+          h('span',{class:'small muted',style:'margin-left:8px'},'Sesi berlaku ±1 jam; akan diminta ulang otomatis saat kedaluwarsa.')),
+        h('div',{class:'row'},
+          h('button',{class:'btn small',onclick:()=>testConn()},'Uji Akses Template'),
+          h('button',{class:'btn small',onclick:()=>disconnectGoogle()},'Keluar'))));
+  } else if(S.googleToken){
+    const masked = S.googleToken.slice(0,8) + '••••' + S.googleToken.slice(-6);
+    c.append(
+      h('div',{class:'row',style:'align-items:center;justify-content:space-between'},
+        h('div',null,
+          h('span',{class:'badge ok'},'Terhubung (Google API)'),
+          h('span',{class:'small muted',style:'margin-left:8px'},`Token: ${masked}`)),
+        h('div',{class:'row'},
+          h('button',{class:'btn small',onclick:()=>testConn()},'Uji Akses Template'),
+          h('button',{class:'btn small',onclick:()=>disconnectGoogle()},'Ganti Token'))));
+  } else if(gisReady()){
+    c.append(
+      h('div',{class:'row',style:'align-items:center;gap:10px'},
+        h('span',{class:'badge warn'},'Belum Terhubung'),
+        h('button',{class:'btn primary small',onclick:()=>{
+          ensureToken().then(()=>testConn()).catch(e=>{ $('#testOut').innerHTML=''; $('#testOut').append(h('div',{class:'banner err'},errMsg(e))); });
+        }},'Masuk dengan Google'),
+        h('span',{class:'small muted'},'Gunakan akun yang memiliki akses ke template dan folder output.')));
+  } else {
+    c.append(
+      h('div',null,
+        h('div',{class:'row',style:'margin-bottom:8px'},
+          h('span',{class:'badge warn'},'Belum Terhubung'),
+          h('span',{class:'small muted'},'Masukkan Google OAuth2 Access Token untuk mengaktifkan ekspor otomatis ke Google Sheets:')),
+        h('div',{class:'row',style:'gap:8px;margin-bottom:8px'},
+          h('input',{
+            id:'tokInput',
+            type:'password',
+            placeholder:'Tempel Access Token Google (ya29...)',
+            style:'max-width:380px'
+          }),
+          h('button',{
+            class:'btn primary small',
+            onclick:()=>{
+              const val = ($('#tokInput')?.value || '').trim();
+              if(!val){ alert('Silakan tempel token Google terlebih dahulu.'); return; }
+              S.googleToken = val;
+              S.tokenExp = 0;
+              renderConnStatus();
+              renderSend();
+              testConn();
+            }
+          },'Hubungkan Akun Google')),
+        h('div',{class:'small muted',style:'line-height:1.45'},
+          'Token dapat diperoleh langsung dari ',
+          h('a',{href:'https://developers.google.com/oauthplayground/#step1&scopes=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fspreadsheets%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fdrive',target:'_blank',rel:'noopener',class:'link'},'Google OAuth 2.0 Playground'),
+          ' (pilih scope Drive & Spreadsheets lalu Step 2 klik "Exchange authorization code for tokens").')));
+  }
+}
+
+function renderFolderStatus(){
+  const el = $('#folderStatus');
+  const inp = $('#folderIdInput');
+  const out = $('#folderVerifyOut');
+  if(!el) return;
+  el.innerHTML = '';
+  if(S.outputFolderId){
+    const name = S.outputFolderName || S.outputFolderId;
+    el.append(
+      h('div',{class:'row',style:'align-items:center;gap:8px'},
+        h('span',{class:'badge ok'},'Folder Custom'),
+        h('span',{class:'small'},name),
+        h('a',{href:'https://drive.google.com/drive/folders/'+S.outputFolderId,target:'_blank',rel:'noopener',class:'link small'},'Buka'),
+        h('button',{class:'btn small',onclick:()=>{
+          S.outputFolderId = '';
+          S.outputFolderName = '';
+          localStorage.removeItem('udt_output_folder_id');
+          localStorage.removeItem('udt_output_folder_name');
+          if(inp) inp.value = '';
+          if(out) out.innerHTML = '';
+          renderFolderStatus();
+        }},'Reset ke Default'))
+    );
+  } else {
+    el.append(h('div',{class:'small muted'},'Menggunakan folder output default bawaan.'));
+  }
+  if(inp && !inp.value && S.outputFolderId) inp.value = S.outputFolderId;
+}
+
+async function verifyFolder(){
+  const inp = $('#folderIdInput');
+  const out = $('#folderVerifyOut');
+  if(!inp || !out) return;
+  const rawId = inp.value.trim();
+
+  const idMatch = rawId.match(/folders\/([a-zA-Z0-9_-]{20,})/);
+  const folderId = idMatch ? idMatch[1] : rawId;
+
+  if(!folderId){ out.innerHTML=''; return; }
+
+  const hasConn = connAvailable();
+  if(!hasConn){
+    out.innerHTML='';
+    out.append(h('div',{class:'banner err'},'Hubungkan token Google terlebih dahulu sebelum memverifikasi folder.'));
+    return;
+  }
+
+  out.innerHTML='';
+  out.append(h('div',{class:'small muted'},'Memverifikasi akses folder...'));
+
+  try{
+    const token = await ensureToken();
+    const res = await fetch(
+      `https://www.googleapis.com/drive/v3/files/${folderId}?fields=id,name,mimeType&supportsAllDrives=true`,
+      { headers:{ Authorization:'Bearer '+token } }
+    );
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error?.message || 'HTTP '+res.status);
+    if(data.mimeType !== 'application/vnd.google-apps.folder') throw new Error('ID tersebut bukan folder Google Drive.');
+
+    S.outputFolderId = data.id;
+    S.outputFolderName = data.name;
+    localStorage.setItem('udt_output_folder_id', data.id);
+    localStorage.setItem('udt_output_folder_name', data.name);
+
+    out.innerHTML='';
+    out.append(h('div',{class:'small'},h('span',{class:'badge ok'},'OK'),` Folder ditemukan: "${data.name}". Output akan disimpan di sini.`));
+    renderFolderStatus();
+  } catch(e){
+    out.innerHTML='';
+    out.append(h('div',{class:'small'},h('span',{class:'badge err'},'Gagal'),` ${errMsg(e)}`));
+  }
+}
+
+function setExportBtnsDisabled(disabled){
+  ['calcBtn','reportBtn','summaryBtn'].forEach(id => {
+    const el = $('#'+id);
+    if(el) el.disabled = disabled;
+  });
+}
+
+function renderSend(){
+  const box = $('#sendList'); box.innerHTML = '';
+  renderFolderStatus();
+  const ids = S.model ? sortedMediaIds(S.model) : [];
+  if(!ids.length){
+    box.append(h('p',{class:'muted'},'Belum ada data.'));
+    setExportBtnsDisabled(true);
+    return;
+  }
+
+  ids.forEach(id => {
+    const rd = readiness(id);
+    if(S.include[id] === undefined) S.include[id] = rd.length === 0;
+    const tCount = Object.keys(S.model.media[id].testBatches).length;
+    const rCount = Object.keys(S.model.media[id].refBatches).length;
+    const cfg = getMedConfig(id);
+    const calcInfo = S.calcSheets[id];
+
+    const rowDiv = h('div',{style:'padding:8px 0;border-bottom:1px solid var(--line)'});
+    rowDiv.append(h('label',{style:'display:flex;gap:10px;align-items:flex-start'},
+      h('input',{type:'checkbox',style:'width:auto;margin-top:4px',checked:S.include[id]&&rd.length===0,disabled:rd.length>0,onchange:e=>{S.include[id]=e.target.checked;}}),
+      h('span',{style:'flex:1'},
+        h('b',null,`${cfg.tabName || ('pH '+id)}`),
+        h('span',{class:'small muted'},` (${cfg.desc})`),
+        ` · ${tCount} Batch Uji, ${rCount} Batch Pembanding`,
+        h('br'),
+        rd.length
+          ? h('span',{class:'small',style:'color:var(--err)'},'Belum siap: '+rd.join('; '))
+          : (calcInfo && calcInfo.id
+              ? h('span',{class:'small'},h('span',{class:'badge ok'},'Sheet Calculation Aktif'), ' ', h('a',{href:calcInfo.url,target:'_blank',rel:'noopener',class:'link'},calcInfo.title||calcInfo.id))
+              : h('span',{class:'small muted'},'Siap diekspor (Calculation → Report → Summary)'))
+      )));
+    box.append(rowDiv);
+  });
+
+  const hasConn = connAvailable();
+  setExportBtnsDisabled(!hasConn || S.busy);
+  $('#sendHint').textContent = hasConn ? '' : 'Hubungkan akun/token Google di atas untuk mengaktifkan tombol Calculation, Report, dan Summary.';
+}
+
+async function initConn(){
+  try{ S.mcp=window.claude?await window.claude.use('mcp'):null; }catch(e){ S.mcp=null; }
+  try{ S.dl=window.claude?await window.claude.use('downloads'):null; }catch(e){ S.dl=null; }
+  initGoogleAuth();
+  renderConnStatus();
+  if(S.step===5) renderSend();
+}
+
+async function testConn(){
+  const out=$('#testOut'); out.innerHTML='';
+  const hasConn = connAvailable();
+  if(!hasConn){ out.append(h('div',{class:'banner err'},'Konektor belum terhubung. Silakan hubungkan token Google di atas.')); return; }
+  
+  out.append(h('div',{class:'small muted',style:'margin-bottom:6px'},'Memverifikasi akses ketiga Master Template di Google Drive...'));
+
+  const tplCheckList = [
+    ['Master Calculation', CONFIG.masterCalculation],
+    ['Master Report', CONFIG.masterReport],
+    ['Master Summary', CONFIG.masterSummary]
+  ];
+
+  for(const [label,tid] of tplCheckList){
+    try{
+      assertTemplate(tid);
+      const r = await call(SHEETS,'get_spreadsheet',{spreadsheetId:tid,fields:['properties.title','sheets.properties.title']});
+      const title = (r&&r.properties&&r.properties.title)||'?';
+      const tabs = (r.sheets||[]).map(s=>s.properties.title).join(' · ');
+      out.append(h('div',{class:'small',style:'margin:4px 0'},h('span',{class:'badge ok'},'OK'),` ${label}: ${title} (Tab: ${tabs})`));
+    } catch(e){
+      out.append(h('div',{class:'small',style:'margin:4px 0'},h('span',{class:'badge err'},'Gagal'),` ${label}: ${errMsg(e)}`));
+    }
+  }
+}
+
+function formatTabTitle(prod, batch){
+  const p = (prod || '').trim();
+  const b = (batch || '').trim();
+  if(!p) return safeTab(b || 'Batch');
+  if(!b) return safeTab(p);
+  if(p.toLowerCase().includes(b.toLowerCase())) return safeTab(p);
+  return safeTab(`${p} ${b}`);
+}
+
+// ===================== 1. COMMAND: CALCULATION =====================
+async function prepareCalcTabs(spreadsheetId, refBatches, testBatches){
+  const getTabs = async () => {
+    const r = await call(SHEETS,'get_spreadsheet',{spreadsheetId, fields:['sheets.properties.sheetId','sheets.properties.title','sheets.properties.index']});
+    return (r.sheets||[]).map(s=>s.properties);
+  };
+
+  let tabs = await getTabs();
+  let batchTabs = tabs.filter(t => !/report/i.test(t.title));
+  if(!batchTabs.length) batchTabs = tabs;
+  if(!batchTabs.length) throw new Error('Master Calculation tidak memiliki tab kalkulasi.');
+
+  const rProd = (S.refParams.product || 'Reference').trim();
+  const tProd = (S.testParams.product || 'Uji').trim();
+
+  const allBatchSpecs = [];
+  refBatches.forEach(b => allBatchSpecs.push({role:'ref', batch:b, title:formatTabTitle(rProd, b)}));
+  testBatches.forEach(b => allBatchSpecs.push({role:'test', batch:b, title:formatTabTitle(tProd, b)}));
+
+  const needBatchCount = allBatchSpecs.length;
+  const requests = [];
+
+  for(let i = batchTabs.length; i < needBatchCount; i++){
+    requests.push({duplicateSheet:{sourceSheetId: batchTabs[0].sheetId, newSheetName:'__bdup'+i}});
+  }
+  for(let i = needBatchCount; i < batchTabs.length; i++){
+    requests.push({deleteSheet:{sheetId: batchTabs[i].sheetId}});
+  }
+
+  if(requests.length){
+    log(`  menyesuaikan jumlah tab batch (${needBatchCount} tab: Reference & Uji)...`);
+    assertWritable(spreadsheetId);
+    await call(SHEETS,'update_spreadsheet',{spreadsheetId, requests});
+    tabs = await getTabs();
+    batchTabs = tabs.filter(t => !/report/i.test(t.title));
+  }
+
+  const renameReqs = [];
+  batchTabs.slice(0, needBatchCount).forEach((t, i) => {
+    renameReqs.push({updateSheetProperties:{properties:{sheetId:t.sheetId, title:'__tmpB'+i}, fields:'title'}});
+  });
+  allBatchSpecs.forEach((spec, i) => {
+    renameReqs.push({updateSheetProperties:{properties:{sheetId:batchTabs[i].sheetId, title:spec.title}, fields:'title'}});
+  });
+
+  assertWritable(spreadsheetId);
+  await call(SHEETS,'update_spreadsheet',{spreadsheetId, requests:renameReqs});
+  return {allBatchSpecs};
+}
+
+async function sendCalculationMedium(mId){
+  const M = S.model.media[mId];
+  const stdSets = S.model.standardSets[mId] || [];
+  const refBatches = Object.keys(M.refBatches);
+  const testBatches = Object.keys(M.testBatches);
+  const cfg = getMedConfig(mId);
+  const tpl = CONFIG.masterCalculation;
+  assertTemplate(tpl);
+
+  const tProdName = (S.testParams.product || 'UDT').trim();
+  const medLabelShort = cfg.tabName || ('MD ' + mId);
+  const title = `UDT ${tProdName} ${testBatches.join('_')} ${medLabelShort}`;
+  log(`${medLabelShort}: menyalin Master Calculation → ${title}`);
+
+  const destFolderId = (S.outputFolderId || '').trim() || CONFIG.outputFolder;
+  const cp = await call(DRIVE,'copy_file',{fileId:tpl, parentId:destFolderId, title});
+  const nid = cp && cp.id;
+  if(!nid) throw new Error('copy_file tidak mengembalikan ID.');
+  markCreated(nid);
+  assertWritable(nid);
+
+  const {allBatchSpecs} = await prepareCalcTabs(nid, refBatches, testBatches);
+  const allBatchWrites = [];
+
+  for(const spec of allBatchSpecs){
+    const isRef = spec.role === 'ref';
+    const bDict = isRef ? M.refBatches : M.testBatches;
+    const B = bDict[spec.batch];
+    let sId = S.stdMapping[mId+'|'+spec.batch];
+    let sObj = stdSets.find(s=>s.id===sId) || stdSets[0];
+    const pObj = isRef ? S.refParams : S.testParams;
+    const p = {...pObj, ws: S.wsWeights[sObj.id] !== undefined ? S.wsWeights[sObj.id] : pObj.wsDefault};
+    const times = M.times;
+    const V = (B.vessels && B.vessels.length) ? Math.max(...B.vessels) : 3;
+
+    const areas = [];
+    for(let v=1; v<=V; v++){
+      areas.push(times.map(t => B.cells[v+'|'+t] ? B.cells[v+'|'+t].area : null));
+    }
+
+    const prodName = (isRef ? S.refParams.product : S.testParams.product) || (isRef ? 'Produk Pembanding' : 'Produk Uji');
+    const analystName = (isRef ? S.refParams.analyst : S.testParams.analyst) || '';
+    const dateVal = (isRef ? S.refParams.runDate : S.testParams.runDate) || todayISO();
+    const apiName = S.condParams.api || (prodName.split(/\s+/)[0] || '');
+
+    const plan = buildTabWrites({
+      V, T: times.length,
+      labels: times.map(t=>t+"'"),
+      areas,
+      std: fin(sObj.std),
+      bsMid: fin(sObj.bsMid),
+      bsEnd: fin(sObj.bsEnd),
+      params: p,
+      header: {
+        product: prodName,
+        batch: spec.batch,
+        api: apiName,
+        mediumDesc: cfg.desc || ('Buffer pH '+mId),
+        apparatus: S.condParams.apparatus || '2 (Paddle)',
+        purpose: isRef ? 'Reference Product' : 'Test Product',
+        analyst: analystName,
+        dateStr: fmtDateEN(dateVal),
+        instrument: S.condParams.instrument || 'HPLC'
+      }
+    });
+
+    log(`  menyiapkan data tab "${spec.title}" (${plan.writes.length} entri sel & formula)`);
+    for(const w of plan.writes){
+      allBatchWrites.push({
+        range: `'${spec.title}'!${w.range}`,
+        values: w.values
+      });
+    }
+  }
+
+  log(`  menulis seluruh data Calculation (${allBatchWrites.length} entri) dalam 1 panggilan batch...`);
+  assertWritable(nid);
+  await call(SHEETS, 'batch_update_values', {
+    spreadsheetId: nid,
+    data: allBatchWrites
+  });
+
+  const url = cp.viewUrl || ('https://docs.google.com/spreadsheets/d/'+nid+'/edit');
+  S.calcSheets[mId] = { id: nid, title, url, createdAt: Date.now() };
+  try{ localStorage.setItem('udt_calc_sheets', JSON.stringify(S.calcSheets)); }catch(e){}
+  return { id: mId, newId: nid, title: `[Calculation] ${title}`, url };
+}
+
+// ===================== 2. COMMAND: REPORT =====================
+async function sendReportMedium(mId){
+  const M = S.model.media[mId];
+  const stdSets = S.model.standardSets[mId] || [];
+  const refBatches = Object.keys(M.refBatches);
+  const testBatches = Object.keys(M.testBatches);
+  const cfg = getMedConfig(mId);
+  const medLabelShort = cfg.tabName || ('pH '+mId);
+
+  if(!refBatches.length){
+    throw new Error(`Medium ${medLabelShort} membutuhkan data Produk Pembanding (Reference) untuk membuat tab Report.`);
+  }
+
+  // Pastikan file Calculation untuk medium ini sudah ada; jika belum, buat terlebih dahulu
+  let calcEntry = S.calcSheets[mId];
+  if(!calcEntry || !calcEntry.id){
+    log(`${medLabelShort}: file Calculation belum dibuat pada sesi ini, menjalankan Calculation terlebih dahulu...`);
+    const createdCalc = await sendCalculationMedium(mId);
+    calcEntry = S.calcSheets[mId] || { id: createdCalc.newId, title: createdCalc.title, url: createdCalc.url };
+  }
+  const calcSpreadsheetId = calcEntry.id;
+  markCreated(calcSpreadsheetId);
+  assertWritable(calcSpreadsheetId);
+
+  // Periksa daftar tab saat ini pada file Calculation
+  const spMeta = await call(SHEETS, 'get_spreadsheet', {
+    spreadsheetId: calcSpreadsheetId,
+    fields: ['properties.title','sheets.properties.sheetId','sheets.properties.title']
+  });
+  const existingSheets = (spMeta.sheets || []).map(s => s.properties);
+
+  // Ambil sheetId dari Master Report
+  let masterRepSheetId = CONFIG.masterReportSheetId || 1578841241;
+  try{
+    const repMeta = await call(SHEETS, 'get_spreadsheet', {
+      spreadsheetId: CONFIG.masterReport,
+      fields: ['sheets.properties.sheetId','sheets.properties.title']
+    });
+    if(repMeta.sheets && repMeta.sheets.length){
+      masterRepSheetId = repMeta.sheets[0].properties.sheetId;
+    }
+  }catch(e){}
+
+  const refBatch = refBatches[0];
+  const rB = M.refBatches[refBatch];
+  let sObjRef = stdSets.find(s=>s.id===(S.stdMapping[mId+'|'+refBatch])) || stdSets[0];
+  const pRef = {...S.refParams, ws: S.wsWeights[sObjRef.id] !== undefined ? S.wsWeights[sObjRef.id] : S.refParams.wsDefault};
+  const rCalc = calcBatchProfile(M, rB, pRef, sObjRef);
+
+  const reportWrites = [];
+
+  for(let idx = 0; idx < testBatches.length; idx++){
+    const tBatch = testBatches[idx];
+    const repTitle = safeTab(testBatches.length === 1 ? 'Report' : ('Report ' + tBatch));
+
+    // Jika tab Report dengan nama yang sama sudah ada di file Calculation, hapus dulu agar bersih
+    const oldTab = existingSheets.find(s => s.title.toLowerCase() === repTitle.toLowerCase());
+    if(oldTab){
+      await call(SHEETS, 'update_spreadsheet', {
+        spreadsheetId: calcSpreadsheetId,
+        requests: [{ deleteSheet: { sheetId: oldTab.sheetId } }]
+      });
+    }
+
+    log(`  menyalin tab Report dari Master Report ke file Calculation → "${repTitle}"...`);
+    const copied = await call(SHEETS, 'copy_sheet_to', {
+      sourceSpreadsheetId: CONFIG.masterReport,
+      sourceSheetId: masterRepSheetId,
+      destinationSpreadsheetId: calcSpreadsheetId
+    });
+    const newSheetId = copied.sheetId;
+
+    await call(SHEETS, 'update_spreadsheet', {
+      spreadsheetId: calcSpreadsheetId,
+      requests: [{
+        updateSheetProperties: {
+          properties: { sheetId: newSheetId, title: repTitle },
+          fields: 'title'
+        }
+      }]
+    });
+
+    // Deteksi apakah baris 1 pada Master Report kosong (offset +1: G63:M74 & G84:M95 & G48/G49) atau offset 0 (G62:M73 & G83:M94 & G47/G48)
+    let rowOff = 1;
+    try{
+      const probe = await call(SHEETS, 'get_values', {
+        spreadsheetId: calcSpreadsheetId,
+        range: `'${repTitle}'!E61:E64`
+      });
+      const flatE = (probe.values || []).map(r => String(r[0]||'').trim());
+      // Jika E62 adalah '1' (Vessel 1 mulai di baris 62), berarti offset = 0
+      if(flatE[1] === '1') rowOff = 0;
+      else if(flatE[2] === '1') rowOff = 1;
+    }catch(e){}
+
+    const tB = M.testBatches[tBatch];
+    let sObjTest = stdSets.find(s=>s.id===(S.stdMapping[mId+'|'+tBatch])) || stdSets[0];
+    const pTest = {...S.testParams, ws: S.wsWeights[sObjTest.id] !== undefined ? S.wsWeights[sObjTest.id] : S.testParams.wsDefault};
+    const tCalc = calcBatchProfile(M, tB, pTest, sObjTest);
+
+    const f2Res = evalSimilarityF2(M.times, rCalc.stats.map(x=>x.avg), tCalc.stats.map(x=>x.avg), rCalc.stats, tCalc.stats);
+    const n = (f2Res && f2Res.n && f2Res.n >= 1) ? Math.min(f2Res.n, 7, M.times.length) : Math.min(M.times.length, 7);
+    const endCol = String.fromCharCode(71 + n - 1); // 71='G'
+
+    const refVCount = rCalc.V || 0;
+    const refGrid = [];
+    for (let v = 0; v < 12; v++){
+      const row = [];
+      for (let c = 0; c < 7; c++){
+        let val = '';
+        if (v < refVCount && rCalc.res && rCalc.res[v] && Array.isArray(rCalc.res[v]) && c < M.times.length){
+          const num = rCalc.res[v][c];
+          val = isFinite(num) ? Number(num.toFixed(2)) : '';
+        }
+        row.push(val);
+      }
+      refGrid.push(row);
+    }
+
+    const testVCount = tCalc.V || 0;
+    const testGrid = [];
+    for (let v = 0; v < 12; v++){
+      const row = [];
+      for (let c = 0; c < 7; c++){
+        let val = '';
+        if (v < testVCount && tCalc.res && tCalc.res[v] && Array.isArray(tCalc.res[v]) && c < M.times.length){
+          const num = tCalc.res[v][c];
+          val = isFinite(num) ? Number(num.toFixed(2)) : '';
+        }
+        row.push(val);
+      }
+      testGrid.push(row);
+    }
+
+    const refStartRow = 62 + rowOff; // 63 di Master Report, 62 jika tanpa baris 1
+    const refEndRow   = 73 + rowOff; // 74 di Master Report, 73 jika tanpa baris 1
+    const testStartRow = 83 + rowOff; // 84 di Master Report, 83 jika tanpa baris 1
+    const testEndRow   = 94 + rowOff; // 95 di Master Report, 94 jika tanpa baris 1
+    const sqRow  = 46 + rowOff; // 47 di Master Report, 46 jika tanpa baris 1
+    const sumRow = 47 + rowOff; // 48 di Master Report, 47 jika tanpa baris 1
+    const nRow   = 48 + rowOff; // 49 di Master Report, 48 jika tanpa baris 1
+
+    const rProdName = S.refParams.product || 'Reference Product';
+    const tProdName = S.testParams.product || 'Test Product';
+
+    // Update identitas header pada Report sesuai produk, medium, apparatus, instrument, dan method reference (E8:E15)
+    reportWrites.push({
+      range: `'${repTitle}'!E${7+rowOff}:E${14+rowOff}`,
+      values: [
+        [rProdName],
+        [tProdName],
+        [cfg.desc || ('Buffer pH '+mId)],
+        [(S.testParams.volMedia || 900) + ' ml'],
+        [S.condParams.apparatus || '2 (Paddle)'],
+        [S.condParams.rpm || '50 rpm'],
+        [S.condParams.instrument || 'HPLC'],
+        [S.condParams.methodRef || 'Farmakope Indonesia (FI) VI / USP']
+      ]
+    });
+    reportWrites.push({ range: `'${repTitle}'!C${19+rowOff}`, values: [[`${rProdName} (${refBatch})`]] });
+    reportWrites.push({ range: `'${repTitle}'!C${23+rowOff}`, values: [[`${tProdName} (${tBatch})`]] });
+    // Perbaiki referensi kolom M pada baris Average/Min/Max Test Product di tabel atas Master Report agar mengacu ke baris Average/Min/Max (96..98) bukan Vessel 12 (95)
+    reportWrites.push({
+      range: `'${repTitle}'!M${23+rowOff}:M${25+rowOff}`,
+      values: [[`=M${95+rowOff}`],[`=M${96+rowOff}`],[`=M${97+rowOff}`]]
+    });
+
+    // 4 target utama pada Report: nilai % dissolved Reference, nilai % dissolved Test, rumus SUM f2, dan nilai n
+    reportWrites.push({ range: `'${repTitle}'!G${refStartRow}:M${refEndRow}`, values: refGrid });
+    reportWrites.push({ range: `'${repTitle}'!G${testStartRow}:M${testEndRow}`, values: testGrid });
+    reportWrites.push({ range: `'${repTitle}'!G${sumRow}`, values: [[`=SUM(G${sqRow}:${endCol}${sqRow})`]] });
+    reportWrites.push({ range: `'${repTitle}'!G${nRow}`, values: [[n]] });
+
+    log(`  tab "${repTitle}" siap (f2: ${isFinite(f2Res.f2) ? fmt(f2Res.f2, 2) : 'N/A'}, n=${n}, Ref ${refVCount} vessel, Uji ${testVCount} vessel)`);
+  }
+
+  log(`  menulis data Report ke file Calculation dalam 1 panggilan batch...`);
+  await call(SHEETS, 'batch_update_values', {
+    spreadsheetId: calcSpreadsheetId,
+    data: reportWrites
+  });
+
+  return {
+    id: mId,
+    newId: calcSpreadsheetId,
+    title: `[Report ditambahkan] ${calcEntry.title || spMeta.properties?.title || calcSpreadsheetId}`,
+    url: calcEntry.url || ('https://docs.google.com/spreadsheets/d/'+calcSpreadsheetId+'/edit')
+  };
+}
+
+// ===================== 3. COMMAND: SUMMARY =====================
+function extractIdFromInput(raw){
+  if(!raw) return '';
+  const s = raw.trim();
+  const m = s.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]{20,})/) || s.match(/([a-zA-Z0-9_-]{25,})/);
+  return m ? m[1] : s;
+}
+
+async function ensureSummarySpreadsheet(){
+  const prodName = (S.testParams.product || 'Produk UDT').trim();
+  const prodKey = prodName.toLowerCase();
+  const summaryTitle = `SUMMARY UDT ${prodName}`;
+  const destFolderId = (S.outputFolderId || '').trim() || CONFIG.outputFolder;
+
+  // 1. Cek apakah pengguna mengisi ID/URL file Summary di kotak input
+  const manualRaw = ($('#summaryFileInput')?.value || '').trim();
+  const manualId = extractIdFromInput(manualRaw);
+  if(manualId){
+    markCreated(manualId);
+    const url = `https://docs.google.com/spreadsheets/d/${manualId}/edit`;
+    S.summarySheets[prodKey] = { id: manualId, title: summaryTitle, url };
+    try{ localStorage.setItem('udt_summary_sheets', JSON.stringify(S.summarySheets)); }catch(e){}
+    return { id: manualId, title: summaryTitle, url, isNew: false };
+  }
+
+  // 2. Cek apakah sudah tersimpan di memori lokal untuk produk yang sama dan masih dapat diakses
+  const cached = S.summarySheets[prodKey];
+  if(cached && cached.id && !MASTER_TEMPLATE_IDS.has(cached.id)){
+    try{
+      await call(SHEETS, 'get_spreadsheet', { spreadsheetId: cached.id, fields: ['properties.title'] });
+      markCreated(cached.id);
+      return { id: cached.id, title: cached.title || summaryTitle, url: cached.url, isNew: false };
+    }catch(e){}
+  }
+
+  // 3. Cari di Google Drive pada folder output apakah file "SUMMARY UDT <Produk>" sudah pernah dibuat
+  try{
+    const found = await call(DRIVE, 'find_file', { title: summaryTitle, parentId: destFolderId });
+    if(found && found.files && found.files.length > 0){
+      const f = found.files[0];
+      markCreated(f.id);
+      const url = f.webViewLink || `https://docs.google.com/spreadsheets/d/${f.id}/edit`;
+      S.summarySheets[prodKey] = { id: f.id, title: f.name, url };
+      try{ localStorage.setItem('udt_summary_sheets', JSON.stringify(S.summarySheets)); }catch(e){}
+      log(`Summary: menggunakan file Summary produk yang sudah ada → ${f.name}`);
+      return { id: f.id, title: f.name, url, isNew: false };
+    }
+  }catch(e){}
+
+  // 4. Jika belum ada, salin dari Master Summary dan bersihkan data sampel bawaan template
+  assertTemplate(CONFIG.masterSummary);
+  log(`Summary: menyalin Master Summary baru → ${summaryTitle}`);
+  const cp = await call(DRIVE, 'copy_file', {
+    fileId: CONFIG.masterSummary,
+    parentId: destFolderId,
+    title: summaryTitle
+  });
+  const nid = cp && cp.id;
+  if(!nid) throw new Error('Gagal membuat salinan Master Summary.');
+  markCreated(nid);
+  const url = cp.viewUrl || `https://docs.google.com/spreadsheets/d/${nid}/edit`;
+  S.summarySheets[prodKey] = { id: nid, title: summaryTitle, url };
+  try{ localStorage.setItem('udt_summary_sheets', JSON.stringify(S.summarySheets)); }catch(e){}
+
+  // Bersihkan blok data bawaan template (k=0..10, baris 14 s/d 266) pada seluruh tab agar bersih untuk produk baru
+  const meta = await call(SHEETS, 'get_spreadsheet', {
+    spreadsheetId: nid,
+    fields: ['sheets.properties.title']
+  });
+  const clearWrites = [];
+  const blank12x7 = Array.from({length:12}, () => Array(7).fill(''));
+  for(const sh of (meta.sheets || [])){
+    const tName = sh.properties.title;
+    clearWrites.push({ range: `'${tName}'!A2`, values: [[prodName.toUpperCase()]] });
+    for(let k = 0; k < 11; k++){
+      const s = 14 + 23 * k;
+      clearWrites.push({ range: `'${tName}'!A${s}:B${s}`, values: [['','']] });
+      clearWrites.push({ range: `'${tName}'!E${s+7}:K${s+18}`, values: blank12x7 });
+      if(k >= 1){
+        clearWrites.push({ range: `'${tName}'!U${s}`, values: [['']] });
+      }
+    }
+  }
+  if(clearWrites.length){
+    await call(SHEETS, 'batch_update_values', { spreadsheetId: nid, data: clearWrites });
+  }
+
+  return { id: nid, title: summaryTitle, url, isNew: true };
+}
+
+function buildSummaryBlockWrites(tabTitle, k, role, prodName, batchName, dateStr, calc, f2Res, refProdName, refBatchName, labels7){
+  const s = 14 + 23 * k; // k=0 -> 14 (Reference), k=1 -> 37 (Test 1), k=2 -> 60 (Test 2), dst.
+  const writes = [];
+  const w = (r, vals) => writes.push({ range: `'${tabTitle}'!${r}`, values: vals });
+
+  w(`A${s}:B${s}`, [[dateStr, `${prodName} (${batchName})`]]);
+
+  const cols7 = ['E','F','G','H','I','J','K'];
+  w(`E${s}:K${s}`,     [cols7.map(c => `=${c}${s+19}`)]); // AVG
+  w(`E${s+1}:K${s+1}`, [cols7.map(c => `=${c}${s+20}`)]); // Min
+  w(`E${s+2}:K${s+2}`, [cols7.map(c => `=${c}${s+21}`)]); // Max
+  w(`E${s+3}:K${s+3}`, [cols7.map(c => `=${c}${s+22}`)]); // RSD
+
+  // Grid 12 vessel x 7 titik waktu pada E(s+7):K(s+18)
+  const vCount = Math.max(1, calc.V || 0);
+  const grid = [];
+  for(let v = 0; v < 12; v++){
+    const row = [];
+    for(let c = 0; c < 7; c++){
+      let val = '';
+      if(v < vCount && calc.res && calc.res[v] && Array.isArray(calc.res[v]) && c < calc.times.length){
+        const num = calc.res[v][c];
+        val = isFinite(num) ? Number(num.toFixed(2)) : '';
+      }
+      row.push(val);
+    }
+    grid.push(row);
+  }
+  w(`E${s+7}:K${s+18}`, grid);
+
+  // Rumus Average, Min, Max, RSD sesuai jumlah vessel aktif (s+7 s/d s+6+vCount)
+  const vStart = s + 7;
+  const vEnd   = s + 6 + vCount;
+  w(`E${s+19}:K${s+19}`, [cols7.map(c => `=AVERAGE(${c}${vStart}:${c}${vEnd})`)]);
+  w(`E${s+20}:K${s+20}`, [cols7.map(c => `=MIN(${c}${vStart}:${c}${vEnd})`)]);
+  w(`E${s+21}:K${s+21}`, [cols7.map(c => `=MAX(${c}${vStart}:${c}${vEnd})`)]);
+  w(`E${s+22}:K${s+22}`, [cols7.map(c => `=(STDEV(${c}${vStart}:${c}${vEnd})/${c}${s+19})*100`)]);
+
+  // Header Minutes untuk blok berikutnya di M(s+22):T(s+22)
+  w(`M${s+22}:T${s+22}`, [['Minutes', ...labels7]]);
+
+  // Jika blok Produk Uji (k >= 1), tulis blok perhitungan f2 di M(s):U(s+4)
+  if(k >= 1){
+    const n = (f2Res && f2Res.n && f2Res.n >= 1) ? Math.min(f2Res.n, 7) : 7;
+    const endColSum = String.fromCharCode(78 + n - 1); // 78='N' (5'), O (10'), P (15'), Q (20'), R (30'), S (45'), T (60')
+    w(`M${s}:T${s}`, [[
+      '(Rt- Tt)2',
+      `=(E$14-E${s})^2`,
+      `=(F$14-F${s})^2`,
+      `=(G$14-G${s})^2`,
+      `=(H$14-H${s})^2`,
+      `=(I$14-I${s})^2`,
+      `=(J$14-J${s})^2`,
+      `=(K$14-K${s})^2`
+    ]]);
+    w(`M${s+1}:N${s+1}`, [['Total', `=SUM(N${s}:${endColSum}${s})`]]);
+    w(`M${s+2}:N${s+2}`, [['n', n]]);
+    w(`M${s+3}:N${s+3}`, [['A', `=(1+(1/N${s+2}*N${s+1}))^-0.5`]]);
+    w(`M${s+4}:N${s+4}`, [['F2', `=50*LOG(N${s+3}*100)`]]);
+
+    const concl = (f2Res && isFinite(f2Res.f2))
+      ? (f2Res.isSimilar
+          ? `Profil disolusi ${prodName} (${batchName}) memiliki kemiripan (ekivalen) terhadap produk pembanding ${refProdName} (${refBatchName}) dengan nilai f2 = ${fmt(f2Res.f2,2)} (≥ 50).`
+          : `Profil disolusi ${prodName} (${batchName}) tidak ekivalen terhadap produk pembanding ${refProdName} (${refBatchName}) dengan nilai f2 = ${fmt(f2Res.f2,2)} (< 50).`)
+      : '';
+    w(`U${s}`, [[concl]]);
+  }
+
+  return writes;
+}
+
+async function sendSummaryMedium(mId, sumSheet){
+  const M = S.model.media[mId];
+  const stdSets = S.model.standardSets[mId] || [];
+  const refBatches = Object.keys(M.refBatches);
+  const testBatches = Object.keys(M.testBatches);
+  const cfg = getMedConfig(mId);
+  const targetTabName = cfg.tabName || ('pH ' + mId);
+
+  const spreadsheetId = sumSheet.id;
+  assertWritable(spreadsheetId);
+
+  // Cari tab medium pada file Summary (misal "pH 1,2", "pH 4,5", "pH 6,8")
+  const sp = await call(SHEETS, 'get_spreadsheet', {
+    spreadsheetId,
+    fields: ['sheets.properties.sheetId','sheets.properties.title','sheets.properties.gridProperties.rowCount']
+  });
+  let sheets = (sp.sheets || []).map(s => s.properties);
+  let targetSheet = sheets.find(s => normMedium(s.title).toLowerCase() === normMedium(targetTabName).toLowerCase())
+                 || sheets.find(s => extractMediumFromString(s.title) === mId);
+
+  if(!targetSheet){
+    // Jika jenis media kustom belum memiliki tab di Summary, duplikasikan dari tab pertama
+    log(`  membuat tab medium baru "${targetTabName}" pada file Summary...`);
+    const dupRes = await call(SHEETS, 'update_spreadsheet', {
+      spreadsheetId,
+      requests: [{
+        duplicateSheet: {
+          sourceSheetId: sheets[0].sheetId,
+          newSheetName: safeTab(targetTabName)
+        }
+      }]
+    });
+    const newShProps = dupRes.replies?.[0]?.duplicateSheet?.properties;
+    targetSheet = newShProps || { sheetId: sheets[0].sheetId, title: safeTab(targetTabName) };
+  }
+
+  const tabTitle = targetSheet.title;
+  const writes = [];
+  const tProdName = S.testParams.product || 'Produk Uji';
+  const rProdName = S.refParams.product || 'Produk Pembanding';
+  const apiName = S.condParams.api || (tProdName.split(/\s+/)[0] || '');
+  const labels7 = Array.from({length:7}, (_,i) => M.times[i] ? (M.times[i]+"'") : ([5,10,15,20,30,45,60][i]+"'"));
+
+  // Update informasi header tab Summary (A2, D4:D9, E13:K13)
+  writes.push({ range: `'${tabTitle}'!A2`, values: [[tProdName.toUpperCase()]] });
+  writes.push({
+    range: `'${tabTitle}'!D4:D9`,
+    values: [
+      [cfg.desc || ('Buffer pH '+mId)],
+      [apiName],
+      [(S.testParams.volMedia || 900) + ' ml'],
+      [S.condParams.apparatus || '2 (Paddle)'],
+      [S.condParams.rpm || '50 rpm'],
+      [S.condParams.instrument || 'HPLC']
+    ]
+  });
+  writes.push({ range: `'${tabTitle}'!E13:K13`, values: [labels7] });
+
+  // Baca Kolom A dan B mulai baris 14 ke bawah untuk memetakan kelompok data (pola 23 baris per blok)
+  const abRes = await call(SHEETS, 'get_values', {
+    spreadsheetId,
+    range: `'${tabTitle}'!A14:B400`
+  });
+  const abRows = abRes.values || [];
+  const getBlockAB = (k) => {
+    const idx = 23 * k; // baris (14 + 23*k) -> indeks relatif terhadap baris 14 adalah 23*k
+    const r = abRows[idx] || [];
+    return { a: String(r[0]||'').trim(), b: String(r[1]||'').trim() };
+  };
+
+  // --- BLOK 0 (Baris 14–36): Reference Product (selalu urutan pertama) ---
+  let rCalc = null;
+  const refBatch = refBatches[0] || '';
+  if(refBatches.length){
+    const rB = M.refBatches[refBatch];
+    let sObjRef = stdSets.find(s=>s.id===(S.stdMapping[mId+'|'+refBatch])) || stdSets[0];
+    const pRef = {...S.refParams, ws: S.wsWeights[sObjRef.id] !== undefined ? S.wsWeights[sObjRef.id] : S.refParams.wsDefault};
+    rCalc = calcBatchProfile(M, rB, pRef, sObjRef);
+    const refDateStr = fmtDateEN(S.refParams.runDate || todayISO());
+
+    const b0 = getBlockAB(0);
+    const sameRefBatch = b0.b && b0.b.toLowerCase().includes(refBatch.toLowerCase());
+    if(!b0.b || !sameRefBatch || sumSheet.isNew){
+      log(`  ${tabTitle}: menulis Reference Product "${rProdName} (${refBatch})" pada urutan pertama (Baris 14–36)`);
+    } else {
+      log(`  ${tabTitle}: memperbarui Reference Product "${rProdName} (${refBatch})" pada urutan pertama (Baris 14–36)`);
+    }
+    writes.push(...buildSummaryBlockWrites(tabTitle, 0, 'ref', rProdName, refBatch, refDateStr, rCalc, null, rProdName, refBatch, labels7));
+  }
+
+  // --- BLOK k >= 1 (Baris 37, 60, 83, ...): Test Product sesuai Tanggal (Kolom A) & Batch (Kolom B) ---
+  // Cari blok k >= 1 yang sudah terisi
+  const occupiedBlocks = new Map(); // k -> {a, b}
+  let maxOccupiedK = 0;
+  for(let k = 1; k <= 15; k++){
+    const ab = getBlockAB(k);
+    if(ab.b){
+      occupiedBlocks.set(k, ab);
+      if(k > maxOccupiedK) maxOccupiedK = k;
+    }
+  }
+
+  for(const tBatch of testBatches){
+    const tB = M.testBatches[tBatch];
+    let sObjTest = stdSets.find(s=>s.id===(S.stdMapping[mId+'|'+tBatch])) || stdSets[0];
+    const pTest = {...S.testParams, ws: S.wsWeights[sObjTest.id] !== undefined ? S.wsWeights[sObjTest.id] : S.testParams.wsDefault};
+    const tCalc = calcBatchProfile(M, tB, pTest, sObjTest);
+    const f2Res = rCalc ? evalSimilarityF2(M.times, rCalc.stats.map(x=>x.avg), tCalc.stats.map(x=>x.avg), rCalc.stats, tCalc.stats) : null;
+    const testDateStr = fmtDateEN(S.testParams.runDate || todayISO());
+
+    // Cek apakah batch ini sudah pernah ditulis pada salah satu kelompok data k >= 1
+    let targetK = -1;
+    for(const [k, ab] of occupiedBlocks.entries()){
+      if(ab.b.toLowerCase().includes(tBatch.toLowerCase())){
+        targetK = k;
+        break;
+      }
+    }
+
+    if(targetK > 0){
+      const sRow = 14 + 23 * targetK;
+      log(`  ${tabTitle}: batch uji "${tBatch}" (${testDateStr}) ditemukan pada kelompok #${targetK} (Baris ${sRow}–${sRow+22}) → memperbarui data`);
+    } else {
+      targetK = maxOccupiedK + 1;
+      maxOccupiedK = targetK;
+      occupiedBlocks.set(targetK, { a: testDateStr, b: `${tProdName} (${tBatch})` });
+      const sRow = 14 + 23 * targetK;
+      log(`  ${tabTitle}: menempatkan batch uji baru "${tBatch}" (${testDateStr}) pada kelompok #${targetK} di bawahnya (Baris ${sRow}–${sRow+22})`);
+
+      // Jika targetK > 9 (melebihi blok template baris 243), gandakan format blok dari Baris 37–59 (indeks 36..59)
+      if(targetK > 9 && targetSheet.sheetId !== undefined){
+        try{
+          await call(SHEETS, 'update_spreadsheet', {
+            spreadsheetId,
+            requests: [
+              { appendDimension: { sheetId: targetSheet.sheetId, dimension: 'ROWS', length: 25 } },
+              {
+                copyPaste: {
+                  source: { sheetId: targetSheet.sheetId, startRowIndex: 36, endRowIndex: 59, startColumnIndex: 0, endColumnIndex: 21 },
+                  destination: { sheetId: targetSheet.sheetId, startRowIndex: sRow - 1, endRowIndex: sRow + 22, startColumnIndex: 0, endColumnIndex: 21 },
+                  pasteType: 'PASTE_NORMAL'
+                }
+              }
+            ]
+          });
+        }catch(e){}
+      }
+    }
+
+    writes.push(...buildSummaryBlockWrites(tabTitle, targetK, 'test', tProdName, tBatch, testDateStr, tCalc, f2Res, rProdName, refBatch, labels7));
+  }
+
+  log(`  menulis ${writes.length} blok data ke tab "${tabTitle}" pada file Summary...`);
+  await call(SHEETS, 'batch_update_values', {
+    spreadsheetId,
+    data: writes
+  });
+}
+
+// ===================== RUNNER UNTUK KETIGA TOMBOL =====================
+async function executeExportCommand(mode){
+  if(S.busy) return;
+  if(!$('#ack').checked){ alert('Centang konfirmasi terlebih dahulu.'); return; }
+  const ids = sortedMediaIds(S.model).filter(id => S.include[id] && readiness(id).length===0);
+  if(!ids.length){ alert('Tidak ada medium yang siap dikirim.'); return; }
+
+  if(!S.mcp){
+    try{ await ensureToken(); }
+    catch(e){ alert(errMsg(e)); return; }
+  }
+
+  S.busy = true;
+  setExportBtnsDisabled(true);
+  $('#sendOut').innerHTML = '';
+  logStarted = false;
+
+  const modeLabel = mode === 'calc' ? 'CALCULATION' : (mode === 'report' ? 'REPORT' : 'SUMMARY');
+  log(`Mulai proses [${modeLabel}] untuk medium: ` + ids.map(i=>getMedConfig(i).tabName||('pH '+i)).join(', '));
+
+  const done = [];
+  try{
+    if(mode === 'summary'){
+      const sumSheet = await ensureSummarySpreadsheet();
+      for(const id of ids){
+        await sendSummaryMedium(id, sumSheet);
+      }
+      done.push({ title: `[Summary] ${sumSheet.title}`, url: sumSheet.url });
+    } else {
+      for(const id of ids){
+        if(mode === 'calc'){
+          done.push(await sendCalculationMedium(id));
+        } else if(mode === 'report'){
+          done.push(await sendReportMedium(id));
+        }
+      }
+    }
+  } catch(e){
+    log(`GAGAL [${modeLabel}] — ${errMsg(e)}`, 'e');
+  }
+
+  const out = $('#sendOut');
+  done.forEach(d => out.append(
+    h('div',{class:'file'},
+      h('span',{class:'nm'},d.title),
+      h('span',{class:'badge ok'},'Selesai'),
+      h('a',{href:d.url,target:'_blank',rel:'noopener'},'Buka Sheet'))));
+
+  log(`Proses [${modeLabel}] selesai.`);
+  S.busy = false;
+  renderSend();
+}
+
+// ===================== Inisialisasi =====================
+function init(){
+  restore();
+  buildNav();
+
+  // Dropzone Produk Uji
+  const dt = $('#dropTest'), ft = $('#fiTest');
+  if(dt && ft){
+    dt.addEventListener('click', ()=>ft.click());
+    ['dragenter','dragover'].forEach(ev=>dt.addEventListener(ev, e=>{e.preventDefault(); dt.classList.add('over');}));
+    ['dragleave','drop'].forEach(ev=>dt.addEventListener(ev, e=>{e.preventDefault(); dt.classList.remove('over');}));
+    dt.addEventListener('drop', e=>{ e.preventDefault(); dt.classList.remove('over'); addFilesForRole([...e.dataTransfer.files], 'test'); });
+    ft.addEventListener('change', ()=>{ addFilesForRole([...ft.files], 'test'); ft.value=''; });
+  }
+
+  // Dropzone Produk Pembanding
+  const dr = $('#dropRef'), fr = $('#fiRef');
+  if(dr && fr){
+    dr.addEventListener('click', ()=>fr.click());
+    ['dragenter','dragover'].forEach(ev=>dr.addEventListener(ev, e=>{e.preventDefault(); dr.classList.add('over');}));
+    ['dragleave','drop'].forEach(ev=>dr.addEventListener(ev, e=>{e.preventDefault(); dr.classList.remove('over');}));
+    dr.addEventListener('drop', e=>{ e.preventDefault(); dr.classList.remove('over'); addFilesForRole([...e.dataTransfer.files], 'ref'); });
+    fr.addEventListener('change', ()=>{ addFilesForRole([...fr.files], 'ref'); fr.value=''; });
+  }
+
+  // Tempel Teks
+  const pasteBtn = $('#pasteBtn');
+  if(pasteBtn){
+    pasteBtn.addEventListener('click', ()=>{
+      const pasteEl = $('#paste');
+      const t = pasteEl ? pasteEl.value : '';
+      if(!t.trim()) return;
+      const roleEl = $('input[name="pasteRole"]:checked');
+      const role = roleEl ? roleEl.value : 'test';
+      const e = textEntry('Tempel-'+(S.testFiles.length+S.refFiles.length+1), t, role, true);
+      e.id = Math.random().toString(36).slice(2);
+      if(role === 'ref') S.refFiles.push(e); else S.testFiles.push(e);
+      if(pasteEl) pasteEl.value = '';
+      rebuild();
+    });
+  }
+
+  if($('#testBtn')) $('#testBtn').addEventListener('click', testConn);
+  if($('#calcBtn')) $('#calcBtn').addEventListener('click', () => executeExportCommand('calc'));
+  if($('#reportBtn')) $('#reportBtn').addEventListener('click', () => executeExportCommand('report'));
+  if($('#summaryBtn')) $('#summaryBtn').addEventListener('click', () => executeExportCommand('summary'));
+  if($('#folderVerifyBtn')) $('#folderVerifyBtn').addEventListener('click', verifyFolder);
+  if($('#folderIdInput')) $('#folderIdInput').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); verifyFolder(); } });
+
+  go(1);
+  initConn();
+}
+window.__udt = {S, rebuild, go, addFilesForRole, textEntry, renderCheck, renderParams, renderResults, renderSend, executeExportCommand, formatTabTitle, lineChart, exportPDF, printReportWindow, parseCSV};
+init();
+</script>
+</body>
+</html>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Asisten UDT — Disolusi Terbanding</title>
+<title>UDT Studio — Uji Disolusi Terbanding</title>
 <script src="https://accounts.google.com/gsi/client" async defer onload="window.onGisLoad&&window.onGisLoad()"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
@@ -453,7 +453,7 @@ details[open] summary { margin-bottom: 8px; }
 <!-- Header -->
 <header class="topbar">
   <div class="topbar-brand">
-    <h1>UDT Assistant</h1>
+    <h1>UDT Studio</h1>
     <span class="sub">Disolusi Terbanding (BPOM / FDA / EMA)</span>
   </div>
   <div class="topbar-actions">
@@ -2644,7 +2644,7 @@ async function exportPDF(){
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(148, 163, 184);
       doc.text(`Halaman ${p} dari ${pageCount}`, 196, 287, { align: 'right' });
-      doc.text('Aplikasi Uji Disolusi Terbanding (UDT)', 14, 287);
+      doc.text('UDT Studio — Disolusi Terbanding', 14, 287);
     }
 
     const safeName = (tProd + '_' + (tBatch !== '-' ? tBatch : 'UDT')).replace(/[^a-zA-Z0-9_-]/g, '_');

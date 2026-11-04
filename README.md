@@ -1,5 +1,5 @@
-# UDT Report Generator v1.2
-**Asisten UDT (Uji Disolusi Terbanding) Otomatis — Dari Data HPLC/UV ke Evaluasi Regulasi, Ekspor PDF & Google Sheets**
+# UDT Studio (v1.2)
+**Studio Uji Disolusi Terbanding (UDT) Otomatis — Dari Data HPLC/UV ke Evaluasi Regulasi, Ekspor PDF & Google Sheets**
 
 Aplikasi web modern berbasis klien murni (HTML5, Vanilla JS, CSS3, PDF.js, jsPDF) untuk memproses, memverifikasi, mengkalkulasi, dan mengevaluasi data profil disolusi terbanding dari instrumen HPLC (PDF Sequence Summary Report / CSV) sesuai pedoman resmi **BPOM, FDA, dan EMA**.
 
