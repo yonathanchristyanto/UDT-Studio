@@ -471,8 +471,8 @@ details[open] summary { margin-bottom: 8px; }
   <!-- STEP 1: UNGGAH -->
   <section class="panel" id="p1">
     <div class="section-header">
-      <h2>Unggah Data HPLC</h2>
-      <p>Unggah file Sequence Summary Report (PDF) atau CSV hasil injeksi instrumen HPLC.</p>
+      <h2>Unggah Data</h2>
+      <p>Pilih file kromatogram (PDF / CSV) untuk Produk Uji dan Produk Pembanding.</p>
     </div>
 
     <div class="dual-drop">
@@ -482,10 +482,9 @@ details[open] summary { margin-bottom: 8px; }
           <h3>Produk Uji</h3>
           <span class="badge ok">Uji</span>
         </div>
-        <div class="drop-box-sub">File laporan atau sekuens batch uji</div>
         <div class="drop" id="dropTest" tabindex="0">
           <b>Pilih atau seret file ke sini</b>
-          <div class="hint">Format didukung: PDF, CSV, TSV, TXT</div>
+          <div class="hint">Format didukung: PDF, CSV, TXT</div>
           <input type="file" id="fiTest" accept=".pdf,.csv,.tsv,.txt" multiple hidden>
         </div>
         <div class="files" id="fileListTest"></div>
@@ -497,10 +496,9 @@ details[open] summary { margin-bottom: 8px; }
           <h3>Produk Pembanding</h3>
           <span class="badge info">Pembanding</span>
         </div>
-        <div class="drop-box-sub">File laporan atau sekuens inovator</div>
         <div class="drop" id="dropRef" tabindex="0">
           <b>Pilih atau seret file ke sini</b>
-          <div class="hint">Format didukung: PDF, CSV, TSV, TXT</div>
+          <div class="hint">Format didukung: PDF, CSV, TXT</div>
           <input type="file" id="fiRef" accept=".pdf,.csv,.tsv,.txt" multiple hidden>
         </div>
         <div class="files" id="fileListRef"></div>
@@ -509,9 +507,9 @@ details[open] summary { margin-bottom: 8px; }
 
     <!-- Panduan penamaan -->
     <details class="card">
-      <summary>Panduan Format Penamaan Sampel Sekuens HPLC</summary>
+      <summary>Format Penamaan Sampel Sekuens (SOP)</summary>
       <div class="sop-box">
-        <p style="margin:0 0 6px">Gunakan format penamaan baku pada <i>Sequence Table</i> instrumen HPLC agar sistem membaca seluruh variabel otomatis:</p>
+        <p style="margin:0 0 6px">Gunakan format baku pada <i>Sequence Table</i> agar variabel terbaca otomatis:</p>
         <table class="sop-tbl">
           <thead>
             <tr><th>Jenis Injeksi</th><th>Format Penamaan Baku</th><th>Contoh</th><th>Keterangan</th></tr>
@@ -524,13 +522,13 @@ details[open] summary { margin-bottom: 8px; }
             <tr><td><b>Sampel (Lengkap)</b></td><td><code>&lt;Produk&gt; &lt;Batch&gt; MD &lt;pH&gt; &lt;Waktu&gt;' &lt;Vessel&gt;</code></td><td><code>Rosuvastatin 24A01 MD 6.8 30' 6</code></td><td>Mendeteksi nama produk</td></tr>
           </tbody>
         </table>
-        <p class="small muted" style="margin:8px 0 0">Jika nama standar tidak mencantumkan pH, medium ditentukan otomatis dari sampel atau nama file.</p>
+        <p class="small muted" style="margin:8px 0 0">Jika nama standar tidak memuat pH, medium ditentukan otomatis dari nama file atau sampel.</p>
       </div>
     </details>
 
     <!-- Paste manual -->
     <details class="card">
-      <summary>Tempel Data Tabel Manual (CSV / Teks)</summary>
+      <summary>Tempel Data Teks Manual (Opsional)</summary>
       <div class="row" style="margin:8px 0 6px">
         <label class="small" style="display:flex;align-items:center;gap:6px"><input type="radio" name="pasteRole" value="test" checked style="width:auto"> Produk Uji</label>
         <label class="small" style="display:flex;align-items:center;gap:6px"><input type="radio" name="pasteRole" value="ref" style="width:auto"> Produk Pembanding</label>
@@ -548,8 +546,8 @@ details[open] summary { margin-bottom: 8px; }
   <!-- STEP 2: VERIFIKASI -->
   <section class="panel" id="p2">
     <div class="section-header">
-      <h2>Verifikasi &amp; Pemetaan Standar</h2>
-      <p>Periksa data injeksi yang terbaca dan konfirmasi larutan standar yang digunakan tiap batch.</p>
+      <h2>Verifikasi Sampel &amp; Standar</h2>
+      <p>Periksa data injeksi yang terbaca dan konfirmasi larutan standar tiap batch.</p>
     </div>
     <div id="p2body"></div>
     <div class="nav">
@@ -561,8 +559,8 @@ details[open] summary { margin-bottom: 8px; }
   <!-- STEP 3: PARAMETER -->
   <section class="panel" id="p3">
     <div class="section-header">
-      <h2>Parameter &amp; Perhitungan</h2>
-      <p>Tentukan kondisi disolusi &amp; instrumen, identitas pengujian, konstanta disolusi, serta bobot penimbangan WS.</p>
+      <h2>Parameter Pengujian</h2>
+      <p>Atur kondisi disolusi, identitas produk, dan data perhitungan.</p>
     </div>
 
     <!-- Kondisi Disolusi & Instrumen -->
@@ -570,7 +568,6 @@ details[open] summary { margin-bottom: 8px; }
       <div class="mhead" style="margin-bottom:10px">
         <div>
           <h2>Kondisi Disolusi &amp; Instrumen</h2>
-          <span class="small muted">Terdeteksi otomatis dari sampel/file, dapat dipilih via dropdown atau diketik manual</span>
         </div>
       </div>
       <div id="pCondBox"></div>
@@ -581,7 +578,6 @@ details[open] summary { margin-bottom: 8px; }
       <div class="mhead" style="margin-bottom:10px">
         <div>
           <h2>Produk Uji</h2>
-          <span class="small muted">Parameter dan bobot WS untuk sampel uji</span>
         </div>
       </div>
 
@@ -599,7 +595,6 @@ details[open] summary { margin-bottom: 8px; }
       <div class="mhead" style="margin-bottom:10px">
         <div>
           <h2>Produk Pembanding</h2>
-          <span class="small muted">Parameter dan bobot WS untuk sampel pembanding</span>
         </div>
         <button class="btn small" id="copyParamsBtn" type="button">Salin Nilai dari Produk Uji</button>
       </div>
@@ -622,8 +617,8 @@ details[open] summary { margin-bottom: 8px; }
   <!-- STEP 4: HASIL -->
   <section class="panel" id="p4">
     <div class="section-header">
-      <h2>Hasil &amp; Evaluasi f2</h2>
-      <p>Profil pelepasan disolusi, keseragaman antar vessel, dan pengujian kemiripan f2 menurut pedoman resmi.</p>
+      <h2>Hasil &amp; Evaluasi Kemiripan (f2)</h2>
+      <p>Profil pelepasan disolusi dan evaluasi ekivalensi in vitro (BPOM / FDA / EMA).</p>
     </div>
     <div id="p4body"></div>
     <div class="nav">
@@ -636,63 +631,58 @@ details[open] summary { margin-bottom: 8px; }
   <section class="panel" id="p5">
     <div class="section-header">
       <h2>Kirim ke Google Sheets</h2>
-      <p>Ekspor bertahap maupun langsung menggunakan tiga Master Template: Calculation, Report, dan Summary.</p>
+      <p>Ekspor hasil ke Master Template (Calculation, Report, dan Summary).</p>
     </div>
 
     <div class="banner info">
-      <b>Catatan:</b> Data hanya ditulis ke salinan baru dari template. File Master Template asli tidak pernah dimodifikasi.
+      <b>Aman:</b> Aplikasi hanya menulis ke salinan file baru di Google Drive. Template master asli tidak pernah diubah.
     </div>
 
     <div class="card">
       <h2>Koneksi Google</h2>
       <div id="conn" class="muted small" style="margin:6px 0">Memeriksa…</div>
       <div class="row" style="margin-top:8px">
-        <button class="btn" id="testBtn">Uji Koneksi &amp; Master Template</button>
+        <button class="btn" id="testBtn">Uji Koneksi</button>
       </div>
       <div id="testOut" style="margin-top:8px"></div>
     </div>
 
     <div class="card">
-      <h2>Folder Output &amp; File Summary</h2>
-      <p style="font-size:13px;color:var(--muted);margin:0 0 10px">Tentukan folder Google Drive tempat salinan disimpan. Biarkan kosong untuk menggunakan folder default bawaan.</p>
+      <h2>Lokasi Penyimpanan &amp; Summary</h2>
       <div id="folderStatus" style="margin-bottom:8px"></div>
       <div style="display:flex;gap:8px;align-items:flex-end">
         <label class="f" style="flex:1;margin:0">
-          ID Folder Output
-          <input type="text" id="folderIdInput" placeholder="Folder ID dari URL Drive (kosongkan = default)" style="font-family:monospace;font-size:12px">
+          Folder Output di Drive
+          <input type="text" id="folderIdInput" placeholder="ID folder Drive (kosongkan untuk default)" style="font-family:monospace;font-size:12px">
         </label>
         <button class="btn" id="folderVerifyBtn" style="flex-shrink:0;margin-bottom:1px">Verifikasi</button>
       </div>
       <div id="folderVerifyOut" style="margin-top:8px"></div>
-      <div class="small muted" style="margin-top:8px;line-height:1.5">
-        Cara mendapatkan ID folder: buka folder di Google Drive → salin bagian ID dari URL<br>
-        <span style="font-family:monospace;font-size:11px;opacity:.7">drive.google.com/drive/folders/<b>ID_FOLDER_DI_SINI</b></span>
-      </div>
 
       <div style="margin-top:14px;padding-top:12px;border-top:1px dashed var(--line)">
         <label class="f" style="margin:0">
-          ID / URL File Summary Produk (Opsional — untuk melanjutkan/menambah batch baru pada file Summary yang sudah ada)
-          <input type="text" id="summaryFileInput" placeholder="Kosongkan agar sistem mencari otomatis di Folder Output atau membuat Summary baru" style="font-family:monospace;font-size:12px">
+          File Summary Produk (Opsional untuk melanjutkan batch baru)
+          <input type="text" id="summaryFileInput" placeholder="ID atau URL spreadsheet Summary (opsional)" style="font-family:monospace;font-size:12px">
         </label>
       </div>
     </div>
 
     <div class="card">
-      <h2>Medium &amp; Perintah Ekspor</h2>
+      <h2>Perintah Ekspor</h2>
       <div id="sendList"></div>
       <label style="display:flex;gap:10px;align-items:flex-start;margin-top:12px;font-size:13px">
         <input type="checkbox" id="ack" style="width:auto;margin-top:3px">
-        <span>Saya memahami bahwa proses ini membuat/memperbarui salinan dari Master Template dan tidak mengubah file template asli.</span>
+        <span>Saya menyetujui pembuatan/pembaruan salinan spreadsheet.</span>
       </label>
       <div class="row" style="margin-top:14px;gap:10px;flex-wrap:wrap">
         <button class="btn primary" id="calcBtn" title="Buat file Google Sheet Calculation berisi tab Reference dan Uji">1. Calculation</button>
         <button class="btn primary" id="reportBtn" title="Generate tab Report pada file Google Sheet Calculation yang sama">2. Report</button>
         <button class="btn primary" id="summaryBtn" title="Ekspor/tambahkan data ke Master Summary sesuai tanggal dan kelompok batch">3. Summary</button>
       </div>
-      <div class="small muted" style="margin-top:8px;line-height:1.5">
-        <b>1. Calculation:</b> Membuat file Google Sheet dari Master Calculation berisi 2 tab (Reference &amp; Uji).<br>
-        <b>2. Report:</b> Menambahkan tab Report dari Master Report ke dalam file Google Sheet Calculation yang sama.<br>
-        <b>3. Summary:</b> Memindahkan/menambahkan kelompok data ke file Summary produk berdasarkan tanggal pengerjaan (Kolom A) dan batch (Kolom B), di mana Reference selalu pada urutan pertama dan batch uji baru ditempatkan berurutan di bawahnya.
+      <div class="small muted" style="margin-top:10px;line-height:1.6">
+        • <b>1. Calculation:</b> Buat spreadsheet kalkulasi (tab Reference &amp; Uji).<br>
+        • <b>2. Report:</b> Tambahkan tab Report ke spreadsheet kalkulasi.<br>
+        • <b>3. Summary:</b> Tambahkan baris data ke spreadsheet Master Summary.
       </div>
       <div class="muted small" id="sendHint" style="margin-top:6px"></div>
     </div>
@@ -1741,7 +1731,7 @@ function renderMediumSection(id){
   card.append(ul);
 
   // Larutan Standar & Bracketing
-  card.append(h('h3',null,'Larutan Standar & Bracketing (pH ' + id + ')'));
+  card.append(h('h3',null,'Area Standar & Bracketing'));
   if(!stdSets.length){
     card.append(h('div',{class:'banner err'},'Tidak ada larutan standar terdeteksi untuk pH '+id+'. Pastikan sequence memuat injeksi standar.'));
   } else {
@@ -1764,7 +1754,7 @@ function renderMediumSection(id){
 
   // Konfirmasi Pemetaan Standar ke Sampel
   if(stdSets.length > 0){
-    card.append(h('h3',null,'Konfirmasi Penggunaan Larutan Standar'));
+    card.append(h('h3',null,'Pemetaan Larutan Standar'));
     const mapGrid = h('div',{class:'grid',style:'grid-template-columns:repeat(auto-fill,minmax(280px,1fr));margin-bottom:14px'});
     
     const renderAssign = (bName, roleBadge) => {
@@ -1910,8 +1900,8 @@ function renderCondSection(){
     h('option',{value:'__custom__', selected:appPresetVal==='__custom__'},'Input Manual...')
   );
   topGrid.append(
-    h('label',{class:'f'},'Apparatus (Pilihan)', appSelect),
-    h('label',{class:'f'},'Apparatus (Nilai pada Sheet / Input Manual)', appManualInp)
+    h('label',{class:'f'},'Apparatus', appSelect),
+    h('label',{class:'f'},'Kustom / Teks Apparatus', appManualInp)
   );
 
   // Instrument dropdown + manual input
@@ -1946,15 +1936,15 @@ function renderCondSection(){
     h('option',{value:'__custom__', selected:instPresetVal==='__custom__'},'Input Manual...')
   );
   topGrid.append(
-    h('label',{class:'f'},'Instrument (Pilihan)', instSelect),
-    h('label',{class:'f'},'Instrument (Nilai pada Sheet / Input Manual)', instManualInp)
+    h('label',{class:'f'},'Instrumen', instSelect),
+    h('label',{class:'f'},'Kustom / Teks Instrumen', instManualInp)
   );
 
   // Zat Aktif (API), Kecepatan Putar, & Method Reference (Report E15)
   topGrid.append(
-    paramField(S.condParams, 'Zat Aktif (API)', 'api', {ph:'mis. Empagliflozin / Rosuvastatin Calcium', hint:'Terdeteksi otomatis dari Compound Name / Nama Produk'}),
-    paramField(S.condParams, 'Kecepatan Putar (Rotation Speed)', 'rpm', {ph:'mis. 50 rpm / 75 rpm / 100 rpm'}),
-    paramField(S.condParams, 'Method Reference (Report E15)', 'methodRef', {ph:'mis. Farmakope Indonesia (FI) VI / USP', hint:'Dituliskan ke sel E15 pada tab Report'})
+    paramField(S.condParams, 'Zat Aktif (API)', 'api', {ph:'mis. Empagliflozin / Rosuvastatin Calcium', hint:'Otomatis dari CDS'}),
+    paramField(S.condParams, 'Kecepatan Putar (RPM)', 'rpm', {ph:'mis. 50 rpm / 75 rpm / 100 rpm'}),
+    paramField(S.condParams, 'Method Reference', 'methodRef', {ph:'mis. Farmakope Indonesia (FI) VI / USP', hint:'Ditulis ke sel E15 Report'})
   );
 
   box.append(topGrid);
@@ -1962,7 +1952,7 @@ function renderCondSection(){
   // 2. Jenis Media per Medium yang Terdeteksi (Dropdown + Input Manual)
   const mIds = S.model ? sortedMediaIds(S.model) : [];
   if(mIds.length){
-    box.append(h('h3',{style:'margin-top:8px'},'Jenis Media Disolusi (Deteksi Otomatis + Opsi Dropdown & Input Manual)'));
+    box.append(h('h3',{style:'margin-top:8px'},'Media Disolusi'));
     mIds.forEach(mId => {
       const cfg = getMedConfig(mId);
       const medRow = h('div',{class:'grid',style:'grid-template-columns:repeat(auto-fill,minmax(220px,1fr));padding:10px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;background:var(--surface)'});
@@ -2010,9 +2000,9 @@ function renderCondSection(){
       );
 
       medRow.append(
-        h('label',{class:'f'},`Jenis Media (Terdeteksi: pH ${mId})`, presetSel),
-        h('label',{class:'f'},'Label Media / Nama Tab Summary (Input Manual)', codeInp),
-        h('label',{class:'f'},'Deskripsi Media pada Sheet (Input Manual)', descInp)
+        h('label',{class:'f'},`Jenis Media (pH ${mId})`, presetSel),
+        h('label',{class:'f'},'Label Tab Summary', codeInp),
+        h('label',{class:'f'},'Deskripsi Media', descInp)
       );
       box.append(medRow);
     });
@@ -2026,11 +2016,11 @@ function renderParams(){
   const gTest = $('#pgenTest'); gTest.innerHTML = '';
   gTest.append(
     paramField(S.testParams, 'Nama Produk Uji', 'product', {ph:'mis. Rosuvastatin 20 mg Tablet'}),
-    paramField(S.testParams, 'Nomor Batch Uji', 'batch', {ph:'mis. F0048J26A', hint:'Terdeteksi otomatis dari nama sampel CDS'}),
-    paramField(S.testParams, 'Nama Analis (AD Scientist)', 'analyst', {ph:'mis. Kania'}),
-    h('label',{class:'f'},'Tanggal Pengujian Produk Uji',
+    paramField(S.testParams, 'Nomor Batch Uji', 'batch', {ph:'mis. F0048J26A', hint:'Otomatis dari CDS'}),
+    paramField(S.testParams, 'Nama Analis', 'analyst', {ph:'mis. Kania'}),
+    h('label',{class:'f'},'Tanggal Pengujian',
       h('input',{type:'date', value:S.testParams.runDate||suggestedDate(), oninput:e=>{S.testParams.runDate=e.target.value; store(); renderResults();}}),
-      h('span',{class:'small muted'},S.testParams.runDate?'diatur manual':'otomatis dari CDS'))
+      h('span',{class:'small muted'},S.testParams.runDate?'manual':'otomatis'))
   );
 
   const cTest = $('#pcalcTest'); cTest.innerHTML = '';
@@ -2038,10 +2028,10 @@ function renderParams(){
     paramField(S.testParams, 'Label Claim (mg)', 'lc', {num:1}),
     paramField(S.testParams, 'Pengenceran Standar (mL)', 'dilStd', {num:1}),
     paramField(S.testParams, 'Pengenceran Sampel (mL)', 'dilSample', {num:1}),
-    paramField(S.testParams, 'Volume Media Disolusi (mL)', 'volMedia', {num:1}),
-    paramField(S.testParams, 'Volume Pengganti Media (mL)', 'volRep', {num:1}),
-    paramField(S.testParams, '% Potensi WS (% Purity)', 'pctWS', {num:1}),
-    paramField(S.testParams, 'Mr Bentuk Garam (bila garam)', 'mrCa', {num:1}),
+    paramField(S.testParams, 'Volume Media (mL)', 'volMedia', {num:1}),
+    paramField(S.testParams, 'Volume Pengganti (mL)', 'volRep', {num:1}),
+    paramField(S.testParams, '% Potensi WS', 'pctWS', {num:1}),
+    paramField(S.testParams, 'Mr Garam (bila ada)', 'mrCa', {num:1}),
     paramField(S.testParams, 'Mr Zat Aktif Bebas', 'mr', {num:1})
   );
 
@@ -2051,11 +2041,11 @@ function renderParams(){
   const gRef = $('#pgenRef'); gRef.innerHTML = '';
   gRef.append(
     paramField(S.refParams, 'Nama Produk Pembanding', 'product', {ph:'mis. Crestor 20 mg Tablet (Inovator)'}),
-    paramField(S.refParams, 'Nomor Batch Pembanding', 'batch', {ph:'mis. F0006H26A', hint:'Terdeteksi otomatis dari nama sampel CDS'}),
-    paramField(S.refParams, 'Nama Analis (AD Scientist)', 'analyst', {ph:'mis. Kania'}),
-    h('label',{class:'f'},'Tanggal Pengujian Pembanding',
+    paramField(S.refParams, 'Nomor Batch Pembanding', 'batch', {ph:'mis. F0006H26A', hint:'Otomatis dari CDS'}),
+    paramField(S.refParams, 'Nama Analis', 'analyst', {ph:'mis. Kania'}),
+    h('label',{class:'f'},'Tanggal Pengujian',
       h('input',{type:'date', value:S.refParams.runDate||suggestedDate(), oninput:e=>{S.refParams.runDate=e.target.value; store(); renderResults();}}),
-      h('span',{class:'small muted'},S.refParams.runDate?'diatur manual':'otomatis dari CDS'))
+      h('span',{class:'small muted'},S.refParams.runDate?'manual':'otomatis'))
   );
 
   const cRef = $('#pcalcRef'); cRef.innerHTML = '';
@@ -2063,10 +2053,10 @@ function renderParams(){
     paramField(S.refParams, 'Label Claim (mg)', 'lc', {num:1}),
     paramField(S.refParams, 'Pengenceran Standar (mL)', 'dilStd', {num:1}),
     paramField(S.refParams, 'Pengenceran Sampel (mL)', 'dilSample', {num:1}),
-    paramField(S.refParams, 'Volume Media Disolusi (mL)', 'volMedia', {num:1}),
-    paramField(S.refParams, 'Volume Pengganti Media (mL)', 'volRep', {num:1}),
-    paramField(S.refParams, '% Potensi WS (% Purity)', 'pctWS', {num:1}),
-    paramField(S.refParams, 'Mr Bentuk Garam (bila garam)', 'mrCa', {num:1}),
+    paramField(S.refParams, 'Volume Media (mL)', 'volMedia', {num:1}),
+    paramField(S.refParams, 'Volume Pengganti (mL)', 'volRep', {num:1}),
+    paramField(S.refParams, '% Potensi WS', 'pctWS', {num:1}),
+    paramField(S.refParams, 'Mr Garam (bila ada)', 'mrCa', {num:1}),
     paramField(S.testParams === S.refParams ? S.refParams : S.refParams, 'Mr Zat Aktif Bebas', 'mr', {num:1})
   );
 
