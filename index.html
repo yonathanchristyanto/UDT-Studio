@@ -673,14 +673,14 @@ details[open] summary { margin-bottom: 8px; }
             <h3 style="margin:0">Produk Uji</h3>
             <span class="badge ok">Uji</span>
           </div>
-          <div class="grid" id="pgenTest" style="grid-template-columns:1fr"></div>
+          <div class="grid" id="pgenTest" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px 14px"></div>
         </div>
         <div style="border:1px solid var(--line);border-radius:8px;padding:14px;background:var(--surface)">
           <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:10px">
             <h3 style="margin:0">Produk Pembanding</h3>
             <span class="badge info">Pembanding</span>
           </div>
-          <div class="grid" id="pgenRef" style="grid-template-columns:1fr"></div>
+          <div class="grid" id="pgenRef" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px 14px"></div>
         </div>
       </div>
     </div>
@@ -1489,8 +1489,8 @@ const S = {
     methodRef:'Farmakope Indonesia (FI) VI / USP'
   },
   mediaConfig:{}, // mId -> { preset, code, tabName, desc }
-  testParams:{ product:'', batch:'', analyst:'', runDate:'', ...DEF_CALC },
-  refParams:{ product:'', batch:'', analyst:'', runDate:'', ...DEF_CALC },
+  testParams:{ product:'', batch:'', manufacturer:'', mdEd:'', analyst:'', runDate:'', ...DEF_CALC },
+  refParams:{ product:'', batch:'', manufacturer:'', mdEd:'', analyst:'', runDate:'', ...DEF_CALC },
   step:1, mcp:null, dl:null, googleToken:'', tokenExp:0, customTemplates:JSON.parse(localStorage.getItem('udt_custom_tpl')||'{}'),
   outputFolderId: localStorage.getItem('udt_output_folder_id')||'',
   outputFolderName: localStorage.getItem('udt_output_folder_name')||'',
@@ -2285,6 +2285,8 @@ function renderParams(){
     gTest.append(
       paramField(S.testParams, 'Nama Produk Uji', 'product', {ph:'mis. Rosuvastatin 20 mg Tablet'}),
       paramField(S.testParams, 'Nomor Batch Uji', 'batch', {ph:'mis. F0048J26A', hint:'Otomatis dari CDS'}),
+      paramField(S.testParams, 'Manufaktur / Produsen Uji', 'manufacturer', {ph:'mis. PT Pharos Indonesia', hint:'Ditulis ke sel Report C27'}),
+      paramField(S.testParams, 'MD / ED (Mfg & Exp Date)', 'mdEd', {ph:'mis. Okt26/Okt28', hint:'Ditulis ke sel Report D24'}),
       paramField(S.testParams, 'Nama Analis', 'analyst', {ph:'mis. Kania'}),
       h('label',{class:'f'},'Tanggal Pengujian',
         h('input',{type:'date', value:S.testParams.runDate||suggestedDate(), oninput:e=>{S.testParams.runDate=e.target.value; store(); renderResults();}}),
@@ -2299,6 +2301,8 @@ function renderParams(){
     gRef.append(
       paramField(S.refParams, 'Nama Produk Pembanding', 'product', {ph:'mis. Crestor 20 mg Tablet (Inovator)'}),
       paramField(S.refParams, 'Nomor Batch Pembanding', 'batch', {ph:'mis. F0006H26A', hint:'Otomatis dari CDS'}),
+      paramField(S.refParams, 'Manufaktur / Produsen Pembanding', 'manufacturer', {ph:'mis. PT Meiji Indonesia', hint:'Ditulis ke sel Report C23'}),
+      paramField(S.refParams, 'MD / ED (Mfg & Exp Date)', 'mdEd', {ph:'mis. Nov24/Nov26', hint:'Ditulis ke sel Report D20'}),
       paramField(S.refParams, 'Nama Analis', 'analyst', {ph:'mis. Kania'}),
       h('label',{class:'f'},'Tanggal Pengujian',
         h('input',{type:'date', value:S.refParams.runDate||suggestedDate(), oninput:e=>{S.refParams.runDate=e.target.value; store(); renderResults();}}),
@@ -2983,12 +2987,20 @@ function printReportWindow(){
             <td class="lbl">Kecepatan Putar</td><td>${S.condParams.rpm || '50 rpm'}</td>
           </tr>
           <tr>
+            <td class="lbl">Manufaktur Pembanding</td><td>${S.refParams.manufacturer || '-'}</td>
+            <td class="lbl">MD / ED Pembanding</td><td>${S.refParams.mdEd || '-'}</td>
+          </tr>
+          <tr>
             <td class="lbl">Produk Uji</td><td>${tProdName}</td>
             <td class="lbl">Media Disolusi</td><td>${cfg.desc || ('Buffer pH ' + mId)}</td>
           </tr>
           <tr>
             <td class="lbl">Batch Produk Uji</td><td>${tName}</td>
             <td class="lbl">Volume Media</td><td>${(S.testParams.volMedia || 900)} mL</td>
+          </tr>
+          <tr>
+            <td class="lbl">Manufaktur Produk Uji</td><td>${S.testParams.manufacturer || '-'}</td>
+            <td class="lbl">MD / ED Produk Uji</td><td>${S.testParams.mdEd || '-'}</td>
           </tr>
           <tr>
             <td class="lbl">Bahan Aktif (API)</td><td>${S.condParams.api || '-'}</td>
@@ -3006,6 +3018,7 @@ function printReportWindow(){
             <tr>
               <th>Identitas Produk</th>
               <th>Batch</th>
+              <th>Manufaktur &amp; MD/ED</th>
               <th>Stat</th>
               ${M.times.map(t => `<th>${t}'</th>`).join('')}
             </tr>
@@ -3014,6 +3027,7 @@ function printReportWindow(){
             <tr>
               <td rowspan="3" style="vertical-align:middle;font-weight:600">${rProdName}</td>
               <td rowspan="3" style="vertical-align:middle;text-align:center">${refBatchName}</td>
+              <td rowspan="3" style="vertical-align:middle;font-size:11px;color:#475569">${S.refParams.manufacturer || '-'}${S.refParams.mdEd ? '<br><b>MD/ED:</b> ' + S.refParams.mdEd : ''}</td>
               <td style="font-weight:600;background:#f8fafc">Rata-rata</td>
               ${refCalc.stats.map(x => `<td class="num" style="font-weight:600">${fmt(x.avg, 2)}</td>`).join('')}
             </tr>
@@ -3028,6 +3042,7 @@ function printReportWindow(){
             <tr style="border-top:2px solid #cbd5e1">
               <td rowspan="3" style="vertical-align:middle;font-weight:600">${tProdName}</td>
               <td rowspan="3" style="vertical-align:middle;text-align:center">${tName}</td>
+              <td rowspan="3" style="vertical-align:middle;font-size:11px;color:#475569">${S.testParams.manufacturer || '-'}${S.testParams.mdEd ? '<br><b>MD/ED:</b> ' + S.testParams.mdEd : ''}</td>
               <td style="font-weight:600;background:#f8fafc">Rata-rata</td>
               ${tCalc.stats.map(x => `<td class="num" style="font-weight:600">${fmt(x.avg, 2)}</td>`).join('')}
             </tr>
@@ -3324,16 +3339,25 @@ async function exportPDF(){
         doc.setTextColor(100, 116, 139);
         doc.text(`Formulir Evaluasi Profil Disolusi Terbanding (Master Report)  |  Dicetak: ${dateStr}`, 105, 21.5, { align: 'center' });
 
+        const rManufacturer = S.refParams.manufacturer || '';
+        const rMdEd = S.refParams.mdEd || '';
+        const tManufacturer = S.testParams.manufacturer || '';
+        const tMdEd = S.testParams.mdEd || '';
+
         // 2. Parameter & Kondisi Pengujian (Box Grid Spreadsheet 4 Kolom)
         const condRows = [
           [{content:'Produk Pembanding', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, rProdName,
            {content:'Aparatus Disolusi', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, S.condParams.apparatus || '2 (Paddle)'],
           [{content:'Batch Pembanding', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, refBatchName,
            {content:'Kecepatan Putar', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, S.condParams.rpm || '50 rpm'],
+          [{content:'Manufaktur Pembanding', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, rManufacturer || '-',
+           {content:'MD / ED Pembanding', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, rMdEd || '-'],
           [{content:'Produk Uji', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, tProdName,
            {content:'Media Disolusi', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, cfg.desc || ('Buffer pH ' + mId)],
           [{content:'Batch Produk Uji', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, tBatchName,
            {content:'Volume Media', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, (S.testParams.volMedia || 900) + ' mL'],
+          [{content:'Manufaktur Produk Uji', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, tManufacturer || '-',
+           {content:'MD / ED Produk Uji', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, tMdEd || '-'],
           [{content:'Zat Aktif (API)', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, S.condParams.api || '-',
            {content:'Detektor / Instrumen', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, S.condParams.instrument || 'HPLC'],
           [{content:'Label Claim', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, (S.testParams.lc || 20) + ' mg',
@@ -3362,16 +3386,18 @@ async function exportPDF(){
         doc.text('RINGKASAN PERBANDINGAN PROFIL DISOLUSI (% TERLARUT)', 14, curY);
         curY += 1.5;
 
-        const compHead = [['Identitas Produk & Batch', 'Stat', ...M.times.map(t => t + "'")]];
+        const compHead = [['Identitas Produk & Batch', 'Manufaktur & MD/ED', 'Stat', ...M.times.map(t => t + "'")]];
         const compBody = [
           [
             { content: `${rProdName}\nBatch: ${refBatchName}`, rowSpan: 3, styles: { valign: 'middle', fontStyle: 'bold' } },
+            { content: `${rManufacturer || '-'}\n${rMdEd ? 'MD/ED: ' + rMdEd : ''}`.trim(), rowSpan: 3, styles: { valign: 'middle', fontSize: 6.2 } },
             'Rata-rata', ...refCalc.stats.map(x => fmt(x.avg, 2))
           ],
           ['Min', ...refCalc.stats.map(x => fmt(x.min, 2))],
           ['Max', ...refCalc.stats.map(x => fmt(x.max, 2))],
           [
             { content: `${tProdName}\nBatch: ${tBatchName}`, rowSpan: 3, styles: { valign: 'middle', fontStyle: 'bold' } },
+            { content: `${tManufacturer || '-'}\n${tMdEd ? 'MD/ED: ' + tMdEd : ''}`.trim(), rowSpan: 3, styles: { valign: 'middle', fontSize: 6.2 } },
             'Rata-rata', ...tCalc.stats.map(x => fmt(x.avg, 2))
           ],
           ['Min', ...tCalc.stats.map(x => fmt(x.min, 2))],
@@ -3386,8 +3412,9 @@ async function exportPDF(){
           headStyles: { fillColor: [241, 245, 249], textColor: [15, 23, 42], fontSize: 6.8, fontStyle: 'bold', halign: 'center' },
           bodyStyles: { fontSize: 6.8, cellPadding: 1.1, lineColor: [203, 213, 225], lineWidth: 0.2 },
           columnStyles: {
-            0: { cellWidth: 44 },
-            1: { cellWidth: 20, fontStyle: 'bold', fillColor: [248, 250, 252] }
+            0: { cellWidth: 32 },
+            1: { cellWidth: 26 },
+            2: { cellWidth: 16, fontStyle: 'bold', fillColor: [248, 250, 252] }
           },
           margin: { left: 14, right: 14 }
         });
@@ -4423,8 +4450,30 @@ async function sendReportMedium(mId){
         [S.condParams.methodRef || 'Farmakope Indonesia (FI) VI / USP']
       ]
     });
+    const rManufacturer = S.refParams.manufacturer || '';
+    const rMdEd = S.refParams.mdEd || '';
+    const tManufacturer = S.testParams.manufacturer || '';
+    const tMdEd = S.testParams.mdEd || '';
+
+    // C20 (19+rowOff): Reference Name & Batch, D20: MD/ED, C23: Manufaktur
     reportWrites.push({ range: `'${repTitle}'!C${19+rowOff}`, values: [[`${rProdName} (${refBatch})`]] });
+    reportWrites.push({ range: `'${repTitle}'!D${19+rowOff}`, values: [[rMdEd]] });
+    reportWrites.push({ range: `'${repTitle}'!C${22+rowOff}`, values: [[rManufacturer]] });
+
+    // C24 (23+rowOff): Test Name & Batch, D24: MD/ED, C27: Manufaktur
     reportWrites.push({ range: `'${repTitle}'!C${23+rowOff}`, values: [[`${tProdName} (${tBatch})`]] });
+    reportWrites.push({ range: `'${repTitle}'!D${23+rowOff}`, values: [[tMdEd]] });
+    reportWrites.push({ range: `'${repTitle}'!C${26+rowOff}`, values: [[tManufacturer]] });
+
+    // Konsistensi manufaktur pada tabel f2 dan tabel individual vessel (baris 49, 52, 70, 91 jika rowOff=1)
+    if(rManufacturer){
+      reportWrites.push({ range: `'${repTitle}'!C${48+rowOff}`, values: [[rManufacturer]] });
+      reportWrites.push({ range: `'${repTitle}'!C${69+rowOff}`, values: [[rManufacturer]] });
+    }
+    if(tManufacturer){
+      reportWrites.push({ range: `'${repTitle}'!C${51+rowOff}`, values: [[tManufacturer]] });
+      reportWrites.push({ range: `'${repTitle}'!C${90+rowOff}`, values: [[tManufacturer]] });
+    }
     // Perbaiki referensi kolom M pada baris Average/Min/Max Test Product di tabel atas Master Report agar mengacu ke baris Average/Min/Max (96..98) bukan Vessel 12 (95)
     reportWrites.push({
       range: `'${repTitle}'!M${23+rowOff}:M${25+rowOff}`,
