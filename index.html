@@ -900,7 +900,7 @@ function itemsToLines(items){
   rows.sort((a,b)=> b.y - a.y);
   return rows.map(r => r.items.sort((a,b)=>a.x-b.x).map(i=>i.s.trim()).join(' ').replace(/\s+/g,' ').trim());
 }
-const ROW_RE = /^(.*?)\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.\d+)$/;
+const ROW_RE = /^(.*?)\s+(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)$/;
 function parseRowsFromLines(lines){
   const rows = [];
   for (const ln of lines){
@@ -908,36 +908,53 @@ function parseRowsFromLines(lines){
     if (!m) continue;
     const name = m[1].trim();
     if (!name || /^(sum|mean|stddev|rsd)\b/i.test(name)) continue;
-    rows.push({name, rt:parseFloat(m[2]), area:parseFloat(m[3]), areaStr:m[3], tail:parseFloat(m[4]), plates:parseFloat(m[5])});
+    if (/^[\d\s.,]+$/.test(name) || /time\s*\[min\]/i.test(name) || /vwd\d/i.test(name) || /\bmAU\b/i.test(name)) continue;
+    rows.push({
+      name,
+      rt: parseFloat(m[2].replace(',','.')),
+      area: parseFloat(m[3].replace(',','.')),
+      areaStr: m[3].replace(',','.'),
+      tail: parseFloat(m[4].replace(',','.')),
+      plates: parseFloat(m[5].replace(',','.'))
+    });
   }
   return rows;
 }
 function parseRowsFromStream(text){
-  const i = text.search(/Plates\s+USP/i);
-  let t = i >= 0 ? text.slice(i).replace(/^Plates\s+USP/i,'') : text;
-  const re = /(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.\d+)(?=\s|$)/g;
+  const idx = text.search(/(?:Theoritical|Theoretical|Plates)\s*(?:Plates|USP)?/i);
+  let t = idx >= 0 ? text.slice(idx).replace(/^(?:Theoritical|Theoretical|Plates)\s*(?:Plates|USP)?/i,'') : text;
+  const re = /(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)(?=\s|$)/g;
   const rows = []; let last = 0, m;
   while ((m = re.exec(t))){
     const name = t.slice(last, m.index).trim();
     last = m.index + m[0].length;
     if (!name || /^(sum|mean|stddev|rsd)\b/i.test(name)) continue;
-    rows.push({name, rt:parseFloat(m[1]), area:parseFloat(m[2]), areaStr:m[2], tail:parseFloat(m[3]), plates:parseFloat(m[4])});
+    if (/^[\d\s.,]+$/.test(name) || /time\s*\[min\]/i.test(name) || /vwd\d/i.test(name) || /\bmAU\b/i.test(name)) continue;
+    rows.push({
+      name,
+      rt: parseFloat(m[1].replace(',','.')),
+      area: parseFloat(m[2].replace(',','.')),
+      areaStr: m[2].replace(',','.'),
+      tail: parseFloat(m[3].replace(',','.')),
+      plates: parseFloat(m[4].replace(',','.'))
+    });
   }
   return rows;
 }
 function parseHeaderMeta(text){
   const g = (re) => { const m = text.match(re); return m ? m[1].trim() : null; };
-  const df = g(/Data file:\s*["']?(.+?\.dx)/i) || g(/Data file:\s*([^\r\n]+)/i);
+  const df = g(/Data file:\s*["']?([\s\S]+?\.dx)/i) || g(/Data file:\s*([^\r\n]+)/i);
   const op = g(/Acq\.\s*operator:[, \t]*([^\r\n]+?)(?:\s+Column name|\r|\n|$)/i);
   const col = g(/Column name:[, \t]*([^\r\n]+?)(?:\s+Serial|\r|\n|$)/i);
   const ser = g(/Serial\s*\\?#:[, \t]*([^\s,\r\n]+)/i);
-  const cmp = g(/Compound Name[,:\s]+([A-Za-z0-9 _+-]+?)(?:\s+Sample Name|\r|\n|$)/i);
+  const cmp = g(/(?:Compound|Compound Name)[:\s]+([A-Za-z0-9 _+-]+?)(?:\s+(?:Sample Name|Name)|\r|\n|$)/i);
+  const mDate = (df || text).match(/(\d{4}-\d{2}-\d{2})/);
   return {
     operator: op ? op.replace(/^["']|["']$/g,'').trim() : null,
     column: col ? col.replace(/^["']|["']$/g,'').trim() : null,
     serial: ser ? ser.replace(/^["']|["']$/g,'').trim() : null,
     compound: cmp ? cmp.replace(/^["']|["']$/g,'').trim() : null,
-    runDate: df ? (df.match(/(\d{4}-\d{2}-\d{2})/)||[])[1] || null : null,
+    runDate: mDate ? mDate[1] : null,
   };
 }
 function parsePdfText(pagesLines){
