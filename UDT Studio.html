@@ -1089,6 +1089,7 @@ function buildUnifiedModel(injections, fileMetaMap){
       const fMeta = fileMetaMap[inj.file] || {};
       rawStdByMed[m].push({
         type: c.type,
+        role: inj.role || 'test',
         area: inj.area,
         rt: inj.rt,
         file: inj.file || 'Manual',
@@ -1103,7 +1104,7 @@ function buildUnifiedModel(injections, fileMetaMap){
     const entries = rawStdByMed[m];
     const fileGroups = {};
     for (const e of entries){
-      const fg = fileGroups[e.file] || (fileGroups[e.file] = {file: e.file, runDate: e.runDate, std:[], bsMid:[], bsEnd:[]});
+      const fg = fileGroups[e.file] || (fileGroups[e.file] = {file: e.file, role: e.role, runDate: e.runDate, std:[], bsMid:[], bsEnd:[]});
       const maxCap = e.type === 'std' ? 5 : 2;
       if (fg[e.type].length < maxCap){
         fg[e.type].push(e.area);
@@ -1125,11 +1126,22 @@ function buildUnifiedModel(injections, fileMetaMap){
     }
 
     for (const orphan of orphanSets){
-      let bestAnchor = anchorSets[0];
+      // Filter anchor kandidat: utamakan role yang sama (test vs ref)
+      const sameRoleAnchors = anchorSets.filter(a => a.role === orphan.role);
+      const candAnchors = sameRoleAnchors.length > 0 ? sameRoleAnchors : anchorSets;
+
+      let bestAnchor = candAnchors[0];
+      // 1. Prioritas utama: kecocokan tanggal runDate dalam kelompok role yang sama
       if (orphan.runDate){
-        const match = anchorSets.find(a => a.runDate === orphan.runDate);
+        const match = candAnchors.find(a => a.runDate === orphan.runDate);
         if (match) bestAnchor = match;
       }
+      // 2. Prioritas kedua: cari anchor di kelompoknya yang masih butuh slot BS
+      const needy = candAnchors.find(a => (orphan.bsMid.length && a.bsMid.length < 2) || (orphan.bsEnd.length && a.bsEnd.length < 2));
+      if (needy && (!orphan.runDate || bestAnchor.bsMid.length >= 2 || bestAnchor.bsEnd.length >= 2)){
+        bestAnchor = needy;
+      }
+
       if (bestAnchor){
         orphan.bsMid.forEach(a => { if (bestAnchor.bsMid.length < 2) bestAnchor.bsMid.push(a); });
         orphan.bsEnd.forEach(a => { if (bestAnchor.bsEnd.length < 2) bestAnchor.bsEnd.push(a); });
@@ -1143,6 +1155,7 @@ function buildUnifiedModel(injections, fileMetaMap){
       return {
         id: 'std_' + m.replace(',','_') + '_' + (idx+1),
         medium: m,
+        role: a.role || 'test',
         file: fileNames,
         runDate: a.runDate,
         name: `Standar ${(m.toLowerCase()==='air'||m.toLowerCase()==='release'||m.toLowerCase()==='rilis') ? m : ('pH ' + m)} (${fileNames})`,
@@ -1776,19 +1789,20 @@ function rebuild(){
   for(const m of Object.keys(model.media)){
     const sets = model.standardSets[m] || [];
     if(!sets.length) continue;
-    const assign = (batchDict) => {
+    const assign = (batchDict, role) => {
       for(const b of Object.keys(batchDict)){
         const k = m + '|' + b;
         const curId = S.stdMapping[k];
         const isValid = sets.some(s => s.id === curId);
         if(!isValid){
-          const match = sets.find(s => s.file.includes(batchDict[b].file));
-          S.stdMapping[k] = match ? match.id : sets[0].id;
+          const matchFile = sets.find(s => s.file.includes(batchDict[b].file));
+          const matchRole = sets.find(s => s.role === role);
+          S.stdMapping[k] = matchFile ? matchFile.id : (matchRole ? matchRole.id : sets[0].id);
         }
       }
     };
-    assign(model.media[m].testBatches);
-    assign(model.media[m].refBatches);
+    assign(model.media[m].testBatches, 'test');
+    assign(model.media[m].refBatches, 'ref');
 
     sets.forEach(s => {
       if(S.wsWeights[s.id] === undefined || !isFinite(toNum(S.wsWeights[s.id]))) {
@@ -1975,9 +1989,14 @@ function renderMediumSection(id){
       const sBox = h('div',{style:'border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:12px;background:var(--card)'});
       
       // Header Info Standar
+      const isRef = s.role === 'ref';
+      const roleBadge = h('span',{class:'badge ' + (isRef ? 'info' : 'ok'), style:'margin-left:6px;font-size:11px'}, isRef ? 'Komparator / Referensi' : 'Produk Uji');
       sBox.append(h('div',{class:'row',style:'justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px'},
         h('div',null,
-          h('b',{style:'font-size:14px'},s.name),
+          h('div',{style:'display:flex;align-items:center;gap:6px;flex-wrap:wrap'},
+            h('b',{style:'font-size:14px'},s.name),
+            roleBadge
+          ),
           h('div',{class:'small muted'},(s.runDate ? 'Tanggal CDS: '+s.runDate+' · ' : '') + 'Sumber: ' + s.file)
         ),
         stdVals.length >= 2 ? h('span',{class:'badge ' + (isStdOk ? 'ok' : (stdRsd > 2.0 ? 'warn' : 'info'))},
