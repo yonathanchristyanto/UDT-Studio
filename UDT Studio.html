@@ -604,11 +604,11 @@ details[open] summary { margin-bottom: 8px; }
             <tr><th>Jenis Injeksi</th><th>Format Penamaan Baku</th><th>Contoh</th><th>Keterangan</th></tr>
           </thead>
           <tbody>
-            <tr><td><b>Standar</b></td><td><code>Standar &lt;pH&gt; &lt;n&gt;</code> atau <code>Standar &lt;n&gt;</code></td><td><code>Standar 6.8 1</code> s/d <code>5</code></td><td>5 injeksi kalibrasi di awal</td></tr>
-            <tr><td><b>BS Mid</b></td><td><code>BS Mid &lt;pH&gt; &lt;n&gt;</code> atau <code>BS Mid &lt;n&gt;</code></td><td><code>BS Mid 6.8 1</code> dan <code>2</code></td><td>2 injeksi bracketing tengah</td></tr>
-            <tr><td><b>BS End</b></td><td><code>BS End &lt;pH&gt; &lt;n&gt;</code> atau <code>BS End &lt;n&gt;</code></td><td><code>BS End 6.8 1</code> dan <code>2</code></td><td>2 injeksi bracketing akhir</td></tr>
-            <tr><td><b>Sampel (Ringkas)</b></td><td><code>&lt;Batch&gt; MD &lt;pH&gt; &lt;Waktu&gt;' &lt;Vessel&gt;</code></td><td><code>24A01 MD 6.8 15' 1</code></td><td>Direkomendasikan</td></tr>
-            <tr><td><b>Sampel (Lengkap)</b></td><td><code>&lt;Produk&gt; &lt;Batch&gt; MD &lt;pH&gt; &lt;Waktu&gt;' &lt;Vessel&gt;</code></td><td><code>Rosuvastatin 24A01 MD 6.8 30' 6</code></td><td>Mendeteksi nama produk</td></tr>
+            <tr><td><b>Standar</b></td><td><code>Standar &lt;Media&gt; &lt;n&gt;</code> atau <code>Standar MD &lt;Media&gt; &lt;n&gt;</code></td><td><code>Standar MD Release 1</code> s/d <code>5</code></td><td>5 injeksi kalibrasi di awal</td></tr>
+            <tr><td><b>BS Mid</b></td><td><code>BS Mid &lt;Media&gt; &lt;n&gt;</code> atau <code>BS Mid MD &lt;Media&gt; &lt;n&gt;</code></td><td><code>BS Mid MD Release 1</code> dan <code>2</code></td><td>2 injeksi bracketing tengah</td></tr>
+            <tr><td><b>BS End</b></td><td><code>BS End &lt;Media&gt; &lt;n&gt;</code> atau <code>BS End MD &lt;Media&gt; &lt;n&gt;</code></td><td><code>BS End MD Release 1</code> dan <code>2</code></td><td>2 injeksi bracketing akhir</td></tr>
+            <tr><td><b>Sampel (Ringkas)</b></td><td><code>&lt;Batch&gt; MD &lt;Media&gt; &lt;Waktu&gt;' &lt;Vessel&gt;</code></td><td><code>F0047H26A MD Release 5' 1</code></td><td>Mendukung pH (1.2, 4.5, 6.8), Air, &amp; Release</td></tr>
+            <tr><td><b>Sampel (Lengkap)</b></td><td><code>&lt;Produk&gt; &lt;Batch&gt; MD &lt;Media&gt; &lt;Waktu&gt;' &lt;Vessel&gt;</code></td><td><code>Zemyc F0047H26A MD Release 30' 3</code></td><td>Mendeteksi nama produk otomatis</td></tr>
           </tbody>
         </table>
         <p class="small muted" style="margin:8px 0 0">Jika nama standar tidak memuat pH, medium ditentukan otomatis dari nama file atau sampel.</p>
@@ -799,6 +799,7 @@ function normMedium(s){
   if (!s) return '';
   const str = String(s).trim();
   if (/^(air|water)$/i.test(str)) return 'Air';
+  if (/^(release|rilis)$/i.test(str)) return 'Release';
   return str.replace(/\./g, ',');
 }
 function toNum(s){
@@ -815,6 +816,8 @@ function extractMediumFromString(str){
   if(!str) return null;
   const mAir = str.match(/\b(Air|Water)\b/i);
   if(mAir) return 'Air';
+  const mRel = str.match(/\b(Release|Rilis)\b/i);
+  if(mRel) return 'Release';
   const m1 = str.match(/(?:MD|pH|ph)\s*([0-9]+[.,][0-9]+|[0-9]+)/i);
   if(m1) return normMedium(m1[1]);
   const m2 = str.match(/([0-9]+[.,][0-9]+)/);
@@ -839,7 +842,7 @@ function classifyName(raw){
   }
 
   // 3. Deteksi Sampel UDT: [Produk] <Batch> MD <pH/Media> <Waktu>' <Vessel>
-  const sm = n.match(/^(?:(.+?)\s+)?([A-Za-z0-9_-]+)\s+(?:MD|pH|ph)\s*([0-9]+[.,][0-9]+|[0-9]+|Air|Water)\s+(\d+)\s*(?:['\u2019\u2032`\u00B4]|min|m|menit)?\s*(?:V|vessel|v)?\s*(\d+)$/i);
+  const sm = n.match(/^(?:(.+?)\s+)?([A-Za-z0-9_-]+)\s+(?:MD|pH|ph)\s*([0-9]+[.,][0-9]+|[0-9]+|Air|Water|Release|Rilis)\s+(\d+)\s*(?:['\u2019\u2032`\u00B4]|min|m|menit)?\s*(?:V|vessel|v)?\s*(\d+)$/i);
   if (sm){
     return {
       type: 'sample',
@@ -852,22 +855,22 @@ function classifyName(raw){
     };
   }
 
-  // Pola alternatif: <Batch> <pH/Media> <Waktu>' <Vessel>
-  const sm2 = n.match(/^([A-Za-z0-9_-]+)\s+([0-9]+[.,][0-9]+|Air|Water)\s+(\d+)\s*(?:['\u2019\u2032`\u00B4]|min|m)?\s*(?:V|v)?\s*(\d+)$/i);
+  // Pola alternatif: [Produk] <Batch> <pH/Media> <Waktu>' <Vessel>
+  const sm2 = n.match(/^(?:(.+?)\s+)?([A-Za-z0-9_-]+)\s+([0-9]+[.,][0-9]+|Air|Water|Release|Rilis)\s+(\d+)\s*(?:['\u2019\u2032`\u00B4]|min|m)?\s*(?:V|v)?\s*(\d+)$/i);
   if (sm2){
     return {
       type: 'sample',
-      product: '',
-      batch: sm2[1].trim(),
-      medium: normMedium(sm2[2]),
-      time: parseInt(sm2[3], 10),
-      vessel: parseInt(sm2[4], 10),
+      product: (sm2[1]||'').trim(),
+      batch: sm2[2].trim(),
+      medium: normMedium(sm2[3]),
+      time: parseInt(sm2[4], 10),
+      vessel: parseInt(sm2[5], 10),
       name: n
     };
   }
 
   // Pola dengan pemisah underscore/dash
-  const sm3 = n.match(/^([A-Za-z0-9]+)[-_](?:MD|pH|ph)?([0-9]+[.,][0-9]+|Air|Water)[-_](\d+)(?:min|m|')?[-_](?:V|v)?(\d+)$/i);
+  const sm3 = n.match(/^([A-Za-z0-9]+)[-_](?:MD|pH|ph)?([0-9]+[.,][0-9]+|Air|Water|Release|Rilis)[-_](\d+)(?:min|m|')?[-_](?:V|v)?(\d+)$/i);
   if (sm3){
     return {
       type: 'sample',
@@ -1125,7 +1128,7 @@ function buildUnifiedModel(injections, fileMetaMap){
         medium: m,
         file: fileNames,
         runDate: a.runDate,
-        name: `Standar pH ${m} (${fileNames})`,
+        name: `Standar ${(m.toLowerCase()==='air'||m.toLowerCase()==='release'||m.toLowerCase()==='rilis') ? m : ('pH ' + m)} (${fileNames})`,
         std: a.std,
         bsMid: a.bsMid,
         bsEnd: a.bsEnd
@@ -1182,7 +1185,14 @@ function refreshModelDims(M){
 
 function sortedMediaIds(model){
   if(!model || !model.media) return [];
-  return Object.keys(model.media).sort((a,b)=>parseFloat(a.replace(',','.'))-parseFloat(b.replace(',','.')));
+  return Object.keys(model.media).sort((a,b)=>{
+    const na = parseFloat(String(a).replace(',','.'));
+    const nb = parseFloat(String(b).replace(',','.'));
+    if(!isNaN(na) && !isNaN(nb)) return na - nb;
+    if(!isNaN(na)) return -1;
+    if(!isNaN(nb)) return 1;
+    return String(a).localeCompare(String(b));
+  });
 }
 
 // --- Validasi & Cek Format ---
@@ -1439,7 +1449,8 @@ const MEDIUM_PRESETS = [
   { code:'1,0', label:'pH 1,0', desc:'0,1 N HCl (pH 1,0)' },
   { code:'7,2', label:'pH 7,2', desc:'Buffer Phosphate pH 7,2' },
   { code:'7,5', label:'pH 7,5', desc:'Buffer Phosphate pH 7,5' },
-  { code:'Air', label:'Air (Water)', desc:'Purified Water (Air)' }
+  { code:'Air', label:'Air (Water)', desc:'Purified Water (Air)' },
+  { code:'Release', label:'Release', desc:'Media Disolusi Pelepasan (Release Medium)' }
 ];
 const APPARATUS_PRESETS = [
   { value:'2 (Paddle)', label:'2 (Paddle)' },
@@ -1842,11 +1853,12 @@ function renderCheck(){
 
     const cleanPH = String(id).replace(',', '.');
     const isAir = cleanPH.toLowerCase() === 'air' || cleanPH.toLowerCase() === 'water';
-    let displayTitle = cfg.tabName || (isAir ? 'Air (Water)' : ('pH ' + cleanPH));
-    if (!displayTitle.toLowerCase().includes(cleanPH.toLowerCase()) && !isAir) {
+    const isRel = cleanPH.toLowerCase() === 'release' || cleanPH.toLowerCase() === 'rilis';
+    let displayTitle = cfg.tabName || (isAir ? 'Air (Water)' : (isRel ? 'Release' : ('pH ' + cleanPH)));
+    if (!displayTitle.toLowerCase().includes(cleanPH.toLowerCase()) && !isAir && !isRel) {
       displayTitle = 'pH ' + cleanPH + ' (' + displayTitle + ')';
     }
-    const displayDesc = cfg.desc || (isAir ? 'Purified Water (Air)' : ('Buffer pH ' + cleanPH));
+    const displayDesc = cfg.desc || (isAir ? 'Purified Water (Air)' : (isRel ? 'Media Disolusi Pelepasan (Release)' : ('Buffer pH ' + cleanPH)));
 
     const btn = h('button',{
       type:'button',
@@ -2601,11 +2613,12 @@ function renderResults(){
 
     const cleanPH = String(id).replace(',', '.');
     const isAir = cleanPH.toLowerCase() === 'air' || cleanPH.toLowerCase() === 'water';
-    let displayTitle = cfg.tabName || (isAir ? 'Air (Water)' : ('pH ' + cleanPH));
-    if (!displayTitle.toLowerCase().includes(cleanPH.toLowerCase()) && !isAir) {
+    const isRel = cleanPH.toLowerCase() === 'release' || cleanPH.toLowerCase() === 'rilis';
+    let displayTitle = cfg.tabName || (isAir ? 'Air (Water)' : (isRel ? 'Release' : ('pH ' + cleanPH)));
+    if (!displayTitle.toLowerCase().includes(cleanPH.toLowerCase()) && !isAir && !isRel) {
       displayTitle = 'pH ' + cleanPH + ' (' + displayTitle + ')';
     }
-    const displayDesc = cfg.desc || (isAir ? 'Purified Water (Air)' : ('Buffer pH ' + cleanPH));
+    const displayDesc = cfg.desc || (isAir ? 'Purified Water (Air)' : (isRel ? 'Media Disolusi Pelepasan (Release)' : ('Buffer pH ' + cleanPH)));
 
     const btn = h('button',{
       type:'button',
