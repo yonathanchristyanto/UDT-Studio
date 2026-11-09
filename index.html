@@ -2041,11 +2041,38 @@ function renderCheck(){
   root.append(layout);
 }
 
+function getStdSetUsage(mId, s){
+  const M = S.model && S.model.media ? S.model.media[mId] : null;
+  const stdSets = (S.model && S.model.standardSets && S.model.standardSets[mId]) || [];
+  if(!M) return { usedByTest: s.role !== 'ref', usedByRef: s.role === 'ref', isShared: false, testBatches: [], refBatches: [] };
+  const tList = Object.keys(M.testBatches).filter(b => (S.stdMapping[mId+'|'+b] || (stdSets[0]&&stdSets[0].id)) === s.id);
+  const rList = Object.keys(M.refBatches).filter(b => (S.stdMapping[mId+'|'+b] || (stdSets[0]&&stdSets[0].id)) === s.id);
+  const usedByTest = tList.length > 0;
+  const usedByRef = rList.length > 0;
+  return {
+    usedByTest,
+    usedByRef,
+    isShared: usedByTest && usedByRef,
+    testBatches: tList,
+    refBatches: rList
+  };
+}
+
 function renderMediumSection(id){
   const M = S.model.media[id];
   const stdSets = S.model.standardSets[id] || [];
   const list = checkMediumValidation(M, stdSets);
   const st = statusOf(list);
+
+  // Cek apakah ada larutan standar yang digunakan bersama oleh Produk Uji dan Pembanding
+  const sharedUsages = stdSets.map(s => ({ std: s, usage: getStdSetUsage(id, s) })).filter(x => x.usage.isShared);
+  sharedUsages.forEach(x => {
+    list.push({
+      id: 'shared:' + x.std.id,
+      level: 'ok',
+      msg: `Standar Bersama: Produk Uji (${x.usage.testBatches.join(', ')}) dan Produk Pembanding (${x.usage.refBatches.join(', ')}) menggunakan larutan standar yang sama (${x.std.name}).`
+    });
+  });
 
   const card = h('div',{class:'card'});
   card.append(h('div',{class:'mhead'},
@@ -2076,9 +2103,13 @@ function renderMediumSection(id){
 
       const sBox = h('div',{style:'border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:12px;background:var(--card)'});
       
-      // Header Info Standar
-      const isRef = s.role === 'ref';
-      const roleBadge = h('span',{class:'badge ' + (isRef ? 'info' : 'ok'), style:'margin-left:6px;font-size:11px'}, isRef ? 'Komparator / Referensi' : 'Produk Uji');
+      // Header Info Standar (mendeteksi apakah digunakan bersama oleh Uji & Pembanding)
+      const usage = getStdSetUsage(id, s);
+      const isRef = !usage.usedByTest && (usage.usedByRef || s.role === 'ref');
+      const roleBadgeText = usage.isShared
+        ? 'Standar Bersama (Produk Uji & Pembanding)'
+        : (isRef ? 'Komparator / Referensi' : 'Produk Uji');
+      const roleBadge = h('span',{class:'badge ' + (usage.isShared ? 'ok' : (isRef ? 'info' : 'ok')), style:'margin-left:6px;font-size:11px'}, roleBadgeText);
       sBox.append(h('div',{class:'row',style:'justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px'},
         h('div',null,
           h('div',{style:'display:flex;align-items:center;gap:6px;flex-wrap:wrap'},
@@ -2170,6 +2201,7 @@ function renderMediumSection(id){
         onchange: e => {
           S.stdMapping[k] = e.target.value;
           store();
+          renderCheck();
           renderParams();
           renderResults();
         }
@@ -2181,6 +2213,22 @@ function renderMediumSection(id){
     Object.keys(M.testBatches).forEach(b => mapGrid.append(renderAssign(b, h('span',{class:'badge ok small'},'Uji'))));
     Object.keys(M.refBatches).forEach(b => mapGrid.append(renderAssign(b, h('span',{class:'badge info small'},'Ref'))));
     card.append(mapGrid);
+
+    if(sharedUsages.length > 0){
+      sharedUsages.forEach(x => {
+        card.append(h('div',{
+          class:'banner info',
+          style:'margin-top:-4px;margin-bottom:14px;display:flex;align-items:center;gap:10px;border-left:3.5px solid var(--accent)'
+        },
+          h('span',{class:'badge ok',style:'flex-shrink:0'},'Standar Bersama'),
+          h('span',{class:'small'},
+            `Produk Uji (${x.usage.testBatches.join(', ')}) dan Produk Pembanding (${x.usage.refBatches.join(', ')}) terhubung ke larutan standar yang sama: `,
+            h('b',null,x.std.name),
+            '.'
+          )
+        ));
+      });
+    }
   }
 
   // Grid Sampel Produk Uji
@@ -2592,10 +2640,13 @@ function renderWeightsForRole(containerEl, role='all'){
 
     // List Standar dalam Media Ini
     mSets.forEach(s => {
-      const isRef = s.role === 'ref';
-      const roleBadgeCls = isRef ? 'info' : 'ok';
-      const roleLabel = isRef ? 'Komparator' : 'Produk Uji';
-      const prodName = isRef ? (S.refParams.product || 'Produk Komparator') : (S.testParams.product || 'Produk Uji');
+      const usage = getStdSetUsage(mId, s);
+      const isRef = !usage.usedByTest && (usage.usedByRef || s.role === 'ref');
+      const roleBadgeCls = usage.isShared ? 'ok' : (isRef ? 'info' : 'ok');
+      const roleLabel = usage.isShared ? 'Standar Bersama' : (isRef ? 'Komparator' : 'Produk Uji');
+      const prodName = usage.isShared
+        ? `${S.testParams.product || 'Produk Uji'} & ${S.refParams.product || 'Komparator'}`
+        : (isRef ? (S.refParams.product || 'Produk Komparator') : (S.testParams.product || 'Produk Uji'));
 
       const curW = S.wsWeights[s.id] !== undefined ? S.wsWeights[s.id] : DEF_CALC.wsDefault;
       const inp = h('input',{
