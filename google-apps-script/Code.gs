@@ -1,58 +1,35 @@
 /**
  * =========================================================================
- * UDT STUDIO — GOOGLE APPS SCRIPT CONNECTOR
+ * UDT STUDIO — GOOGLE APPS SCRIPT CONNECTOR (100% NATIVE)
  * Analytical Development - Pharos Indonesia
  * =========================================================================
  *
- * Jembatan otomatis untuk menghubungkan aplikasi UDT Studio dengan
- * Google Drive & Google Sheets tanpa memerlukan login OAuth / token manual.
+ * Menggunakan layanan bawaan SpreadsheetApp & DriveApp sehingga TIDAK PERLU
+ * mengaktifkan Google Sheets API / Drive API di Google Cloud Console.
  *
- * PETUNJUK PENYIAPAN (CUKUP DILAKUKAN SEKALI):
- * 1. Buka https://script.google.com/ pada browser (gunakan akun departemen/lab).
- * 2. Klik tombol "+ New project" di pojok kiri atas.
- * 3. Beri nama proyek, misalnya: "UDT Studio Connector".
- * 4. Hapus seluruh isi pada file "Code.gs", lalu tempelkan (paste) seluruh
- *    kode dari file ini.
- * 5. Klik icon "Save" (gambar disket) atau tekan Ctrl + S.
- * 6. Klik tombol "Deploy" (warna biru di kanan atas) -> pilih "New deployment".
- * 7. Klik icon gerigi (Select type) di sebelah "Select type", pilih "Web app".
- * 8. Isi konfigurasi deployment:
- *    - Description: "UDT Studio Connector"
- *    - Execute as : "Me (email Anda/departemen)"
- *    - Who has access: "Anyone" (PENTING: pilih "Anyone" agar aplikasi dapat
- *      mengirim data tanpa popup login/token).
- * 9. Klik tombol "Deploy".
- * 10. Jika muncul "Authorization required", klik "Authorize access",
- *     pilih akun Google Anda, klik "Advanced", lalu klik "Go to UDT Studio Connector (unsafe)",
- *     dan klik "Allow".
- * 11. Salin (copy) "Web app URL" (URL yang berakhiran "/exec").
- * 12. Buka aplikasi UDT Studio -> Langkah 5 (Kirim ke Google Sheets) ->
- *     tempelkan URL tersebut ke kolom "URL Google Apps Script" dan klik "Hubungkan".
+ * CARA UPDATE SCRIPT:
+ * 1. Buka kembali proyek script Anda di https://script.google.com/
+ * 2. Hapus semua kode lama di Code.gs, lalu tempelkan kode baru ini.
+ * 3. Tekan Ctrl + S (Simpan).
+ * 4. Klik tombol "Deploy" -> "Manage deployments" (Kelola penerapan)
+ *    ATAU klik "Deploy" -> "New deployment" (Penerapan baru).
+ *    - Jika lewat "Manage deployments": klik ikon Pensil (Edit) di kanan atas,
+ *      pada bagian "Version" pilih "New version", lalu klik "Deploy".
+ *    - Jika lewat "New deployment": pilih "Web app", Execute as: "Me",
+ *      Who has access: "Anyone", lalu klik "Deploy" dan salin URL barunya.
  * =========================================================================
  */
 
-// Anchor scopes agar Google otomatis meminta izin Drive & Sheets saat deployment
-function _scopeAnchors() {
-  DriveApp.getRootFolder();
-  SpreadsheetApp.getActive();
-}
-
-/**
- * Menangani permintaan GET (untuk uji koneksi dari browser atau ping)
- */
 function doGet(e) {
   return ContentService.createTextOutput(JSON.stringify({
     ok: true,
-    service: "UDT Studio Google Connector",
+    service: "UDT Studio Google Connector (Native)",
     status: "Active",
     message: "Konektor UDT Studio siap digunakan.",
     timestamp: new Date().toISOString()
   })).setMimeType(ContentService.MimeType.JSON);
 }
 
-/**
- * Menangani permintaan POST dari aplikasi UDT Studio
- */
 function doPost(e) {
   try {
     if (!e || !e.postData || !e.postData.contents) {
@@ -62,9 +39,8 @@ function doPost(e) {
     var req = JSON.parse(e.postData.contents);
     var tool = req.tool;
     var input = req.input || {};
-    var token = ScriptApp.getOAuthToken();
 
-    var result = handleTool(tool, input, token);
+    var result = handleTool(tool, input);
 
     return ContentService.createTextOutput(JSON.stringify({
       ok: true,
@@ -79,199 +55,245 @@ function doPost(e) {
   }
 }
 
-/**
- * Eksekutor operasi Google Drive & Google Sheets
- */
-function handleTool(tool, input, token) {
-  var headers = {
-    "Authorization": "Bearer " + token,
-    "Content-Type": "application/json"
-  };
+function findSheetById(ss, sheetId) {
+  var sheets = ss.getSheets();
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].getSheetId() == sheetId) {
+      return sheets[i];
+    }
+  }
+  return null;
+}
 
+function writeRangeValues(ss, rangeStr, values) {
+  if (!values || !values.length) return;
+  var numRows = values.length;
+  var numCols = 0;
+  for (var i = 0; i < numRows; i++) {
+    if (values[i] && values[i].length > numCols) {
+      numCols = values[i].length;
+    }
+  }
+  if (numCols === 0) return;
+
+  var rect = [];
+  for (var r = 0; r < numRows; r++) {
+    var row = [];
+    for (var c = 0; c < numCols; c++) {
+      var v = (values[r] && c < values[r].length) ? values[r][c] : "";
+      row.push(v === null || v === undefined ? "" : v);
+    }
+    rect.push(row);
+  }
+
+  var rg = ss.getRange(rangeStr);
+  var sh = rg.getSheet();
+  var targetRange = sh.getRange(rg.getRow(), rg.getColumn(), numRows, numCols);
+  targetRange.setValues(rect);
+}
+
+function handleTool(tool, input) {
   // 1. Uji koneksi
   if (tool === "test_conn") {
     return { ok: true, timestamp: new Date().toISOString() };
   }
 
-  // 2. Salin template file (Drive API)
+  // 2. Salin template file (DriveApp Native)
   if (tool === "copy_file") {
-    var url = "https://www.googleapis.com/drive/v3/files/" + input.fileId + "/copy?supportsAllDrives=true";
-    var payload = {
-      name: input.title,
-      parents: input.parentId ? [input.parentId] : []
-    };
-    var res = UrlFetchApp.fetch(url, {
-      method: "post",
-      headers: headers,
-      payload: JSON.stringify(payload),
-      muteHttpExceptions: true
-    });
-
-    // Jika gagal menyimpan ke parent folder tertentu, simpan ke My Drive
-    if (res.getResponseCode() >= 400 && input.parentId) {
-      delete payload.parents;
-      res = UrlFetchApp.fetch(url, {
-        method: "post",
-        headers: headers,
-        payload: JSON.stringify(payload),
-        muteHttpExceptions: true
-      });
+    var file = DriveApp.getFileById(input.fileId);
+    var copied;
+    if (input.parentId) {
+      try {
+        var folder = DriveApp.getFolderById(input.parentId);
+        copied = file.makeCopy(input.title, folder);
+      } catch (e) {
+        copied = file.makeCopy(input.title);
+      }
+    } else {
+      copied = file.makeCopy(input.title);
     }
-
-    if (res.getResponseCode() >= 400) {
-      var err = JSON.parse(res.getContentText() || "{}");
-      throw new Error((err.error && err.error.message) || ("Gagal menyalin file (HTTP " + res.getResponseCode() + ")"));
-    }
-
-    var data = JSON.parse(res.getContentText());
     return {
-      id: data.id,
-      title: data.name,
-      viewUrl: "https://docs.google.com/spreadsheets/d/" + data.id + "/edit"
+      id: copied.getId(),
+      title: copied.getName(),
+      viewUrl: "https://docs.google.com/spreadsheets/d/" + copied.getId() + "/edit"
     };
   }
 
-  // 3. Baca metadata spreadsheet (Sheets API)
+  // 3. Baca metadata spreadsheet (SpreadsheetApp Native)
   if (tool === "get_spreadsheet") {
-    var qs = [];
-    if (input.fields) {
-      qs.push("fields=" + encodeURIComponent(Array.isArray(input.fields) ? input.fields.join(",") : input.fields));
-    }
-    if (input.includeGridData) qs.push("includeGridData=true");
-    var qStr = qs.length ? "?" + qs.join("&") : "";
-    var url = "https://sheets.googleapis.com/v4/spreadsheets/" + input.spreadsheetId + qStr;
-
-    var res = UrlFetchApp.fetch(url, {
-      method: "get",
-      headers: { "Authorization": "Bearer " + token },
-      muteHttpExceptions: true
+    var ss = SpreadsheetApp.openById(input.spreadsheetId);
+    var sheets = ss.getSheets().map(function(sh, idx) {
+      return {
+        properties: {
+          sheetId: sh.getSheetId(),
+          title: sh.getName(),
+          index: idx,
+          gridProperties: {
+            rowCount: sh.getMaxRows(),
+            columnCount: sh.getMaxColumns()
+          }
+        }
+      };
     });
-    if (res.getResponseCode() >= 400) {
-      var err = JSON.parse(res.getContentText() || "{}");
-      throw new Error((err.error && err.error.message) || ("Gagal membaca spreadsheet (HTTP " + res.getResponseCode() + ")"));
-    }
-    return JSON.parse(res.getContentText());
+    return {
+      properties: { title: ss.getName() },
+      sheets: sheets
+    };
   }
 
-  // 4. Batch update struktur tab/sheet (Sheets API)
+  // 4. Batch update struktur tab/sheet (SpreadsheetApp Native)
   if (tool === "update_spreadsheet") {
-    var url = "https://sheets.googleapis.com/v4/spreadsheets/" + input.spreadsheetId + ":batchUpdate";
-    var res = UrlFetchApp.fetch(url, {
-      method: "post",
-      headers: headers,
-      payload: JSON.stringify({ requests: input.requests }),
-      muteHttpExceptions: true
-    });
-    if (res.getResponseCode() >= 400) {
-      var err = JSON.parse(res.getContentText() || "{}");
-      throw new Error((err.error && err.error.message) || ("Gagal memperbarui spreadsheet (HTTP " + res.getResponseCode() + ")"));
+    var ss = SpreadsheetApp.openById(input.spreadsheetId);
+    var requests = input.requests || [];
+    var replies = [];
+
+    for (var i = 0; i < requests.length; i++) {
+      var r = requests[i];
+
+      if (r.duplicateSheet) {
+        var srcSh = findSheetById(ss, r.duplicateSheet.sourceSheetId) || ss.getSheets()[0];
+        var newSh = srcSh.copyTo(ss);
+        if (r.duplicateSheet.newSheetName) {
+          newSh.setName(r.duplicateSheet.newSheetName);
+        }
+        replies.push({
+          duplicateSheet: {
+            properties: {
+              sheetId: newSh.getSheetId(),
+              title: newSh.getName()
+            }
+          }
+        });
+      } else if (r.deleteSheet) {
+        var delSh = findSheetById(ss, r.deleteSheet.sheetId);
+        if (delSh && ss.getSheets().length > 1) {
+          ss.deleteSheet(delSh);
+        }
+        replies.push({});
+      } else if (r.updateSheetProperties) {
+        var props = r.updateSheetProperties.properties || {};
+        var renSh = findSheetById(ss, props.sheetId);
+        if (renSh && props.title) {
+          renSh.setName(props.title);
+        }
+        replies.push({});
+      } else if (r.appendDimension) {
+        var appSh = findSheetById(ss, r.appendDimension.sheetId);
+        if (appSh) {
+          var len = r.appendDimension.length || 1;
+          if (r.appendDimension.dimension === "ROWS") {
+            appSh.insertRowsAfter(appSh.getMaxRows(), len);
+          } else {
+            appSh.insertColumnsAfter(appSh.getMaxColumns(), len);
+          }
+        }
+        replies.push({});
+      } else if (r.copyPaste) {
+        var cpSrc = r.copyPaste.source;
+        var cpDst = r.copyPaste.destination;
+        var sSh = findSheetById(ss, cpSrc.sheetId);
+        var dSh = findSheetById(ss, cpDst.sheetId);
+        if (sSh && dSh) {
+          var numRows = cpSrc.endRowIndex - cpSrc.startRowIndex;
+          var numCols = cpSrc.endColumnIndex - cpSrc.startColumnIndex;
+          var srcRange = sSh.getRange(cpSrc.startRowIndex + 1, cpSrc.startColumnIndex + 1, numRows, numCols);
+          var dstRange = dSh.getRange(cpDst.startRowIndex + 1, cpDst.startColumnIndex + 1, numRows, numCols);
+          srcRange.copyTo(dstRange);
+        }
+        replies.push({});
+      } else {
+        replies.push({});
+      }
     }
-    return JSON.parse(res.getContentText());
+
+    SpreadsheetApp.flush();
+    return { replies: replies };
   }
 
-  // 5. Batch update isi sel & formula (Sheets API)
+  // 5. Batch update isi sel & formula (SpreadsheetApp Native)
   if (tool === "batch_update_values") {
-    var url = "https://sheets.googleapis.com/v4/spreadsheets/" + input.spreadsheetId + "/values:batchUpdate";
-    var res = UrlFetchApp.fetch(url, {
-      method: "post",
-      headers: headers,
-      payload: JSON.stringify({
-        valueInputOption: "USER_ENTERED",
-        data: input.data
-      }),
-      muteHttpExceptions: true
-    });
-    if (res.getResponseCode() >= 400) {
-      var err = JSON.parse(res.getContentText() || "{}");
-      throw new Error((err.error && err.error.message) || ("Gagal menulis data ke spreadsheet (HTTP " + res.getResponseCode() + ")"));
+    var ss = SpreadsheetApp.openById(input.spreadsheetId);
+    var items = input.data || [];
+    for (var i = 0; i < items.length; i++) {
+      writeRangeValues(ss, items[i].range, items[i].values);
     }
-    return JSON.parse(res.getContentText());
+    SpreadsheetApp.flush();
+    return { totalUpdatedEntries: items.length };
   }
 
-  // 6. Update nilai rentang tunggal (Sheets API)
+  // 6. Update nilai rentang tunggal (SpreadsheetApp Native)
   if (tool === "update_values") {
-    var url = "https://sheets.googleapis.com/v4/spreadsheets/" + input.spreadsheetId + "/values/" + encodeURIComponent(input.range) + "?valueInputOption=USER_ENTERED";
-    var res = UrlFetchApp.fetch(url, {
-      method: "put",
-      headers: headers,
-      payload: JSON.stringify({ range: input.range, values: input.values }),
-      muteHttpExceptions: true
-    });
-    if (res.getResponseCode() >= 400) {
-      var err = JSON.parse(res.getContentText() || "{}");
-      throw new Error((err.error && err.error.message) || ("Gagal menulis rentang nilai (HTTP " + res.getResponseCode() + ")"));
-    }
-    return JSON.parse(res.getContentText());
+    var ss = SpreadsheetApp.openById(input.spreadsheetId);
+    writeRangeValues(ss, input.range, input.values);
+    SpreadsheetApp.flush();
+    return { updatedRange: input.range };
   }
 
-  // 7. Baca nilai rentang sel (Sheets API)
+  // 7. Baca nilai rentang sel (SpreadsheetApp Native)
   if (tool === "get_values") {
-    var vo = input.valueRenderOption || "FORMATTED_VALUE";
-    var url = "https://sheets.googleapis.com/v4/spreadsheets/" + input.spreadsheetId + "/values/" + encodeURIComponent(input.range) + "?valueRenderOption=" + vo;
-    var res = UrlFetchApp.fetch(url, {
-      method: "get",
-      headers: { "Authorization": "Bearer " + token },
-      muteHttpExceptions: true
-    });
-    if (res.getResponseCode() >= 400) {
-      var err = JSON.parse(res.getContentText() || "{}");
-      throw new Error((err.error && err.error.message) || ("Gagal membaca nilai rentang (HTTP " + res.getResponseCode() + ")"));
-    }
-    return JSON.parse(res.getContentText());
+    var ss = SpreadsheetApp.openById(input.spreadsheetId);
+    var rg = ss.getRange(input.range);
+    var vals = (input.valueRenderOption === "UNFORMATTED_VALUE")
+      ? rg.getValues()
+      : rg.getDisplayValues();
+    return { range: input.range, values: vals };
   }
 
-  // 8. Salin sheet/tab antar-file (Sheets API)
+  // 8. Salin sheet/tab antar-file (SpreadsheetApp Native)
   if (tool === "copy_sheet_to") {
-    var url = "https://sheets.googleapis.com/v4/spreadsheets/" + input.sourceSpreadsheetId + "/sheets/" + input.sourceSheetId + ":copyTo";
-    var res = UrlFetchApp.fetch(url, {
-      method: "post",
-      headers: headers,
-      payload: JSON.stringify({ destinationSpreadsheetId: input.destinationSpreadsheetId }),
-      muteHttpExceptions: true
-    });
-    if (res.getResponseCode() >= 400) {
-      var err = JSON.parse(res.getContentText() || "{}");
-      throw new Error((err.error && err.error.message) || ("Gagal menyalin tab sheet (HTTP " + res.getResponseCode() + ")"));
+    var srcSS = SpreadsheetApp.openById(input.sourceSpreadsheetId);
+    var dstSS = SpreadsheetApp.openById(input.destinationSpreadsheetId);
+    var srcSh = findSheetById(srcSS, input.sourceSheetId) || srcSS.getSheets()[0];
+    if (!srcSh) {
+      throw new Error("Sheet sumber tidak ditemukan pada Master Report.");
     }
-    return JSON.parse(res.getContentText());
+    var copiedSh = srcSh.copyTo(dstSS);
+    SpreadsheetApp.flush();
+    return {
+      sheetId: copiedSh.getSheetId(),
+      title: copiedSh.getName()
+    };
   }
 
-  // 9. Cari file di Drive (Drive API)
+  // 9. Cari file di Drive (DriveApp Native)
   if (tool === "find_file") {
-    var qParts = [
-      "name = '" + String(input.title || "").replace(/'/g, "\\'") + "'",
-      "mimeType = 'application/vnd.google-apps.spreadsheet'",
-      "trashed = false"
-    ];
-    if (input.parentId) qParts.push("'" + input.parentId + "' in parents");
-    var url = "https://www.googleapis.com/drive/v3/files?q=" + encodeURIComponent(qParts.join(" and ")) + "&fields=files(id,name,webViewLink)&pageSize=5&supportsAllDrives=true&includeItemsFromAllDrives=true";
-    var res = UrlFetchApp.fetch(url, {
-      method: "get",
-      headers: { "Authorization": "Bearer " + token },
-      muteHttpExceptions: true
-    });
-    if (res.getResponseCode() >= 400) return { files: [] };
-    return JSON.parse(res.getContentText());
+    var filesOut = [];
+    var iter;
+    if (input.parentId) {
+      try {
+        var folder = DriveApp.getFolderById(input.parentId);
+        iter = folder.getFilesByName(input.title);
+      } catch (e) {
+        iter = DriveApp.getFilesByName(input.title);
+      }
+    } else {
+      iter = DriveApp.getFilesByName(input.title);
+    }
+    while (iter.hasNext() && filesOut.length < 5) {
+      var f = iter.next();
+      if (!f.isTrashed() && f.getMimeType() === MimeType.GOOGLE_SHEETS) {
+        filesOut.push({
+          id: f.getId(),
+          name: f.getName(),
+          webViewLink: "https://docs.google.com/spreadsheets/d/" + f.getId() + "/edit"
+        });
+      }
+    }
+    return { files: filesOut };
   }
 
-  // 10. Verifikasi folder output (Drive API)
+  // 10. Verifikasi folder output (DriveApp Native)
   if (tool === "verify_folder") {
-    var folderId = input.folderId;
-    var url = "https://www.googleapis.com/drive/v3/files/" + folderId + "?fields=id,name,mimeType&supportsAllDrives=true";
-    var res = UrlFetchApp.fetch(url, {
-      method: "get",
-      headers: { "Authorization": "Bearer " + token },
-      muteHttpExceptions: true
-    });
-    if (res.getResponseCode() >= 400) {
-      var err = JSON.parse(res.getContentText() || "{}");
-      throw new Error((err.error && err.error.message) || ("Folder tidak ditemukan (HTTP " + res.getResponseCode() + ")"));
+    try {
+      var folder = DriveApp.getFolderById(input.folderId);
+      return {
+        id: folder.getId(),
+        name: folder.getName(),
+        mimeType: "application/vnd.google-apps.folder"
+      };
+    } catch (e) {
+      throw new Error("Folder tidak ditemukan atau akun tidak memiliki akses (" + (e.message || e) + ").");
     }
-    var data = JSON.parse(res.getContentText());
-    if (data.mimeType !== "application/vnd.google-apps.folder") {
-      throw new Error("ID tersebut bukan folder Google Drive.");
-    }
-    return data;
   }
 
   throw new Error("Alat '" + tool + "' tidak dikenali.");
