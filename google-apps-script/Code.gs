@@ -1,19 +1,11 @@
 /**
  * =========================================================================
- * UDT STUDIO — GOOGLE APPS SCRIPT CONNECTOR (100% NATIVE)
+ * UDT STUDIO — GOOGLE APPS SCRIPT CONNECTOR (100% NATIVE SPREADSHEETAPP)
  * Analytical Development - Pharos Indonesia
  * =========================================================================
  */
 
 function doGet(e) {
-  // Baris di bawah ini wajib ada agar detektor otomatis Google Apps Script
-  // meminta izin PENUH Google Drive (https://www.googleapis.com/auth/drive)
-  // untuk keperluan menyalin template (makeCopy):
-  if (false) {
-    DriveApp.createFile("scope_check", "");
-    SpreadsheetApp.create("scope_check");
-  }
-
   return ContentService.createTextOutput(JSON.stringify({
     ok: true,
     service: "UDT Studio Google Connector (Native)",
@@ -90,23 +82,34 @@ function handleTool(tool, input) {
     return { ok: true, timestamp: new Date().toISOString() };
   }
 
+  // Menyalin spreadsheet menggunakan SpreadsheetApp.copy() (tidak memerlukan izin tulis DriveApp)
   if (tool === "copy_file") {
-    var file = DriveApp.getFileById(input.fileId);
-    var copied;
-    if (input.parentId) {
-      try {
-        var folder = DriveApp.getFolderById(input.parentId);
-        copied = file.makeCopy(input.title, folder);
-      } catch (e) {
-        copied = file.makeCopy(input.title);
+    var copiedId = "";
+    var copiedName = "";
+    try {
+      var srcSS = SpreadsheetApp.openById(input.fileId);
+      var newSS = srcSS.copy(input.title);
+      copiedId = newSS.getId();
+      copiedName = newSS.getName();
+
+      // Opsional: jika izin Drive tersedia, pindahkan ke folder tujuan
+      if (input.parentId) {
+        try {
+          var folder = DriveApp.getFolderById(input.parentId);
+          DriveApp.getFileById(copiedId).moveTo(folder);
+        } catch (moveErr) {}
       }
-    } else {
-      copied = file.makeCopy(input.title);
+    } catch (ssErr) {
+      var file = DriveApp.getFileById(input.fileId);
+      var copied = file.makeCopy(input.title);
+      copiedId = copied.getId();
+      copiedName = copied.getName();
     }
+
     return {
-      id: copied.getId(),
-      title: copied.getName(),
-      viewUrl: "https://docs.google.com/spreadsheets/d/" + copied.getId() + "/edit"
+      id: copiedId,
+      title: copiedName,
+      viewUrl: "https://docs.google.com/spreadsheets/d/" + copiedId + "/edit"
     };
   }
 
@@ -242,27 +245,29 @@ function handleTool(tool, input) {
 
   if (tool === "find_file") {
     var filesOut = [];
-    var iter;
-    if (input.parentId) {
-      try {
-        var folder = DriveApp.getFolderById(input.parentId);
-        iter = folder.getFilesByName(input.title);
-      } catch (e) {
+    try {
+      var iter;
+      if (input.parentId) {
+        try {
+          var folder = DriveApp.getFolderById(input.parentId);
+          iter = folder.getFilesByName(input.title);
+        } catch (e) {
+          iter = DriveApp.getFilesByName(input.title);
+        }
+      } else {
         iter = DriveApp.getFilesByName(input.title);
       }
-    } else {
-      iter = DriveApp.getFilesByName(input.title);
-    }
-    while (iter.hasNext() && filesOut.length < 5) {
-      var f = iter.next();
-      if (!f.isTrashed() && f.getMimeType() === MimeType.GOOGLE_SHEETS) {
-        filesOut.push({
-          id: f.getId(),
-          name: f.getName(),
-          webViewLink: "https://docs.google.com/spreadsheets/d/" + f.getId() + "/edit"
-        });
+      while (iter.hasNext() && filesOut.length < 5) {
+        var f = iter.next();
+        if (!f.isTrashed() && f.getMimeType() === MimeType.GOOGLE_SHEETS) {
+          filesOut.push({
+            id: f.getId(),
+            name: f.getName(),
+            webViewLink: "https://docs.google.com/spreadsheets/d/" + f.getId() + "/edit"
+          });
+        }
       }
-    }
+    } catch (e) {}
     return { files: filesOut };
   }
 
