@@ -3589,14 +3589,17 @@ function printReportWindow(){
         if(i < f2Res.n) sumSq += sq;
       }
 
+      const rawRpm = String(S.condParams.rpm || '').trim();
+      const rpmFormatted = rawRpm ? (rawRpm.toLowerCase().endsWith('rpm') ? rawRpm : rawRpm + ' rpm') : '–';
+
       const f2Label = isFinite(f2Res.f2) ? `f2 = ${fmtF2(f2Res.f2)}` : 'f2: N/A';
       let conclusionBadge = '';
       if(f2Res.both85at15){
-        conclusionBadge = `<div class="f2-badge ok"><div class="f2-badge-score">${f2Label}</div><div class="f2-badge-body"><b>DISSOLUSI SANGAT CEPAT (VERY RAPID DISSOLUTION)</b><br>Kedua produk (${testFullName} vs ${refFullName}) mencapai &ge; 85% dalam 15 menit (<b>n = ${f2Res.n}</b>). Profil disolusi dinilai similar.</div></div>`;
+        conclusionBadge = `<div class="f2-badge ok"><div class="f2-badge-score">${f2Label}</div><div class="f2-badge-body"><b>SIMILAR</b><br>Kedua produk mencapai &ge; 85% dalam 15 menit (n = ${f2Res.n}). Perhitungan f2 untuk informasi saja.</div></div>`;
       } else if(f2Res.isSimilar){
-        conclusionBadge = `<div class="f2-badge ok"><div class="f2-badge-score">${f2Label}</div><div class="f2-badge-body"><b>PROFIL DISOLUSI SIMILAR (50 &ndash; 100) &mdash; ${testFullName} vs ${refFullName}</b><br><b>n = ${f2Res.n}</b>${f2Res.usedTimes && f2Res.usedTimes.length ? ` (${f2Res.usedTimes.map(t=>t+"'").join(', ')})` : ''} &bull; Total &sum;(Rt-Tt)&sup2; = ${fmt(sumSq, 0)}</div></div>`;
+        conclusionBadge = `<div class="f2-badge ok"><div class="f2-badge-score">${f2Label}</div><div class="f2-badge-body"><b>SIMILAR</b><br><b>n = ${f2Res.n}</b>${f2Res.usedTimes && f2Res.usedTimes.length ? ` (${f2Res.usedTimes.map(t=>t+"'").join(', ')})` : ''} &bull; Total &sum;(Rt-Tt)&sup2; = ${fmt(sumSq, 0)}</div></div>`;
       } else {
-        conclusionBadge = `<div class="f2-badge warn"><div class="f2-badge-score">${f2Label}</div><div class="f2-badge-body"><b>PROFIL DISOLUSI NOT SIMILAR (&lt; 50) &mdash; ${testFullName} vs ${refFullName}</b><br><b>n = ${f2Res.n}</b>${f2Res.usedTimes && f2Res.usedTimes.length ? ` (${f2Res.usedTimes.map(t=>t+"'").join(', ')})` : ''} &bull; Total &sum;(Rt-Tt)&sup2; = ${fmt(sumSq, 0)}</div></div>`;
+        conclusionBadge = `<div class="f2-badge warn"><div class="f2-badge-score">${f2Label}</div><div class="f2-badge-body"><b>NOT SIMILAR</b><br><b>n = ${f2Res.n}</b>${f2Res.usedTimes && f2Res.usedTimes.length ? ` (${f2Res.usedTimes.map(t=>t+"'").join(', ')})` : ''} &bull; Total &sum;(Rt-Tt)&sup2; = ${fmt(sumSq, 0)}</div></div>`;
       }
 
       // HALAMAN 1: Master Report Summary
@@ -3611,36 +3614,20 @@ function printReportWindow(){
         <div class="sec-title">1. PARAMETER &amp; KONDISI PENGUJIAN</div>
         <table class="sheet-table">
           <tr>
-            <td class="lbl">Produk Pembanding</td><td><b>${refFullName}</b></td>
-            <td class="lbl">Aparatus Disolusi</td><td>${S.condParams.apparatus || '–'}</td>
+            <td class="lbl">Reference Product</td><td><b>${rProdName}</b></td>
+            <td class="lbl">Test Product</td><td><b>${tProdName}</b></td>
           </tr>
           <tr>
-            <td class="lbl">Batch Pembanding</td><td>${refBatchName}</td>
-            <td class="lbl">Kecepatan Putar</td><td>${S.condParams.rpm || '–'}</td>
+            <td class="lbl">Medium</td><td>${cfg.desc || ('Buffer pH ' + mId)}</td>
+            <td class="lbl">Volume medium</td><td>${S.testParams.volMedia ? S.testParams.volMedia + ' ml' : '–'}</td>
           </tr>
           <tr>
-            <td class="lbl">Manufaktur Pembanding</td><td>${S.refParams.manufacturer || '-'}</td>
-            <td class="lbl">MD / ED Pembanding</td><td>${S.refParams.mdEd || '-'}</td>
+            <td class="lbl">Apparatus</td><td>${S.condParams.apparatus || '–'}</td>
+            <td class="lbl">Rotation speed</td><td>${rpmFormatted}</td>
           </tr>
           <tr>
-            <td class="lbl">Produk Uji</td><td><b>${testFullName}</b></td>
-            <td class="lbl">Media Disolusi</td><td>${cfg.desc || ('Buffer pH ' + mId)}</td>
-          </tr>
-          <tr>
-            <td class="lbl">Batch Produk Uji</td><td>${tName}</td>
-            <td class="lbl">Volume Media</td><td>${S.testParams.volMedia ? S.testParams.volMedia + " mL" : "–"}</td>
-          </tr>
-          <tr>
-            <td class="lbl">Manufaktur Produk Uji</td><td>${S.testParams.manufacturer || '-'}</td>
-            <td class="lbl">MD / ED Produk Uji</td><td>${S.testParams.mdEd || '-'}</td>
-          </tr>
-          <tr>
-            <td class="lbl">Bahan Aktif (API)</td><td>${S.condParams.api || '-'}</td>
-            <td class="lbl">Detektor / Instrumen</td><td>${S.condParams.instrument || '–'}</td>
-          </tr>
-          <tr>
-            <td class="lbl">Label Claim</td><td>${S.testParams.lc ? S.testParams.lc + " mg" : "–"}</td>
-            <td class="lbl">Acuan Metode</td><td>${S.condParams.methodRef || '–'}</td>
+            <td class="lbl">Analytical method</td><td>${S.condParams.instrument || '–'}</td>
+            <td class="lbl">Method reference</td><td>${S.condParams.methodRef || '–'}</td>
           </tr>
         </table>
 
@@ -3656,32 +3643,40 @@ function printReportWindow(){
           </thead>
           <tbody>
             <tr>
-              <td rowspan="3" style="vertical-align:middle;font-weight:700">${refFullName}</td>
-              <td rowspan="3" style="vertical-align:middle;font-size:11px;color:#475569">${S.refParams.manufacturer || '-'}${S.refParams.mdEd ? '<br><b>MD/ED:</b> ' + S.refParams.mdEd : ''}</td>
-              <td style="font-weight:600;background:#f8fafc">Rata-rata</td>
-              ${refCalc.stats.map(x => `<td class="num" style="font-weight:600">${fmt(x.avg, 0)}</td>`).join('')}
+              <td rowspan="4" style="vertical-align:middle;font-weight:700">${refFullName}</td>
+              <td rowspan="4" style="vertical-align:middle;font-size:11px;color:#475569">${S.refParams.manufacturer || '-'}${S.refParams.mdEd ? '<br><b>MD/ED:</b> ' + S.refParams.mdEd : ''}</td>
+              <td style="font-weight:600;background:#f8fafc;vertical-align:middle">Rata-rata</td>
+              ${refCalc.stats.map(x => `<td class="num" style="font-weight:600;vertical-align:middle">${fmt(x.avg, 0)}</td>`).join('')}
             </tr>
             <tr>
-              <td style="background:#f8fafc">Min</td>
-              ${refCalc.stats.map(x => `<td class="num">${fmt(x.min, 0)}</td>`).join('')}
+              <td style="background:#f8fafc;vertical-align:middle">Min</td>
+              ${refCalc.stats.map(x => `<td class="num" style="vertical-align:middle">${fmt(x.min, 0)}</td>`).join('')}
             </tr>
             <tr>
-              <td style="background:#f8fafc">Max</td>
-              ${refCalc.stats.map(x => `<td class="num">${fmt(x.max, 0)}</td>`).join('')}
+              <td style="background:#f8fafc;vertical-align:middle">Max</td>
+              ${refCalc.stats.map(x => `<td class="num" style="vertical-align:middle">${fmt(x.max, 0)}</td>`).join('')}
+            </tr>
+            <tr>
+              <td style="background:#f8fafc;vertical-align:middle">% RSD</td>
+              ${refCalc.stats.map(x => `<td class="num" style="vertical-align:middle">${fmt(x.rsd, 1)}%</td>`).join('')}
             </tr>
             <tr style="border-top:2px solid #cbd5e1">
-              <td rowspan="3" style="vertical-align:middle;font-weight:700">${testFullName}</td>
-              <td rowspan="3" style="vertical-align:middle;font-size:11px;color:#475569">${S.testParams.manufacturer || '-'}${S.testParams.mdEd ? '<br><b>MD/ED:</b> ' + S.testParams.mdEd : ''}</td>
-              <td style="font-weight:600;background:#f8fafc">Rata-rata</td>
-              ${tCalc.stats.map(x => `<td class="num" style="font-weight:600">${fmt(x.avg, 0)}</td>`).join('')}
+              <td rowspan="4" style="vertical-align:middle;font-weight:700">${testFullName}</td>
+              <td rowspan="4" style="vertical-align:middle;font-size:11px;color:#475569">${S.testParams.manufacturer || '-'}${S.testParams.mdEd ? '<br><b>MD/ED:</b> ' + S.testParams.mdEd : ''}</td>
+              <td style="font-weight:600;background:#f8fafc;vertical-align:middle">Rata-rata</td>
+              ${tCalc.stats.map(x => `<td class="num" style="font-weight:600;vertical-align:middle">${fmt(x.avg, 0)}</td>`).join('')}
             </tr>
             <tr>
-              <td style="background:#f8fafc">Min</td>
-              ${tCalc.stats.map(x => `<td class="num">${fmt(x.min, 0)}</td>`).join('')}
+              <td style="background:#f8fafc;vertical-align:middle">Min</td>
+              ${tCalc.stats.map(x => `<td class="num" style="vertical-align:middle">${fmt(x.min, 0)}</td>`).join('')}
             </tr>
             <tr>
-              <td style="background:#f8fafc">Max</td>
-              ${tCalc.stats.map(x => `<td class="num">${fmt(x.max, 0)}</td>`).join('')}
+              <td style="background:#f8fafc;vertical-align:middle">Max</td>
+              ${tCalc.stats.map(x => `<td class="num" style="vertical-align:middle">${fmt(x.max, 0)}</td>`).join('')}
+            </tr>
+            <tr>
+              <td style="background:#f8fafc;vertical-align:middle">% RSD</td>
+              ${tCalc.stats.map(x => `<td class="num" style="vertical-align:middle">${fmt(x.rsd, 1)}%</td>`).join('')}
             </tr>
           </tbody>
         </table>
@@ -3725,7 +3720,7 @@ function printReportWindow(){
       <!-- HALAMAN 2: Individual 12 Vessels -->
       <div class="sheet-page">
         <div class="rep-header">
-          <h1>DATA RINCI DISOLUSI INDIVIDUAL (12 VESSEL)</h1>
+          <h1>HASIL ANALISIS DISOLUSI</h1>
           <div class="rep-sub">Analytical Development - Pharos Indonesia</div>
           <p>Medium: ${cfg.desc || ('Buffer pH ' + mId)} &bull; ${refFullName} vs ${testFullName}</p>
         </div>
@@ -3758,7 +3753,7 @@ function printReportWindow(){
               ${refCalc.stats.map(x => `<td class="num">${fmt(x.max, 0)}</td>`).join('')}
             </tr>
             <tr>
-              <td style="text-align:center">Standar Deviasi (SD)</td>
+              <td style="text-align:center">SD</td>
               ${refCalc.stats.map(x => `<td class="num">${fmt(x.sd, 1)}</td>`).join('')}
             </tr>
             <tr style="background:#f1f5f9;font-weight:600">
@@ -3796,7 +3791,7 @@ function printReportWindow(){
               ${tCalc.stats.map(x => `<td class="num">${fmt(x.max, 0)}</td>`).join('')}
             </tr>
             <tr>
-              <td style="text-align:center">Standar Deviasi (SD)</td>
+              <td style="text-align:center">SD</td>
               ${tCalc.stats.map(x => `<td class="num">${fmt(x.sd, 1)}</td>`).join('')}
             </tr>
             <tr style="background:#f1f5f9;font-weight:600">
@@ -3829,7 +3824,7 @@ function printReportWindow(){
     .rep-header p { margin: 0; font-size: 8.5px; color: #64748b; }
     .sec-title { font-size: 10.5px; font-weight: 700; color: #0071e3; margin: 10px 0 5px; border-bottom: 1.5px solid #0071e3; padding-bottom: 2px; }
     table.sheet-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 9.5px; }
-    table.sheet-table th, table.sheet-table td { border: 1px solid #cbd5e1; padding: 4px 6px; }
+    table.sheet-table th, table.sheet-table td { border: 1px solid #cbd5e1; padding: 4px 6px; vertical-align: middle; }
     table.sheet-table th { background: #f1f5f9; color: #1e293b; font-weight: 600; text-align: center; }
     table.sheet-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
     table.sheet-table td.lbl { background: #f8fafc; font-weight: 600; color: #475569; width: 22%; }
@@ -3953,24 +3948,19 @@ async function exportPDF(){
         const tManufacturer = S.testParams.manufacturer || '';
         const tMdEd = S.testParams.mdEd || '';
 
-        // 2. Parameter & Kondisi Pengujian (Box Grid Spreadsheet 4 Kolom)
+        const rawRpm = String(S.condParams.rpm || '').trim();
+        const rpmFormatted = rawRpm ? (rawRpm.toLowerCase().endsWith('rpm') ? rawRpm : rawRpm + ' rpm') : '–';
+
+        // 2. Parameter & Kondisi Pengujian (Persis Format Sheet Master Report E8:E15)
         const condRows = [
-          [{content:'Produk Pembanding', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, {content:refFullName, styles:{fontStyle:'bold'}},
-           {content:'Aparatus Disolusi', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, S.condParams.apparatus || '–'],
-          [{content:'Batch Pembanding', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, refBatchName,
-           {content:'Kecepatan Putar', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, S.condParams.rpm || '–'],
-          [{content:'Manufaktur Pembanding', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, rManufacturer || '-',
-           {content:'MD / ED Pembanding', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, rMdEd || '-'],
-          [{content:'Produk Uji', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, {content:testFullName, styles:{fontStyle:'bold'}},
-           {content:'Media Disolusi', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, cfg.desc || ('Buffer pH ' + mId)],
-          [{content:'Batch Produk Uji', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, tBatchName,
-           {content:'Volume Media', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, S.testParams.volMedia ? S.testParams.volMedia + ' mL' : '–'],
-          [{content:'Manufaktur Produk Uji', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, tManufacturer || '-',
-           {content:'MD / ED Produk Uji', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, tMdEd || '-'],
-          [{content:'Zat Aktif (API)', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, S.condParams.api || '-',
-           {content:'Detektor / Instrumen', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, S.condParams.instrument || '–'],
-          [{content:'Label Claim', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, S.testParams.lc ? S.testParams.lc + ' mg' : '–',
-           {content:'Acuan Metode', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, S.condParams.methodRef || '–']
+          [{content:'Reference Product', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, {content:rProdName, styles:{fontStyle:'bold'}},
+           {content:'Test Product', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, {content:tProdName, styles:{fontStyle:'bold'}}],
+          [{content:'Medium', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, cfg.desc || ('Buffer pH ' + mId),
+           {content:'Volume medium', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, S.testParams.volMedia ? S.testParams.volMedia + ' ml' : '–'],
+          [{content:'Apparatus', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, S.condParams.apparatus || '–',
+           {content:'Rotation speed', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, rpmFormatted],
+          [{content:'Analytical method', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, S.condParams.instrument || '–',
+           {content:'Method reference', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, S.condParams.methodRef || '–']
         ];
 
         doc.autoTable({
@@ -3998,19 +3988,21 @@ async function exportPDF(){
         const compHead = [['Identitas Produk & Batch', 'Manufaktur & MD/ED', 'Stat', ...M.times.map(t => t + "'")]];
         const compBody = [
           [
-            { content: refFullName, rowSpan: 3, styles: { valign: 'middle', fontStyle: 'bold' } },
-            { content: `${rManufacturer || '-'}\n${rMdEd ? 'MD/ED: ' + rMdEd : ''}`.trim(), rowSpan: 3, styles: { valign: 'middle', fontSize: 6.2 } },
+            { content: refFullName, rowSpan: 4, styles: { valign: 'middle', fontStyle: 'bold' } },
+            { content: `${rManufacturer || '-'}\n${rMdEd ? 'MD/ED: ' + rMdEd : ''}`.trim(), rowSpan: 4, styles: { valign: 'middle', fontSize: 6.2 } },
             'Rata-rata', ...refCalc.stats.map(x => fmt(x.avg, 0))
           ],
           ['Min', ...refCalc.stats.map(x => fmt(x.min, 0))],
           ['Max', ...refCalc.stats.map(x => fmt(x.max, 0))],
+          ['% RSD', ...refCalc.stats.map(x => fmt(x.rsd, 1) + '%')],
           [
-            { content: testFullName, rowSpan: 3, styles: { valign: 'middle', fontStyle: 'bold' } },
-            { content: `${tManufacturer || '-'}\n${tMdEd ? 'MD/ED: ' + tMdEd : ''}`.trim(), rowSpan: 3, styles: { valign: 'middle', fontSize: 6.2 } },
+            { content: testFullName, rowSpan: 4, styles: { valign: 'middle', fontStyle: 'bold' } },
+            { content: `${tManufacturer || '-'}\n${tMdEd ? 'MD/ED: ' + tMdEd : ''}`.trim(), rowSpan: 4, styles: { valign: 'middle', fontSize: 6.2 } },
             'Rata-rata', ...tCalc.stats.map(x => fmt(x.avg, 0))
           ],
           ['Min', ...tCalc.stats.map(x => fmt(x.min, 0))],
-          ['Max', ...tCalc.stats.map(x => fmt(x.max, 0))]
+          ['Max', ...tCalc.stats.map(x => fmt(x.max, 0))],
+          ['% RSD', ...tCalc.stats.map(x => fmt(x.rsd, 1) + '%')]
         ];
 
         doc.autoTable({
@@ -4018,12 +4010,13 @@ async function exportPDF(){
           head: compHead,
           body: compBody,
           theme: 'grid',
-          headStyles: { fillColor: [241, 245, 249], textColor: [15, 23, 42], fontSize: 6.8, fontStyle: 'bold', halign: 'center' },
-          bodyStyles: { fontSize: 6.8, cellPadding: 1.1, lineColor: [203, 213, 225], lineWidth: 0.2 },
+          styles: { valign: 'middle', fontSize: 6.8, cellPadding: 1.0, lineColor: [203, 213, 225], lineWidth: 0.2 },
+          headStyles: { valign: 'middle', fillColor: [241, 245, 249], textColor: [15, 23, 42], fontSize: 6.8, fontStyle: 'bold', halign: 'center' },
+          bodyStyles: { valign: 'middle', fontSize: 6.8, cellPadding: 1.0, lineColor: [203, 213, 225], lineWidth: 0.2 },
           columnStyles: {
             0: { cellWidth: 32 },
             1: { cellWidth: 26 },
-            2: { cellWidth: 16, fontStyle: 'bold', fillColor: [248, 250, 252] }
+            2: { cellWidth: 16, fontStyle: 'bold', halign: 'center', fillColor: [248, 250, 252] }
           },
           margin: { left: 14, right: 14 }
         });
@@ -4084,18 +4077,18 @@ async function exportPDF(){
         const f2Label = isFinite(f2Res.f2) ? `f2 = ${fmtF2(f2Res.f2)}` : 'f2: N/A';
         const usedTimesLabel = f2Res.usedTimes && f2Res.usedTimes.length ? ` (${f2Res.usedTimes.map(t=>t+"'").join(', ')})` : '';
 
-        let boxBg = [236, 253, 245], boxBorder = [5, 150, 105], boxTitle = `PROFIL DISOLUSI SIMILAR (50 - 100) — ${testFullName} vs ${refFullName}`;
+        let boxBg = [236, 253, 245], boxBorder = [5, 150, 105], boxTitle = 'SIMILAR';
         let boxDesc = `n = ${f2Res.n}${usedTimesLabel}  |  Total Sigma(Rt-Tt)^2 = ${fmt(sumSq, 0)}`;
 
         if(f2Res.both85at15){
           boxBg = [236, 253, 245];
           boxBorder = [5, 150, 105];
-          boxTitle = `DISSOLUSI SANGAT CEPAT (VERY RAPID DISSOLUTION) — ${testFullName} vs ${refFullName}`;
-          boxDesc = `n = ${f2Res.n}  |  Kedua produk mencapai >= 85% dalam 15 menit (Similar).`;
+          boxTitle = 'SIMILAR';
+          boxDesc = `n = ${f2Res.n}  |  Kedua produk mencapai >= 85% dalam 15 menit. Perhitungan f2 untuk informasi saja.`;
         } else if(!f2Res.isSimilar){
           boxBg = [255, 251, 235];
           boxBorder = [217, 119, 6];
-          boxTitle = `PROFIL DISOLUSI NOT SIMILAR (< 50) — ${testFullName} vs ${refFullName}`;
+          boxTitle = 'NOT SIMILAR';
         }
 
         doc.setFontSize(8.2);
@@ -4143,7 +4136,7 @@ async function exportPDF(){
         doc.setFontSize(10.5);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(15, 23, 42);
-        doc.text('DATA RINCI DISOLUSI INDIVIDUAL (12 VESSEL)', 105, 15.2, { align: 'center' });
+        doc.text('HASIL ANALISIS DISOLUSI', 105, 15.2, { align: 'center' });
 
         doc.setFontSize(8);
         doc.setFont('helvetica', 'bold');
@@ -4171,7 +4164,7 @@ async function exportPDF(){
         refBody.push(['Rata-rata', ...refCalc.stats.map(x => fmt(x.avg, 0))]);
         refBody.push(['Min', ...refCalc.stats.map(x => fmt(x.min, 0))]);
         refBody.push(['Max', ...refCalc.stats.map(x => fmt(x.max, 0))]);
-        refBody.push(['Standar Deviasi (SD)', ...refCalc.stats.map(x => fmt(x.sd, 1))]);
+        refBody.push(['SD', ...refCalc.stats.map(x => fmt(x.sd, 1))]);
         refBody.push(['% RSD', ...refCalc.stats.map(x => fmt(x.rsd, 1) + '%')]);
 
         doc.autoTable({
@@ -4201,7 +4194,7 @@ async function exportPDF(){
         testBody.push(['Rata-rata', ...tCalc.stats.map(x => fmt(x.avg, 0))]);
         testBody.push(['Min', ...tCalc.stats.map(x => fmt(x.min, 0))]);
         testBody.push(['Max', ...tCalc.stats.map(x => fmt(x.max, 0))]);
-        testBody.push(['Standar Deviasi (SD)', ...tCalc.stats.map(x => fmt(x.sd, 1))]);
+        testBody.push(['SD', ...tCalc.stats.map(x => fmt(x.sd, 1))]);
         testBody.push(['% RSD', ...tCalc.stats.map(x => fmt(x.rsd, 1) + '%')]);
 
         doc.autoTable({
@@ -4219,7 +4212,7 @@ async function exportPDF(){
       }
     }
 
-    // Nomor Halaman & Footer Resmi pada Setiap Halaman
+    // Nomor Halaman pada Setiap Halaman
     const pageCount = doc.internal.getNumberOfPages();
     for(let p = 1; p <= pageCount; p++){
       doc.setPage(p);
@@ -4227,7 +4220,6 @@ async function exportPDF(){
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(148, 163, 184);
       doc.text(`Halaman ${p} dari ${pageCount}`, 196, 289, { align: 'right' });
-      doc.text('UDT Studio  |  Laporan Resmi Uji Disolusi Terbanding (Master Report Format)', 14, 289);
     }
 
     const safeName = (tProdName + '_' + (S.testParams.batch || 'UDT')).replace(/[^a-zA-Z0-9_-]/g, '_');
