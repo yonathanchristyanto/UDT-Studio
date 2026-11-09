@@ -385,16 +385,81 @@ td input.num, .cellin { width: 92px; text-align: right; padding: 4px 8px; font-v
 .banner.err  { background: var(--err-soft); color: var(--err); }
 .banner.ok   { background: var(--ok-soft); color: var(--ok); }
 
-/* F2 Box */
+/* F2 Box - Main Highlight */
 .f2-box {
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: 14px 16px;
-  background: var(--card-subtle);
-  margin-top: 12px;
+  border: 2px solid var(--accent);
+  border-radius: var(--radius-lg);
+  padding: 18px 22px;
+  background: var(--card);
+  margin-top: 16px;
+  box-shadow: 0 4px 14px rgba(0, 113, 227, 0.08);
 }
-.f2-box h4 { margin: 0 0 6px; font-size: 13px; font-weight: 600; }
-.f2-calc-steps { font-size: 12px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
+.f2-box.ok {
+  border-color: var(--ok);
+  background: linear-gradient(135deg, var(--ok-soft) 0%, var(--card) 70%);
+  box-shadow: 0 4px 14px rgba(40, 167, 69, 0.10);
+}
+.f2-box.warn {
+  border-color: var(--warn);
+  background: linear-gradient(135deg, var(--warn-soft) 0%, var(--card) 70%);
+  box-shadow: 0 4px 14px rgba(194, 105, 0, 0.10);
+}
+.f2-box h4 { margin: 0 0 10px; font-size: 12.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+.f2-hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px 20px;
+  padding: 6px 0;
+}
+.f2-score-main {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.f2-score-val {
+  font-size: 36px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--fg);
+}
+.f2-box.ok .f2-score-val { color: var(--ok); }
+.f2-box.warn .f2-score-val { color: var(--warn); }
+.f2-status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  border-radius: 99px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.f2-status-pill.ok { background: var(--ok); color: #fff; }
+.f2-status-pill.warn { background: var(--warn); color: #fff; }
+.f2-status-pill.info { background: var(--surface); color: var(--fg); }
+.f2-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+  font-size: 13px;
+}
+.f2-n-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 6px;
+  background: var(--surface);
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--fg);
+}
+.f2-calc-steps { font-size: 12.5px; color: var(--muted); margin-top: 4px; line-height: 1.5; }
 
 /* SOP Table */
 .sop-box { background: var(--card-subtle); border-radius: var(--radius-sm); padding: 12px; margin-top: 8px; font-size: 12.5px; }
@@ -427,8 +492,9 @@ svg.chart { width: 100%; height: auto; max-width: 960px; display: block; }
 svg.chart text { fill: var(--muted); font-size: 11px; }
 svg.chart .ax { stroke: var(--line-strong); }
 svg.chart .gl { stroke: var(--line); stroke-dasharray: 2 4; }
-.legend { display: flex; flex-wrap: wrap; gap: 12px 18px; font-size: 12px; margin-top: 8px; }
-.legend i { display: inline-block; width: 16px; height: 3px; vertical-align: middle; margin-right: 6px; border-radius: 2px; }
+.legend { display: flex; flex-wrap: wrap; gap: 12px 20px; font-size: 12.5px; font-weight: 500; margin-top: 10px; align-items: center; }
+.legend span { display: inline-flex; align-items: center; gap: 7px; }
+.legend svg.leg-icon { width: 34px; height: 14px; flex-shrink: 0; overflow: visible; }
 
 /* Misc */
 .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
@@ -2633,7 +2699,7 @@ function renderMediumResultCard(mId){
     const testBatches = Object.keys(M.testBatches);
     const seriesForChart = [];
     if(refCalculated && refCalculated.stats && refCalculated.stats.length){
-      seriesForChart.push({name: 'Pembanding ('+refBatchName+')', vals: refCalculated.stats.map(x=>x.avg), color: '#475569', dash: true});
+      seriesForChart.push({name: 'Pembanding ('+refBatchName+')', vals: refCalculated.stats.map(x=>x.avg), color: '#475569', dash: true, marker: 'square'});
     }
 
     if(!testBatches.length){
@@ -2653,10 +2719,10 @@ function renderMediumResultCard(mId){
       card.append(renderProfileTable(tCalc, 'Uji'));
       
       if(tCalc.stats && tCalc.stats.length){
-        seriesForChart.push({name: 'Uji ('+tName+')', vals: tCalc.stats.map(x=>x.avg), color: COLORS[tIdx % COLORS.length]});
+        seriesForChart.push({name: 'Uji ('+tName+')', vals: tCalc.stats.map(x=>x.avg), color: COLORS[tIdx % COLORS.length], dash: false, marker: tIdx === 0 ? 'circle' : 'triangle'});
       }
 
-      // 3. Evaluasi f2
+      // 3. Evaluasi f2 (Highlight Utama)
       if(refCalculated && refCalculated.stats && refCalculated.stats.length && tCalc.stats && tCalc.stats.length){
         const f2Res = evalSimilarityF2(
           M.times,
@@ -2666,27 +2732,38 @@ function renderMediumResultCard(mId){
           tCalc.stats
         );
 
-        const f2Box = h('div',{class:'f2-box'});
-        f2Box.append(h('h4',null,`Evaluasi Kemiripan f2 (Batch ${tName} vs Pembanding ${refBatchName})`));
-        
+        const badgeClass = f2Res.isSimilar ? 'ok' : (isFinite(f2Res.f2) ? 'warn' : 'info');
+        const f2Box = h('div',{class:'f2-box ' + badgeClass});
+        f2Box.append(h('h4',null,`Hasil Evaluasi Faktor Kemiripan f2 (Batch ${tName} vs Pembanding ${refBatchName})`));
+
+        const f2ValText = isFinite(f2Res.f2) ? `f2 = ${fmt(f2Res.f2, 2)}` : 'f2 = N/A';
+        const statusText = f2Res.both85at15
+          ? "Ekivalen / Serupa (Very Rapid ≥ 85% @ 15')"
+          : (isFinite(f2Res.f2)
+              ? (f2Res.isSimilar ? '50 – 100: Ekivalen / Serupa' : '< 50: Tidak Ekivalen')
+              : 'Belum dapat dihitung');
+
+        f2Box.append(h('div',{class:'f2-hero'},
+          h('div',{class:'f2-score-main'},
+            h('div',{class:'f2-score-val'}, f2ValText)
+          ),
+          h('span',{class:'f2-status-pill ' + badgeClass}, statusText)
+        ));
+
         if(f2Res.both85at15){
-          f2Box.append(h('div',{class:'banner ok',style:'margin:6px 0'},
+          f2Box.append(h('div',{class:'banner ok',style:'margin:8px 0 4px'},
             h('b',null,'Very Rapid Dissolution / Profil Serupa'),
             h('div',{class:'small'},'Kedua produk terdisolusi ≥ 85% dalam 15 menit. Berdasarkan pedoman FDA, EMA, dan BPOM, kurva disolusi dianggap serupa tanpa perlu evaluasi statistik f2.')));
         }
 
-        const badgeClass = f2Res.isSimilar ? 'ok' : (isFinite(f2Res.f2) ? 'warn' : 'info');
-        const badgeText = isFinite(f2Res.f2)
-          ? `f2 = ${fmt(f2Res.f2, 2)} (${f2Res.isSimilar ? '50 – 100: Ekivalen / Serupa' : '< 50: Tidak Ekivalen'})`
-          : 'f2: Belum dapat dihitung (data tidak cukup)';
-
-        f2Box.append(h('div',{class:'row',style:'margin:8px 0'},
-          h('span',{class:'badge ' + badgeClass}, badgeText),
-          f2Res.usedTimes && f2Res.usedTimes.length ? h('span',{class:'small muted'}, `Titik waktu diikutsertakan: ${f2Res.usedTimes.map(t=>t+"'").join(', ')} (${f2Res.n} titik)`) : null));
-
-        f2Box.append(h('div',{class:'f2-calc-steps'},
-          `Kaidah Cutoff BPOM/FDA: ${f2Res.reason}.` +
-          (f2Res.n > 0 ? (f2Res.minPointsValid ? '' : ' Peringatan: Regulasi mensyaratkan minimal 3 titik waktu.') : '')
+        f2Box.append(h('div',{class:'f2-meta-row'},
+          h('span',{class:'f2-n-badge'}, `n = ${f2Res.n}`),
+          f2Res.usedTimes && f2Res.usedTimes.length
+            ? h('span',{class:'small muted'}, `Titik waktu diikutsertakan: ${f2Res.usedTimes.map(t=>t+"'").join(', ')}`)
+            : null,
+          (f2Res.n > 0 && !f2Res.minPointsValid)
+            ? h('span',{class:'small',style:'color:var(--warn);font-weight:600'}, 'Peringatan: Regulasi mensyaratkan minimal 3 titik waktu.')
+            : null
         ));
 
         if(f2Res.rsdExceeded){
@@ -2704,7 +2781,19 @@ function renderMediumResultCard(mId){
       card.append(h('h3',{style:'margin-top:20px'},'Kurva Profil Disolusi'));
       card.append(h('div',{html:lineChart(seriesForChart, M.times)}));
       card.append(h('div',{class:'legend'},
-        seriesForChart.map(s=>h('span',null,h('i',{style:'background:'+s.color}),s.name))));
+        seriesForChart.map(s => {
+          const isSq = s.marker === 'square' || s.dash;
+          const isTri = s.marker === 'triangle';
+          const dashAttr = s.dash ? 'stroke-dasharray="4 3"' : '';
+          let markerSvg = `<circle cx="17" cy="7" r="4" fill="${s.color}"/>`;
+          if(isSq){
+            markerSvg = `<rect x="13" y="3" width="8" height="8" fill="${s.color}"/>`;
+          } else if(isTri){
+            markerSvg = `<polygon points="17,2.5 12.5,11 21.5,11" fill="${s.color}"/>`;
+          }
+          const iconHtml = `<svg class="leg-icon" viewBox="0 0 34 14"><line x1="1" y1="7" x2="33" y2="7" stroke="${s.color}" stroke-width="2.2" ${dashAttr}/>${markerSvg}</svg>`;
+          return h('span', null, h('span', {html: iconHtml}), s.name);
+        })));
     }
 
     return card;
@@ -2807,15 +2896,16 @@ function renderProfileTable(calc, roleLab){
     if(!row) return;
     tb.append(h('tr',null,
       h('td',null,'Vessel ' + (i+1)),
-      row.map(v => h('td',{class:isFinite(v)?'':'miss'}, isFinite(v)?fmt(v,2):'–'))));
+      row.map(v => h('td',{class:isFinite(v)?'':'miss'}, isFinite(v)?fmt(v,0):'–'))));
   });
 
   [['Min','min'],['Max','max'],['Rata-rata','avg'],['SD','sd'],['RSD (%)','rsd']].forEach(([lab,k])=>{
+    const dec = (k === 'sd' || k === 'rsd') ? 1 : 0;
     tb.append(h('tr',{class:'stat'},
       h('td',null,lab),
       calc.stats.map((x,i)=>{
         const bad = k==='rsd' && (i===0 ? x.rsd>20 : x.rsd>10);
-        return h('td',{class:bad?'bad':''}, fmt(x[k],2));
+        return h('td',{class:bad?'bad':''}, fmt(x[k], dec));
       })));
   });
   tbl.append(tb);
@@ -2849,10 +2939,17 @@ function lineChart(series, times){
     });
     if(pts.length <= 1) return;
     svg += `<polyline fill="none" stroke="${s.color}" stroke-width="2.2" ${s.dash?'stroke-dasharray="6 4"':''} points="${pts.join(' ')}"/>`;
+    const isSq = s.marker === 'square' || s.dash;
+    const isTri = s.marker === 'triangle';
+    const drawMarker = (cx, cy, r) => {
+      if(isSq) return `<rect x="${cx - r}" y="${cy - r}" width="${r * 2}" height="${r * 2}" fill="${s.color}"/>`;
+      if(isTri) return `<polygon points="${cx},${cy - r - 1} ${cx - r - 0.8},${cy + r} ${cx + r + 0.8},${cy + r}" fill="${s.color}"/>`;
+      return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${s.color}"/>`;
+    };
     // Titik marker di (0,0)
-    svg += `<circle cx="${X(0)}" cy="${Y(0)}" r="3" fill="${s.color}"/>`;
+    svg += drawMarker(X(0), Y(0), 3.2);
     s.vals.forEach((v,i) => {
-      if(isFinite(v)) svg += `<circle cx="${X(xs[i])}" cy="${Y(v)}" r="3.5" fill="${s.color}"/>`;
+      if(isFinite(v)) svg += drawMarker(X(xs[i]), Y(v), 3.8);
     });
   });
   return svg + '</svg>';
@@ -2991,44 +3088,55 @@ function drawChartCanvas(series, times, w = 520, h = 160) {
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // Titik marker
-    ctx.beginPath();
-    ctx.arc(X(0), Y(0), 2.5, 0, Math.PI * 2);
-    ctx.fill();
+    // Titik marker (Persegi untuk Pembanding, Bulat untuk Uji)
+    const isSq = s.marker === 'square' || s.dash;
+    const drawPt = (px, py, r) => {
+      if (isSq) {
+        ctx.fillRect(px - r, py - r, r * 2, r * 2);
+      } else {
+        ctx.beginPath();
+        ctx.arc(px, py, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    };
+    drawPt(X(0), Y(0), 2.6);
     (s.vals || []).forEach((v, i) => {
       if (typeof v === 'number' && isFinite(v)) {
-        ctx.beginPath();
-        ctx.arc(X(xs[i]), Y(v), 3, 0, Math.PI * 2);
-        ctx.fill();
+        drawPt(X(xs[i]), Y(v), 3.2);
       }
     });
   });
 
   // Kotak Legenda
-  const legW = 160, legH = series.length * 13 + 6;
+  const legW = 165, legH = series.length * 14 + 6;
   const legX = w - legW - 10, legY = T + 2;
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.94)';
   ctx.fillRect(legX, legY, legW, legH);
   ctx.strokeStyle = '#cbd5e1';
   ctx.lineWidth = 0.6;
   ctx.strokeRect(legX, legY, legW, legH);
 
   series.forEach((s, idx) => {
-    const itemY = legY + idx * 13 + 7;
+    const itemY = legY + idx * 14 + 7.5;
+    const isSq = s.marker === 'square' || s.dash;
     ctx.strokeStyle = s.color || '#0071e3';
     ctx.lineWidth = 1.8;
-    if (s.dash) ctx.setLineDash([4, 3]);
+    if (s.dash) ctx.setLineDash([4, 2.5]);
     else ctx.setLineDash([]);
     ctx.beginPath();
-    ctx.moveTo(legX + 8, itemY);
-    ctx.lineTo(legX + 24, itemY);
+    ctx.moveTo(legX + 6, itemY);
+    ctx.lineTo(legX + 26, itemY);
     ctx.stroke();
     ctx.setLineDash([]);
 
     ctx.fillStyle = s.color || '#0071e3';
-    ctx.beginPath();
-    ctx.arc(legX + 16, itemY, 2.5, 0, Math.PI * 2);
-    ctx.fill();
+    if (isSq) {
+      ctx.fillRect(legX + 16 - 3, itemY - 3, 6, 6);
+    } else {
+      ctx.beginPath();
+      ctx.arc(legX + 16, itemY, 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
 
     ctx.fillStyle = '#334155';
     ctx.font = '7.5px Arial, sans-serif';
@@ -3092,8 +3200,8 @@ function printReportWindow(){
       );
 
       const chartDataUrl = drawChartCanvas([
-        { name: `Pembanding (${refBatchName})`, vals: refCalc.stats.map(x => x.avg), color: '#475569', dash: true },
-        { name: `Uji (${tName})`, vals: tCalc.stats.map(x => x.avg), color: '#0071e3', dash: false }
+        { name: `Pembanding (${refBatchName})`, vals: refCalc.stats.map(x => x.avg), color: '#475569', dash: true, marker: 'square' },
+        { name: `Uji (${tName})`, vals: tCalc.stats.map(x => x.avg), color: '#0071e3', dash: false, marker: 'circle' }
       ], M.times, 580, 190);
 
       // Selisih & kuadrat selisih untuk tabel evaluasi f2
@@ -3113,11 +3221,11 @@ function printReportWindow(){
       const f2Label = isFinite(f2Res.f2) ? `f2 = ${fmt(f2Res.f2, 2)}` : 'f2: N/A';
       let conclusionBadge = '';
       if(f2Res.both85at15){
-        conclusionBadge = '<div class="f2-badge ok"><b>DISSOLUSI SANGAT CEPAT (VERY RAPID DISSOLUTION)</b><br>Kedua produk mencapai &ge; 85% dalam 15 menit. Profil disolusi dinilai serupa tanpa perlu kalkulasi faktor f2 (Sesuai Pedoman BPOM &amp; FDA).</div>';
+        conclusionBadge = `<div class="f2-badge ok"><div class="f2-badge-score">${f2Label}</div><div class="f2-badge-body"><b>DISSOLUSI SANGAT CEPAT (VERY RAPID DISSOLUTION)</b><br>Kedua produk mencapai &ge; 85% dalam 15 menit (<b>n = ${f2Res.n}</b>). Profil disolusi dinilai serupa.</div></div>`;
       } else if(f2Res.isSimilar){
-        conclusionBadge = `<div class="f2-badge ok"><b>PROFIL DISOLUSI SERUPA / EKIVALEN (${f2Label} &ge; 50.00)</b><br>Kriteria batas toleransi % RSD dan kaidah cutoff pemotongan titik waktu regulasi terpenuhi.</div>`;
+        conclusionBadge = `<div class="f2-badge ok"><div class="f2-badge-score">${f2Label}</div><div class="f2-badge-body"><b>PROFIL DISOLUSI SERUPA / EKIVALEN (50 &ndash; 100)</b><br><b>n = ${f2Res.n}</b>${f2Res.usedTimes && f2Res.usedTimes.length ? ` (${f2Res.usedTimes.map(t=>t+"'").join(', ')})` : ''} &bull; Total &sum;(Rt-Tt)&sup2; = ${fmt(sumSq, 0)}</div></div>`;
       } else {
-        conclusionBadge = `<div class="f2-badge warn"><b>PROFIL DISOLUSI TIDAK SERUPA (${f2Label} &lt; 50.00)</b><br>Perbedaan profil disolusi melebihi batas penerimaan faktor kesamaan.</div>`;
+        conclusionBadge = `<div class="f2-badge warn"><div class="f2-badge-score">${f2Label}</div><div class="f2-badge-body"><b>PROFIL DISOLUSI TIDAK SERUPA (&lt; 50)</b><br><b>n = ${f2Res.n}</b>${f2Res.usedTimes && f2Res.usedTimes.length ? ` (${f2Res.usedTimes.map(t=>t+"'").join(', ')})` : ''} &bull; Total &sum;(Rt-Tt)&sup2; = ${fmt(sumSq, 0)}</div></div>`;
       }
 
       // HALAMAN 1: Master Report Summary
@@ -3181,30 +3289,30 @@ function printReportWindow(){
               <td rowspan="3" style="vertical-align:middle;text-align:center">${refBatchName}</td>
               <td rowspan="3" style="vertical-align:middle;font-size:11px;color:#475569">${S.refParams.manufacturer || '-'}${S.refParams.mdEd ? '<br><b>MD/ED:</b> ' + S.refParams.mdEd : ''}</td>
               <td style="font-weight:600;background:#f8fafc">Rata-rata</td>
-              ${refCalc.stats.map(x => `<td class="num" style="font-weight:600">${fmt(x.avg, 2)}</td>`).join('')}
+              ${refCalc.stats.map(x => `<td class="num" style="font-weight:600">${fmt(x.avg, 0)}</td>`).join('')}
             </tr>
             <tr>
               <td style="background:#f8fafc">Min</td>
-              ${refCalc.stats.map(x => `<td class="num">${fmt(x.min, 2)}</td>`).join('')}
+              ${refCalc.stats.map(x => `<td class="num">${fmt(x.min, 0)}</td>`).join('')}
             </tr>
             <tr>
               <td style="background:#f8fafc">Max</td>
-              ${refCalc.stats.map(x => `<td class="num">${fmt(x.max, 2)}</td>`).join('')}
+              ${refCalc.stats.map(x => `<td class="num">${fmt(x.max, 0)}</td>`).join('')}
             </tr>
             <tr style="border-top:2px solid #cbd5e1">
               <td rowspan="3" style="vertical-align:middle;font-weight:600">${tProdName}</td>
               <td rowspan="3" style="vertical-align:middle;text-align:center">${tName}</td>
               <td rowspan="3" style="vertical-align:middle;font-size:11px;color:#475569">${S.testParams.manufacturer || '-'}${S.testParams.mdEd ? '<br><b>MD/ED:</b> ' + S.testParams.mdEd : ''}</td>
               <td style="font-weight:600;background:#f8fafc">Rata-rata</td>
-              ${tCalc.stats.map(x => `<td class="num" style="font-weight:600">${fmt(x.avg, 2)}</td>`).join('')}
+              ${tCalc.stats.map(x => `<td class="num" style="font-weight:600">${fmt(x.avg, 0)}</td>`).join('')}
             </tr>
             <tr>
               <td style="background:#f8fafc">Min</td>
-              ${tCalc.stats.map(x => `<td class="num">${fmt(x.min, 2)}</td>`).join('')}
+              ${tCalc.stats.map(x => `<td class="num">${fmt(x.min, 0)}</td>`).join('')}
             </tr>
             <tr>
               <td style="background:#f8fafc">Max</td>
-              ${tCalc.stats.map(x => `<td class="num">${fmt(x.max, 2)}</td>`).join('')}
+              ${tCalc.stats.map(x => `<td class="num">${fmt(x.max, 0)}</td>`).join('')}
             </tr>
           </tbody>
         </table>
@@ -3225,26 +3333,23 @@ function printReportWindow(){
           <tbody>
             <tr>
               <td style="font-weight:600">Reference (Rt) %</td>
-              ${refCalc.stats.map(x => `<td class="num">${fmt(x.avg, 2)}</td>`).join('')}
+              ${refCalc.stats.map(x => `<td class="num">${fmt(x.avg, 0)}</td>`).join('')}
             </tr>
             <tr>
               <td style="font-weight:600">Test (Tt) %</td>
-              ${tCalc.stats.map(x => `<td class="num">${fmt(x.avg, 2)}</td>`).join('')}
+              ${tCalc.stats.map(x => `<td class="num">${fmt(x.avg, 0)}</td>`).join('')}
             </tr>
             <tr style="background:#f8fafc">
               <td style="font-weight:600">Selisih (Rt - Tt)</td>
-              ${diffs.map(d => `<td class="num">${fmt(d, 2)}</td>`).join('')}
+              ${diffs.map(d => `<td class="num">${fmt(d, 0)}</td>`).join('')}
             </tr>
             <tr style="background:#f8fafc">
               <td style="font-weight:600">Kuadrat Selisih (Rt - Tt)&sup2;</td>
-              ${sqDiffs.map(s => `<td class="num">${fmt(s, 2)}</td>`).join('')}
+              ${sqDiffs.map(s => `<td class="num">${fmt(s, 0)}</td>`).join('')}
             </tr>
           </tbody>
         </table>
 
-        <div style="font-size:10px;color:#475569;margin-bottom:8px">
-          <b>Kaidah Cutoff Regulator (BPOM/FDA):</b> ${f2Res.reason} &bull; Titik diikutsertakan (n) = ${f2Res.n} &bull; Total &sum;(Rt-Tt)&sup2; = ${fmt(sumSq, 2)}
-        </div>
         ${conclusionBadge}
       </div>
 
@@ -3267,28 +3372,28 @@ function printReportWindow(){
             ${refCalc.res.map((row, vIdx) => `
               <tr>
                 <td style="text-align:center;font-weight:600;background:#f8fafc">Vessel ${vIdx + 1}</td>
-                ${row.map(val => `<td class="num">${isFinite(val) ? fmt(val, 2) : '-'}</td>`).join('')}
+                ${row.map(val => `<td class="num">${isFinite(val) ? fmt(val, 0) : '-'}</td>`).join('')}
               </tr>
             `).join('')}
             <tr class="highlight" style="border-top:2px solid #94a3b8">
               <td style="text-align:center;font-weight:700">Rata-rata</td>
-              ${refCalc.stats.map(x => `<td class="num">${fmt(x.avg, 2)}</td>`).join('')}
+              ${refCalc.stats.map(x => `<td class="num">${fmt(x.avg, 0)}</td>`).join('')}
             </tr>
             <tr>
               <td style="text-align:center">Min</td>
-              ${refCalc.stats.map(x => `<td class="num">${fmt(x.min, 2)}</td>`).join('')}
+              ${refCalc.stats.map(x => `<td class="num">${fmt(x.min, 0)}</td>`).join('')}
             </tr>
             <tr>
               <td style="text-align:center">Max</td>
-              ${refCalc.stats.map(x => `<td class="num">${fmt(x.max, 2)}</td>`).join('')}
+              ${refCalc.stats.map(x => `<td class="num">${fmt(x.max, 0)}</td>`).join('')}
             </tr>
             <tr>
               <td style="text-align:center">Standar Deviasi (SD)</td>
-              ${refCalc.stats.map(x => `<td class="num">${fmt(x.sd, 2)}</td>`).join('')}
+              ${refCalc.stats.map(x => `<td class="num">${fmt(x.sd, 1)}</td>`).join('')}
             </tr>
             <tr style="background:#f1f5f9;font-weight:600">
               <td style="text-align:center">% RSD</td>
-              ${refCalc.stats.map(x => `<td class="num">${fmt(x.rsd, 2)}%</td>`).join('')}
+              ${refCalc.stats.map(x => `<td class="num">${fmt(x.rsd, 1)}%</td>`).join('')}
             </tr>
           </tbody>
         </table>
@@ -3305,28 +3410,28 @@ function printReportWindow(){
             ${tCalc.res.map((row, vIdx) => `
               <tr>
                 <td style="text-align:center;font-weight:600;background:#f8fafc">Vessel ${vIdx + 1}</td>
-                ${row.map(val => `<td class="num">${isFinite(val) ? fmt(val, 2) : '-'}</td>`).join('')}
+                ${row.map(val => `<td class="num">${isFinite(val) ? fmt(val, 0) : '-'}</td>`).join('')}
               </tr>
             `).join('')}
             <tr class="highlight" style="border-top:2px solid #94a3b8">
               <td style="text-align:center;font-weight:700">Rata-rata</td>
-              ${tCalc.stats.map(x => `<td class="num">${fmt(x.avg, 2)}</td>`).join('')}
+              ${tCalc.stats.map(x => `<td class="num">${fmt(x.avg, 0)}</td>`).join('')}
             </tr>
             <tr>
               <td style="text-align:center">Min</td>
-              ${tCalc.stats.map(x => `<td class="num">${fmt(x.min, 2)}</td>`).join('')}
+              ${tCalc.stats.map(x => `<td class="num">${fmt(x.min, 0)}</td>`).join('')}
             </tr>
             <tr>
               <td style="text-align:center">Max</td>
-              ${tCalc.stats.map(x => `<td class="num">${fmt(x.max, 2)}</td>`).join('')}
+              ${tCalc.stats.map(x => `<td class="num">${fmt(x.max, 0)}</td>`).join('')}
             </tr>
             <tr>
               <td style="text-align:center">Standar Deviasi (SD)</td>
-              ${tCalc.stats.map(x => `<td class="num">${fmt(x.sd, 2)}</td>`).join('')}
+              ${tCalc.stats.map(x => `<td class="num">${fmt(x.sd, 1)}</td>`).join('')}
             </tr>
             <tr style="background:#f1f5f9;font-weight:600">
               <td style="text-align:center">% RSD</td>
-              ${tCalc.stats.map(x => `<td class="num">${fmt(x.rsd, 2)}%</td>`).join('')}
+              ${tCalc.stats.map(x => `<td class="num">${fmt(x.rsd, 1)}%</td>`).join('')}
             </tr>
           </tbody>
         </table>
@@ -3391,9 +3496,11 @@ function printReportWindow(){
     table.sheet-table tr.highlight { background: #f0fdf4; font-weight: 700; }
     .chart-container { text-align: center; margin: 8px 0 10px; }
     .chart-container img { max-width: 100%; height: auto; border: 1px solid #e2e8f0; border-radius: 4px; }
-    .f2-badge { border: 1.5px solid #0071e3; background: #eff6ff; border-radius: 6px; padding: 8px 12px; margin: 8px 0; font-size: 10px; }
+    .f2-badge { border: 2px solid #0071e3; background: #eff6ff; border-radius: 8px; padding: 10px 16px; margin: 8px 0; font-size: 10.5px; display: flex; align-items: center; gap: 18px; }
     .f2-badge.ok { border-color: #059669; background: #ecfdf5; color: #065f46; }
     .f2-badge.warn { border-color: #d97706; background: #fffbeb; color: #92400e; }
+    .f2-badge-score { font-size: 22px; font-weight: 800; padding-right: 16px; border-right: 1.5px solid currentColor; white-space: nowrap; letter-spacing: -0.02em; }
+    .f2-badge-body { flex: 1; line-height: 1.45; }
     .sign-table { width: 100%; border-collapse: collapse; margin-top: 14px; font-size: 9.5px; }
     .sign-table th, .sign-table td { border: 1px solid #cbd5e1; text-align: center; padding: 6px; width: 33.33%; }
     .sign-table th { background: #f8fafc; color: #475569; }
@@ -3543,17 +3650,17 @@ async function exportPDF(){
           [
             { content: `${rProdName}\nBatch: ${refBatchName}`, rowSpan: 3, styles: { valign: 'middle', fontStyle: 'bold' } },
             { content: `${rManufacturer || '-'}\n${rMdEd ? 'MD/ED: ' + rMdEd : ''}`.trim(), rowSpan: 3, styles: { valign: 'middle', fontSize: 6.2 } },
-            'Rata-rata', ...refCalc.stats.map(x => fmt(x.avg, 2))
+            'Rata-rata', ...refCalc.stats.map(x => fmt(x.avg, 0))
           ],
-          ['Min', ...refCalc.stats.map(x => fmt(x.min, 2))],
-          ['Max', ...refCalc.stats.map(x => fmt(x.max, 2))],
+          ['Min', ...refCalc.stats.map(x => fmt(x.min, 0))],
+          ['Max', ...refCalc.stats.map(x => fmt(x.max, 0))],
           [
             { content: `${tProdName}\nBatch: ${tBatchName}`, rowSpan: 3, styles: { valign: 'middle', fontStyle: 'bold' } },
             { content: `${tManufacturer || '-'}\n${tMdEd ? 'MD/ED: ' + tMdEd : ''}`.trim(), rowSpan: 3, styles: { valign: 'middle', fontSize: 6.2 } },
-            'Rata-rata', ...tCalc.stats.map(x => fmt(x.avg, 2))
+            'Rata-rata', ...tCalc.stats.map(x => fmt(x.avg, 0))
           ],
-          ['Min', ...tCalc.stats.map(x => fmt(x.min, 2))],
-          ['Max', ...tCalc.stats.map(x => fmt(x.max, 2))]
+          ['Min', ...tCalc.stats.map(x => fmt(x.min, 0))],
+          ['Max', ...tCalc.stats.map(x => fmt(x.max, 0))]
         ];
 
         doc.autoTable({
@@ -3574,8 +3681,8 @@ async function exportPDF(){
         // 4. Kurva Profil Disolusi Komparatif (Canvas PNG)
         curY = doc.lastAutoTable.finalY + 3;
         const chartDataUrl = drawChartCanvas([
-          { name: `Pembanding (${refBatchName})`, vals: refCalc.stats.map(x => x.avg), color: '#475569', dash: true },
-          { name: `Uji (${tBatchName})`, vals: tCalc.stats.map(x => x.avg), color: '#0071e3', dash: false }
+          { name: `Pembanding (${refBatchName})`, vals: refCalc.stats.map(x => x.avg), color: '#475569', dash: true, marker: 'square' },
+          { name: `Uji (${tBatchName})`, vals: tCalc.stats.map(x => x.avg), color: '#0071e3', dash: false, marker: 'circle' }
         ], M.times, 520, 140);
 
         doc.addImage(chartDataUrl, 'PNG', 14, curY, 182, 42);
@@ -3603,10 +3710,10 @@ async function exportPDF(){
 
         const f2Head = [['Parameter Evaluasi f2', ...M.times.map(t => t + "'")]];
         const f2Body = [
-          ['Reference (Rt) %', ...refCalc.stats.map(x => fmt(x.avg, 2))],
-          ['Test (Tt) %', ...tCalc.stats.map(x => fmt(x.avg, 2))],
-          ['Selisih (Rt - Tt)', ...diffs.map(d => fmt(d, 2))],
-          ['Kuadrat Selisih (Rt - Tt)^2', ...sqDiffs.map(s => fmt(s, 2))]
+          ['Reference (Rt) %', ...refCalc.stats.map(x => fmt(x.avg, 0))],
+          ['Test (Tt) %', ...tCalc.stats.map(x => fmt(x.avg, 0))],
+          ['Selisih (Rt - Tt)', ...diffs.map(d => fmt(d, 0))],
+          ['Kuadrat Selisih (Rt - Tt)^2', ...sqDiffs.map(s => fmt(s, 0))]
         ];
 
         doc.autoTable({
@@ -3622,38 +3729,49 @@ async function exportPDF(){
           margin: { left: 14, right: 14 }
         });
 
-        // 6. Box Kesimpulan & Kaidah Regulator
+        // 6. Box Kesimpulan & Highlight Utama f2
         curY = doc.lastAutoTable.finalY + 3;
         const f2Label = isFinite(f2Res.f2) ? `f2 = ${fmt(f2Res.f2, 2)}` : 'f2: N/A';
+        const usedTimesLabel = f2Res.usedTimes && f2Res.usedTimes.length ? ` (${f2Res.usedTimes.map(t=>t+"'").join(', ')})` : '';
 
-        let boxBg = [236, 253, 245], boxBorder = [5, 150, 105], boxTitle = `PROFIL DISOLUSI SERUPA / EKIVALEN (${f2Label} >= 50.00)`;
-        let boxDesc = `Kaidah Cutoff BPOM/FDA: ${f2Res.reason} | Titik waktu disertakan: ${f2Res.usedTimes?.map(t=>t+"'").join(', ')} (n=${f2Res.n}) | Total Sigma(Rt-Tt)^2 = ${fmt(sumSq, 2)}`;
+        let boxBg = [236, 253, 245], boxBorder = [5, 150, 105], boxTitle = `PROFIL DISOLUSI SERUPA / EKIVALEN (50 - 100)`;
+        let boxDesc = `n = ${f2Res.n}${usedTimesLabel}  |  Total Sigma(Rt-Tt)^2 = ${fmt(sumSq, 0)}`;
 
         if(f2Res.both85at15){
           boxBg = [236, 253, 245];
           boxBorder = [5, 150, 105];
           boxTitle = 'DISSOLUSI SANGAT CEPAT (VERY RAPID DISSOLUTION)';
-          boxDesc = 'Kedua produk mencapai >= 85% dalam 15 menit. Profil disolusi dinilai serupa tanpa perlu syarat f2 (Sesuai Pedoman BPOM & FDA).';
+          boxDesc = `n = ${f2Res.n}  |  Kedua produk mencapai >= 85% dalam 15 menit (Profil Serupa).`;
         } else if(!f2Res.isSimilar){
           boxBg = [255, 251, 235];
           boxBorder = [217, 119, 6];
-          boxTitle = `PROFIL DISOLUSI TIDAK SERUPA (${f2Label} < 50.00)`;
+          boxTitle = `PROFIL DISOLUSI TIDAK SERUPA (< 50)`;
         }
 
         doc.setFillColor(boxBg[0], boxBg[1], boxBg[2]);
         doc.setDrawColor(boxBorder[0], boxBorder[1], boxBorder[2]);
-        doc.setLineWidth(0.35);
-        doc.roundedRect(14, curY, 182, 14, 1.5, 1.5, 'FD');
+        doc.setLineWidth(0.5);
+        doc.roundedRect(14, curY, 182, 16, 2, 2, 'FD');
 
-        doc.setFontSize(8);
+        // Highlight besar f2 di sisi kiri kotak
+        doc.setFontSize(14.5);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(boxBorder[0], boxBorder[1], boxBorder[2]);
-        doc.text(boxTitle, 18, curY + 5.5);
+        doc.text(f2Label, 19, curY + 10);
 
-        doc.setFontSize(6.8);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(51, 65, 85);
-        doc.text(boxDesc, 18, curY + 10.5);
+        // Garis pemisah vertikal
+        doc.setLineWidth(0.3);
+        doc.line(62, curY + 3, 62, curY + 13);
+
+        // Status & keterangan n = ... di sisi kanan
+        doc.setFontSize(8.5);
+        doc.setFont('helvetica', 'bold');
+        doc.text(boxTitle, 66, curY + 6.5);
+
+        doc.setFontSize(7.5);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(30, 41, 59);
+        doc.text(boxDesc, 66, curY + 11.8);
 
         // ==================== HALAMAN 2: DETAIL 12 VESSEL & PENGESAHAN ====================
         doc.addPage();
@@ -3685,13 +3803,13 @@ async function exportPDF(){
         const refHead = [['Vessel \\ Menit', ...M.times.map(t => t + "'")]];
         const refBody = [];
         refCalc.res.forEach((row, i) => {
-          if(row) refBody.push([`Vessel ${i+1}`, ...row.map(v => isFinite(v) ? fmt(v, 2) : '-')]);
+          if(row) refBody.push([`Vessel ${i+1}`, ...row.map(v => isFinite(v) ? fmt(v, 0) : '-')]);
         });
-        refBody.push(['Rata-rata', ...refCalc.stats.map(x => fmt(x.avg, 2))]);
-        refBody.push(['Min', ...refCalc.stats.map(x => fmt(x.min, 2))]);
-        refBody.push(['Max', ...refCalc.stats.map(x => fmt(x.max, 2))]);
-        refBody.push(['Standar Deviasi (SD)', ...refCalc.stats.map(x => fmt(x.sd, 2))]);
-        refBody.push(['% RSD', ...refCalc.stats.map(x => fmt(x.rsd, 2) + '%')]);
+        refBody.push(['Rata-rata', ...refCalc.stats.map(x => fmt(x.avg, 0))]);
+        refBody.push(['Min', ...refCalc.stats.map(x => fmt(x.min, 0))]);
+        refBody.push(['Max', ...refCalc.stats.map(x => fmt(x.max, 0))]);
+        refBody.push(['Standar Deviasi (SD)', ...refCalc.stats.map(x => fmt(x.sd, 1))]);
+        refBody.push(['% RSD', ...refCalc.stats.map(x => fmt(x.rsd, 1) + '%')]);
 
         doc.autoTable({
           startY: curY,
@@ -3715,13 +3833,13 @@ async function exportPDF(){
         const testHead = [['Vessel \\ Menit', ...M.times.map(t => t + "'")]];
         const testBody = [];
         tCalc.res.forEach((row, i) => {
-          if(row) testBody.push([`Vessel ${i+1}`, ...row.map(v => isFinite(v) ? fmt(v, 2) : '-')]);
+          if(row) testBody.push([`Vessel ${i+1}`, ...row.map(v => isFinite(v) ? fmt(v, 0) : '-')]);
         });
-        testBody.push(['Rata-rata', ...tCalc.stats.map(x => fmt(x.avg, 2))]);
-        testBody.push(['Min', ...tCalc.stats.map(x => fmt(x.min, 2))]);
-        testBody.push(['Max', ...tCalc.stats.map(x => fmt(x.max, 2))]);
-        testBody.push(['Standar Deviasi (SD)', ...tCalc.stats.map(x => fmt(x.sd, 2))]);
-        testBody.push(['% RSD', ...tCalc.stats.map(x => fmt(x.rsd, 2) + '%')]);
+        testBody.push(['Rata-rata', ...tCalc.stats.map(x => fmt(x.avg, 0))]);
+        testBody.push(['Min', ...tCalc.stats.map(x => fmt(x.min, 0))]);
+        testBody.push(['Max', ...tCalc.stats.map(x => fmt(x.max, 0))]);
+        testBody.push(['Standar Deviasi (SD)', ...tCalc.stats.map(x => fmt(x.sd, 1))]);
+        testBody.push(['% RSD', ...tCalc.stats.map(x => fmt(x.rsd, 1) + '%')]);
 
         doc.autoTable({
           startY: curY,
