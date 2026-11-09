@@ -7,18 +7,17 @@
  * Menggunakan layanan bawaan SpreadsheetApp & DriveApp sehingga TIDAK PERLU
  * mengaktifkan Google Sheets API / Drive API di Google Cloud Console.
  *
- * CARA UPDATE SCRIPT:
- * 1. Buka kembali proyek script Anda di https://script.google.com/
- * 2. Hapus semua kode lama di Code.gs, lalu tempelkan kode baru ini.
- * 3. Tekan Ctrl + S (Simpan).
- * 4. Klik tombol "Deploy" -> "Manage deployments" (Kelola penerapan)
- *    ATAU klik "Deploy" -> "New deployment" (Penerapan baru).
- *    - Jika lewat "Manage deployments": klik ikon Pensil (Edit) di kanan atas,
- *      pada bagian "Version" pilih "New version", lalu klik "Deploy".
- *    - Jika lewat "New deployment": pilih "Web app", Execute as: "Me",
- *      Who has access: "Anyone", lalu klik "Deploy" dan salin URL barunya.
+ * PENTING — AKTIFKAN IZIN PENUH DRIVE:
+ * Klik tombol "▷ Run / Jalankan" di baris menu atas editor Google Apps Script
+ * satu kali saja, lalu klik "Review permissions / Beri akses" -> "Allow / Izinkan"
+ * agar izin menyalin file (DriveApp.File.makeCopy) aktif sepenuhnya.
  * =========================================================================
  */
+
+function aktifkanIzin() {
+  DriveApp.getRootFolder();
+  Logger.log("Izin Google Drive & Sheets telah aktif sepenuhnya.");
+}
 
 function doGet(e) {
   return ContentService.createTextOutput(JSON.stringify({
