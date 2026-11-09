@@ -706,17 +706,6 @@ details[open] summary { margin-bottom: 8px; }
       </div>
     </details>
 
-    <!-- Paste manual -->
-    <details class="card">
-      <summary>Tempel Data Teks Manual (Opsional)</summary>
-      <div class="row" style="margin:8px 0 6px">
-        <label class="small" style="display:flex;align-items:center;gap:6px"><input type="radio" name="pasteRole" value="test" checked style="width:auto"> Produk Uji</label>
-        <label class="small" style="display:flex;align-items:center;gap:6px"><input type="radio" name="pasteRole" value="ref" style="width:auto"> Produk Pembanding</label>
-      </div>
-      <textarea id="paste" placeholder="Sample Name;RT;Area (satu baris per injeksi, pisahkan dengan titik-koma, tab, atau koma)"></textarea>
-      <div class="row" style="margin-top:8px"><button class="btn" id="pasteBtn">Tambahkan Teks</button></div>
-    </details>
-
     <div class="nav">
       <span></span>
       <button class="btn primary" data-go="2">Lanjut ke Verifikasi</button>
@@ -807,12 +796,8 @@ details[open] summary { margin-bottom: 8px; }
   <!-- STEP 5: KIRIM -->
   <section class="panel" id="p5">
     <div class="section-header">
-      <h2>Kirim ke Google Sheets</h2>
-      <p>Ekspor hasil ke Master Template (Calculation, Report, dan Summary).</p>
-    </div>
-
-    <div class="banner info">
-      <b>Aman:</b> Aplikasi hanya menulis ke salinan file baru di Google Drive. Template master asli tidak pernah diubah.
+      <h2>Export ke Sheets</h2>
+      <p>Ekspor hasil ke Master Template (Calculation dan Report).</p>
     </div>
 
     <div class="card">
@@ -825,7 +810,7 @@ details[open] summary { margin-bottom: 8px; }
     </div>
 
     <div class="card">
-      <h2>Lokasi Penyimpanan &amp; Summary</h2>
+      <h2>Lokasi Penyimpanan Google Drive</h2>
       <div id="folderStatus" style="margin-bottom:8px"></div>
       <div style="display:flex;gap:8px;align-items:flex-end">
         <label class="f" style="flex:1;margin:0">
@@ -835,37 +820,34 @@ details[open] summary { margin-bottom: 8px; }
         <button class="btn" id="folderVerifyBtn" style="flex-shrink:0;margin-bottom:1px">Verifikasi</button>
       </div>
       <div id="folderVerifyOut" style="margin-top:8px"></div>
-
-      <div style="margin-top:14px;padding-top:12px;border-top:1px dashed var(--line)">
-        <label class="f" style="margin:0">
-          File Summary Produk (Opsional untuk melanjutkan batch baru)
-          <input type="text" id="summaryFileInput" placeholder="ID atau URL spreadsheet Summary (opsional)" style="font-family:monospace;font-size:12px">
-        </label>
-      </div>
     </div>
 
     <div class="card">
       <h2>Perintah Ekspor</h2>
       <div id="sendList"></div>
-      <label style="display:flex;gap:10px;align-items:flex-start;margin-top:12px;font-size:13px">
-        <input type="checkbox" id="ack" style="width:auto;margin-top:3px">
-        <span>Saya menyetujui pembuatan/pembaruan salinan spreadsheet.</span>
-      </label>
       <div class="row" style="margin-top:14px;gap:10px;flex-wrap:wrap">
         <button class="btn primary" id="calcBtn" title="Buat file Google Sheet Calculation berisi tab Reference dan Uji">1. Calculation</button>
         <button class="btn primary" id="reportBtn" title="Generate tab Report pada file Google Sheet Calculation yang sama">2. Report</button>
-        <button class="btn primary" id="summaryBtn" title="Ekspor/tambahkan data ke Master Summary sesuai tanggal dan kelompok batch">3. Summary</button>
       </div>
       <div class="small muted" style="margin-top:10px;line-height:1.6">
         • <b>1. Calculation:</b> Buat spreadsheet kalkulasi (tab Reference &amp; Uji).<br>
-        • <b>2. Report:</b> Tambahkan tab Report ke spreadsheet kalkulasi.<br>
-        • <b>3. Summary:</b> Tambahkan baris data ke spreadsheet Master Summary.
+        • <b>2. Report:</b> Tambahkan tab Report ke spreadsheet kalkulasi.
       </div>
       <div class="muted small" id="sendHint" style="margin-top:6px"></div>
     </div>
 
     <div class="card">
       <h2>Log Aktivitas</h2>
+      <!-- Progress Bar saat ekspor berlangsung -->
+      <div id="exportProgressWrap" style="display:none;margin-bottom:12px;background:var(--card-subtle);padding:10px 14px;border-radius:var(--radius-sm);border:1px solid var(--line)">
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:12.5px;margin-bottom:6px">
+          <span id="exportProgressLabel" style="font-weight:600;color:var(--primary)">Sedang memproses...</span>
+          <span id="exportProgressPct" style="font-weight:700;color:var(--text);font-variant-numeric:tabular-nums">0%</span>
+        </div>
+        <div style="width:100%;height:8px;background:var(--line);border-radius:4px;overflow:hidden">
+          <div id="exportProgressBar" style="width:0%;height:100%;background:linear-gradient(90deg,var(--primary),var(--accent));transition:width 0.3s ease;border-radius:4px"></div>
+        </div>
+      </div>
       <div class="log" id="log">Belum ada aktivitas.</div>
       <div id="sendOut" style="margin-top:10px"></div>
     </div>
@@ -1384,17 +1366,19 @@ function calcBatchProfile(M, B, p, stdSet){
   }
 
   const T = times.length;
-  const wsWeight = (p && isFinite(toNum(p.ws)) && toNum(p.ws) > 0) ? toNum(p.ws) : DEF_CALC.wsDefault;
-  const lc = (p && isFinite(toNum(p.lc)) && toNum(p.lc) > 0) ? toNum(p.lc) : 1;
-  const dilStd = (p && isFinite(toNum(p.dilStd)) && toNum(p.dilStd) > 0) ? toNum(p.dilStd) : 1;
-  const dilSample = (p && isFinite(toNum(p.dilSample)) && toNum(p.dilSample) > 0) ? toNum(p.dilSample) : 1;
-  const volMedia = (p && isFinite(toNum(p.volMedia)) && toNum(p.volMedia) > 0) ? toNum(p.volMedia) : 900;
-  const volRep = (p && isFinite(toNum(p.volRep))) ? toNum(p.volRep) : 0;
-  const pctWS = (p && isFinite(toNum(p.pctWS))) ? toNum(p.pctWS) : 100;
+  const wsWeight = (p && isFinite(toNum(p.ws)) && toNum(p.ws) > 0) ? toNum(p.ws) : NaN;
+  const lc = (p && isFinite(toNum(p.lc)) && toNum(p.lc) > 0) ? toNum(p.lc) : NaN;
+  const dilStd = (p && isFinite(toNum(p.dilStd)) && toNum(p.dilStd) > 0) ? toNum(p.dilStd) : NaN;
+  const dilSample = (p && isFinite(toNum(p.dilSample)) && toNum(p.dilSample) > 0) ? toNum(p.dilSample) : NaN;
+  const volMedia = (p && isFinite(toNum(p.volMedia)) && toNum(p.volMedia) > 0) ? toNum(p.volMedia) : NaN;
+  const volRep = (p && isFinite(toNum(p.volRep)) && toNum(p.volRep) >= 0) ? toNum(p.volRep) : 0;
+  const pctWS = (p && isFinite(toNum(p.pctWS))) ? toNum(p.pctWS) : NaN;
   const mrCa = (p && isFinite(toNum(p.mrCa)) && toNum(p.mrCa) > 0) ? toNum(p.mrCa) : 1;
   const mr = (p && isFinite(toNum(p.mr)) && toNum(p.mr) > 0) ? toNum(p.mr) : 1;
 
-  const k = (wsWeight / lc) * (dilSample / dilStd) * (mr / mrCa) * pctWS / stdMean;
+  const k = (!isFinite(wsWeight) || !isFinite(lc) || !isFinite(dilStd) || !isFinite(dilSample) || !isFinite(volMedia) || !isFinite(pctWS))
+    ? NaN
+    : (wsWeight / lc) * (dilSample / dilStd) * (mr / mrCa) * pctWS / stdMean;
 
   const res = [];
   for (let v = 1; v <= V; v++){
@@ -1608,8 +1592,8 @@ const GOOGLE_CLIENT_ID = '';
 const GOOGLE_SCOPES = 'https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/spreadsheets';
 
 const DEF_CALC = {
-  lc: 20, dilStd: 500, dilSample: 900, volMedia: 900, volRep: 10,
-  pctWS: 98.23, mrCa: 1001.14, mr: 481.54, wsDefault: 22
+  lc: null, dilStd: null, dilSample: null, volMedia: null, volRep: null,
+  pctWS: null, mrCa: 1, mr: 1, wsDefault: null, useMr: false
 };
 const COLORS = ['#0f766e', '#c2410c', '#6d28d9', '#0369a1', '#be123c', '#4d7c0f'];
 
@@ -1624,7 +1608,7 @@ const S = {
     apparatus:'2 (Paddle)',
     instrumentPreset:'HPLC',
     instrument:'HPLC',
-    rpm:'50 rpm',
+    rpm:'',
     methodRef:'Farmakope Indonesia (FI) VI / USP'
   },
   mediaConfig:{}, // mId -> { preset, code, tabName, desc }
@@ -1698,6 +1682,11 @@ function restore(){
       Object.assign(S.testParams, j.testParams||{});
       Object.assign(S.refParams, j.refParams||{});
       Object.assign(S.condParams, j.condParams||{});
+      // Jika data tersimpan di localStorage masih menggunakan mock default lama Rosuvastatin, bersihkan
+      if(S.testParams && S.testParams.pctWS === 98.23 && S.testParams.lc === 20 && S.testParams.dilStd === 500 && S.testParams.volMedia === 900){
+        Object.assign(S.testParams, DEF_CALC);
+        Object.assign(S.refParams, DEF_CALC);
+      }
       delete S.testParams.tabPrefix;
       delete S.refParams.tabPrefix;
       if(!S.condParams.methodRef) S.condParams.methodRef = 'Farmakope Indonesia (FI) VI / USP';
@@ -1716,7 +1705,7 @@ function suggestedDate(){
 }
 
 // ===================== Navigasi =====================
-const STEPS=['Unggah','Verifikasi & Standar','Parameter & Perhitungan','Hasil & f2','Kirim ke Sheets'];
+const STEPS=['Unggah','Verifikasi & Standar','Parameter & Perhitungan','Hasil & f2','Export ke Sheets'];
 function buildNav(){
   const nav=$('#steps'); nav.innerHTML='';
   STEPS.forEach((t,i)=>nav.append(h('button',{class:(S.step===i+1?'active ':'')+(S.step>i+1?'done':''),onclick:()=>go(i+1)},h('span',{class:'n'},S.step>i+1?'✓':String(i+1)),t)));
@@ -1924,8 +1913,8 @@ function rebuild(){
     assign(model.media[m].refBatches, 'ref');
 
     sets.forEach(s => {
-      if(S.wsWeights[s.id] === undefined || !isFinite(toNum(S.wsWeights[s.id]))) {
-        S.wsWeights[s.id] = DEF_CALC.wsDefault;
+      if(S.wsWeights[s.id] === undefined) {
+        S.wsWeights[s.id] = null;
       }
     });
   }
@@ -2485,7 +2474,7 @@ function renderCondSection(){
 
       medRow.append(
         h('label',{class:'f'},`Jenis Media (pH ${mId})`, presetSel),
-        h('label',{class:'f'},'Label Tab Summary', codeInp),
+        h('label',{class:'f'},'Label Tab Media', codeInp),
         h('label',{class:'f'},'Deskripsi Media', descInp)
       );
       box.append(medRow);
@@ -2532,13 +2521,15 @@ function renderParams(){
     cCommon.innerHTML = '';
     const syncParamField = (label, key, opts={}) => {
       const val = S.testParams[key] !== undefined ? S.testParams[key] : (S.refParams[key] !== undefined ? S.refParams[key] : '');
+      const displayVal = (val === null || val === undefined) ? '' : (opts.num && isFinite(val) ? String(val).replace('.', ',') : String(val));
       const inp = h('input',{
-        type: opts.num ? 'number' : 'text',
-        step: opts.num ? 'any' : undefined,
-        value: (val === null || val === undefined) ? '' : String(val),
+        type: 'text',
+        inputmode: opts.num ? 'decimal' : 'text',
+        value: displayVal,
         placeholder: opts.ph || '',
         oninput: e => {
-          const v = opts.num ? (e.target.value === '' ? null : toNum(e.target.value)) : e.target.value;
+          const raw = e.target.value.trim();
+          const v = opts.num ? (raw === '' ? null : toNum(raw)) : e.target.value;
           S.testParams[key] = v;
           S.refParams[key] = v;
           store();
@@ -2549,14 +2540,11 @@ function renderParams(){
     };
 
     cCommon.append(
-      syncParamField('Label Claim (mg)', 'lc', {num:1}),
-      syncParamField('Volume Media (mL)', 'volMedia', {num:1}),
-      syncParamField('Volume Pengganti (mL)', 'volRep', {num:1}),
-      syncParamField('Pengenceran Standar (mL)', 'dilStd', {num:1}),
-      syncParamField('Pengenceran Sampel (mL)', 'dilSample', {num:1}),
-      syncParamField('% Potensi WS', 'pctWS', {num:1}),
-      syncParamField('Mr Garam (bila ada)', 'mrCa', {num:1}),
-      syncParamField('Mr Zat Aktif Bebas', 'mr', {num:1})
+      syncParamField('Label Claim (mg)', 'lc', {num:1, ph:'mis. 20'}),
+      syncParamField('Volume Media (mL)', 'volMedia', {num:1, ph:'mis. 900'}),
+      syncParamField('Volume Media Replace (mL)', 'volRep', {num:1, ph:'mis. 10'}),
+      syncParamField('Faktor Pengenceran Standar', 'dilStd', {num:1, ph:'mis. 500'}),
+      syncParamField('Faktor Pengenceran Sampel', 'dilSample', {num:1, ph:'mis. 900'})
     );
   }
 
@@ -2601,12 +2589,112 @@ function renderWeightsForRole(containerEl, role='all'){
 
   const box = h('div',{style:'border-top:1px dashed var(--line);padding-top:16px;margin-top:16px'});
 
-  // Header Bagian dengan Quick Setter (Set Semua Bobot Sekaligus)
+  // Section 1: Parameter WS & Koreksi Mr Terpadu
+  const wsParamCard = h('div',{style:'background:var(--card-subtle);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-bottom:14px'});
+  const wsTopRow = h('div',{class:'row',style:'align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px'});
+
+  // % Potensi WS
+  const curPctWS = S.testParams.pctWS !== undefined ? S.testParams.pctWS : (S.refParams.pctWS !== undefined ? S.refParams.pctWS : null);
+  const pctInp = h('input',{
+    type:'text',
+    inputmode:'decimal',
+    placeholder:'mis. 99,5',
+    value: (curPctWS !== null && curPctWS !== undefined && isFinite(curPctWS)) ? String(curPctWS).replace('.', ',') : '',
+    style:'width:110px;font-weight:600',
+    oninput: e => {
+      const v = toNum(e.target.value);
+      const val = isFinite(v) ? v : null;
+      S.testParams.pctWS = val;
+      S.refParams.pctWS = val;
+      store();
+      renderResults();
+    }
+  });
+  const pctLabel = h('label',{class:'f',style:'margin:0;flex-direction:row;align-items:center;gap:8px'},
+    h('b',{style:'font-size:13px;white-space:nowrap'},'% Potensi WS:'),
+    pctInp
+  );
+
+  // Checkbox Koreksi Mr (Default: Sembunyi & otomatis bernilai 1 jika tidak dicentang)
+  const isMrActive = Boolean(S.useMr || (S.testParams.mrCa && S.testParams.mrCa !== 1) || (S.testParams.mr && S.testParams.mr !== 1));
+  const mrToggleWrap = h('div',{id:'mrInputsWrap',style:`display:${isMrActive?'grid':'none'};grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:12px;padding-top:10px;border-top:1px dashed var(--line)`});
+
+  const mrCaVal = (S.testParams.mrCa !== undefined && S.testParams.mrCa !== null) ? S.testParams.mrCa : 1;
+  const mrVal = (S.testParams.mr !== undefined && S.testParams.mr !== null) ? S.testParams.mr : 1;
+
+  const mrCaInp = h('input',{
+    type:'text',
+    inputmode:'decimal',
+    placeholder:'mis. 1001,14',
+    value: (isMrActive && mrCaVal !== 1) ? String(mrCaVal).replace('.', ',') : '',
+    oninput: e => {
+      const v = toNum(e.target.value);
+      const val = isFinite(v) ? v : 1;
+      S.testParams.mrCa = val;
+      S.refParams.mrCa = val;
+      store();
+      renderResults();
+    }
+  });
+
+  const mrInp = h('input',{
+    type:'text',
+    inputmode:'decimal',
+    placeholder:'mis. 481,54',
+    value: (isMrActive && mrVal !== 1) ? String(mrVal).replace('.', ',') : '',
+    oninput: e => {
+      const v = toNum(e.target.value);
+      const val = isFinite(v) ? v : 1;
+      S.testParams.mr = val;
+      S.refParams.mr = val;
+      store();
+      renderResults();
+    }
+  });
+
+  mrToggleWrap.append(
+    h('label',{class:'f'},'Mr Bentuk Garam / Standar', mrCaInp),
+    h('label',{class:'f'},'Mr Zat Aktif Bebas', mrInp)
+  );
+
+  const mrCheck = h('input',{
+    type:'checkbox',
+    style:'width:auto;margin:0',
+    checked: isMrActive,
+    onchange: e => {
+      const active = e.target.checked;
+      S.useMr = active;
+      if(!active){
+        S.testParams.mrCa = 1;
+        S.refParams.mrCa = 1;
+        S.testParams.mr = 1;
+        S.refParams.mr = 1;
+        mrCaInp.value = '';
+        mrInp.value = '';
+        mrToggleWrap.style.display = 'none';
+      } else {
+        mrToggleWrap.style.display = 'grid';
+      }
+      store();
+      renderResults();
+    }
+  });
+
+  const mrCheckLabel = h('label',{style:'display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;margin:0;user-select:none'},
+    mrCheck,
+    h('span',null,'Gunakan Koreksi Bobot Molekul (Mr)')
+  );
+
+  wsTopRow.append(pctLabel, mrCheckLabel);
+  wsParamCard.append(wsTopRow, mrToggleWrap);
+  box.append(wsParamCard);
+
+  // Section 2: Header Bobot Penimbangan WS dengan Quick Setter
+  // Catatan: Tulisan "Berkelompok per Media Disolusi" telah dihilangkan sesuai permintaan
   const headerRow = h('div',{class:'row',style:'justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px'},
     h('div',null,
       h('h3',{style:'margin:0;font-size:15px;display:flex;align-items:center;gap:8px'},
-        'Bobot Penimbangan Baku Kerja / WS (mg)',
-        h('span',{class:'badge info',style:'font-size:11px;font-weight:normal'},'Berkelompok per Media Disolusi')
+        'Bobot Penimbangan Baku Kerja / WS (mg)'
       ),
       h('div',{class:'small muted',style:'margin-top:2px'},
         'Atur bobot penimbangan baku kerja (Working Standard) untuk masing-masing larutan standar pada setiap media disolusi.'
@@ -2616,19 +2704,22 @@ function renderWeightsForRole(containerEl, role='all'){
       h('span',{class:'small muted'},'Set semua:'),
       h('input',{
         id:'inpBulkWS',
-        type:'number',
-        step:'any',
-        placeholder:String(DEF_CALC.wsDefault),
-        style:'width:75px;padding:4px 8px;font-size:12px',
-        value:String(DEF_CALC.wsDefault)
+        type:'text',
+        inputmode:'decimal',
+        placeholder:'mis. 20',
+        style:'width:80px;padding:4px 8px;font-size:12px;font-weight:600'
       }),
       h('button',{
         class:'btn small',
         type:'button',
         style:'font-size:12px;padding:4px 10px',
         onclick:()=>{
-          const v = toNum($('#inpBulkWS')?.value);
-          if(!isFinite(v) || v <= 0) return;
+          const raw = ($('#inpBulkWS')?.value || '').trim();
+          const v = toNum(raw);
+          if(!isFinite(v) || v <= 0) {
+            alert('Masukkan angka bobot WS yang valid (mis. 20 atau 20,5)');
+            return;
+          }
           relevantSets.forEach(s => { S.wsWeights[s.id] = v; });
           store();
           renderResults();
@@ -2682,16 +2773,18 @@ function renderWeightsForRole(containerEl, role='all'){
         ? `${S.testParams.product || 'Produk Uji'} & ${S.refParams.product || 'Komparator'}`
         : (isRef ? (S.refParams.product || 'Produk Komparator') : (S.testParams.product || 'Produk Uji'));
 
-      const curW = S.wsWeights[s.id] !== undefined ? S.wsWeights[s.id] : DEF_CALC.wsDefault;
+      const curW = S.wsWeights[s.id];
+      const displayW = (curW !== null && curW !== undefined && isFinite(curW)) ? String(curW).replace('.', ',') : '';
       const inp = h('input',{
-        type:'number',
-        step:'any',
+        type:'text',
         inputmode:'decimal',
-        value:String(curW).replace('.',','),
+        placeholder:'mis. 20',
+        value: displayW,
         style:'font-weight:bold;font-size:13px;width:100%',
         oninput:e=>{
-          const val = toNum(e.target.value);
-          S.wsWeights[s.id] = isFinite(val) ? val : 0;
+          const raw = e.target.value.trim();
+          const val = raw === '' ? null : toNum(raw);
+          S.wsWeights[s.id] = (val !== null && isFinite(val)) ? val : null;
           store();
           renderResults();
         }
@@ -2717,7 +2810,6 @@ function renderWeightsForRole(containerEl, role='all'){
           inp
         )
       );
-
       mCard.append(sRow);
     });
 
@@ -2727,7 +2819,6 @@ function renderWeightsForRole(containerEl, role='all'){
   box.append(mediaGrid);
   containerEl.append(box);
 }
-
 // ===================== Langkah 4: Hasil & Evaluasi f2 =====================
 // Helper: Format konsisten "<Nama Produk> <Batch>" (contoh: Diflucan NG7930, Zemyc Y5G103B)
 function formatProductBatch(prodParam, batchName, batchObj, fallbackRole){
@@ -3387,7 +3478,7 @@ function printReportWindow(){
           </tr>
           <tr>
             <td class="lbl">Batch Produk Uji</td><td>${tName}</td>
-            <td class="lbl">Volume Media</td><td>${(S.testParams.volMedia || 900)} mL</td>
+            <td class="lbl">Volume Media</td><td>${S.testParams.volMedia ? S.testParams.volMedia + " mL" : "–"}</td>
           </tr>
           <tr>
             <td class="lbl">Manufaktur Produk Uji</td><td>${S.testParams.manufacturer || '-'}</td>
@@ -3398,7 +3489,7 @@ function printReportWindow(){
             <td class="lbl">Detektor / Instrumen</td><td>${S.condParams.instrument || 'HPLC'}</td>
           </tr>
           <tr>
-            <td class="lbl">Label Claim</td><td>${(S.testParams.lc || 20)} mg</td>
+            <td class="lbl">Label Claim</td><td>${S.testParams.lc ? S.testParams.lc + " mg" : "–"}</td>
             <td class="lbl">Acuan Metode</td><td>${S.condParams.methodRef || 'Farmakope Indonesia (FI) VI / USP'}</td>
           </tr>
         </table>
@@ -3754,12 +3845,12 @@ async function exportPDF(){
           [{content:'Produk Uji', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, {content:testFullName, styles:{fontStyle:'bold'}},
            {content:'Media Disolusi', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, cfg.desc || ('Buffer pH ' + mId)],
           [{content:'Batch Produk Uji', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, tBatchName,
-           {content:'Volume Media', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, (S.testParams.volMedia || 900) + ' mL'],
+           {content:'Volume Media', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, S.testParams.volMedia ? S.testParams.volMedia + ' mL' : '–'],
           [{content:'Manufaktur Produk Uji', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, tManufacturer || '-',
            {content:'MD / ED Produk Uji', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, tMdEd || '-'],
           [{content:'Zat Aktif (API)', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, S.condParams.api || '-',
            {content:'Detektor / Instrumen', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, S.condParams.instrument || 'HPLC'],
-          [{content:'Label Claim', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, (S.testParams.lc || 20) + ' mg',
+          [{content:'Label Claim', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, S.testParams.lc ? S.testParams.lc + ' mg' : '–',
            {content:'Acuan Metode', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, S.condParams.methodRef || 'Farmakope Indonesia (FI) VI / USP']
         ];
 
@@ -4605,7 +4696,7 @@ async function verifyFolder(){
 }
 
 function setExportBtnsDisabled(disabled){
-  ['calcBtn','reportBtn','summaryBtn'].forEach(id => {
+  ['calcBtn','reportBtn'].forEach(id => {
     const el = $('#'+id);
     if(el) el.disabled = disabled;
   });
@@ -4641,14 +4732,14 @@ function renderSend(){
           ? h('span',{class:'small',style:'color:var(--err)'},'Belum siap: '+rd.join('; '))
           : (calcInfo && calcInfo.id
               ? h('span',{class:'small'},h('span',{class:'badge ok'},'Sheet Calculation Aktif'), ' ', h('a',{href:calcInfo.url,target:'_blank',rel:'noopener',class:'link'},calcInfo.title||calcInfo.id))
-              : h('span',{class:'small muted'},'Siap diekspor (Calculation → Report → Summary)'))
+              : h('span',{class:'small muted'},'Siap diekspor (Calculation → Report)'))
       )));
     box.append(rowDiv);
   });
 
   const hasConn = connAvailable();
   setExportBtnsDisabled(!hasConn || S.busy);
-  $('#sendHint').textContent = hasConn ? '' : 'Hubungkan akun/token Google di atas untuk mengaktifkan tombol Calculation, Report, dan Summary.';
+  $('#sendHint').textContent = hasConn ? '' : 'Hubungkan akun/token Google di atas untuk mengaktifkan tombol Calculation dan Report.';
 }
 
 async function initConn(){
@@ -4664,7 +4755,7 @@ async function testConn(){
   const hasConn = connAvailable();
   if(!hasConn){ out.append(h('div',{class:'banner err'},'Konektor belum terhubung. Silakan hubungkan token Google di atas.')); return; }
   
-  out.append(h('div',{class:'small muted',style:'margin-bottom:6px'},'Memverifikasi akses ketiga Master Template di Google Drive...'));
+  out.append(h('div',{class:'small muted',style:'margin-bottom:6px'},'Memverifikasi akses Master Template (Calculation & Report) di Google Drive...'));
 
   if(S.gasUrl){
     try {
@@ -4994,7 +5085,7 @@ async function sendReportMedium(mId){
         [rProdName],
         [tProdName],
         [cfg.desc || ('Buffer pH '+mId)],
-        [(S.testParams.volMedia || 900) + ' ml'],
+        [S.testParams.volMedia ? S.testParams.volMedia + ' ml' : '–'],
         [S.condParams.apparatus || '2 (Paddle)'],
         [S.condParams.rpm || '50 rpm'],
         [S.condParams.instrument || 'HPLC'],
@@ -5280,7 +5371,7 @@ async function sendSummaryMedium(mId, sumSheet){
     values: [
       [cfg.desc || ('Buffer pH '+mId)],
       [apiName],
-      [(S.testParams.volMedia || 900) + ' ml'],
+      [S.testParams.volMedia ? S.testParams.volMedia + ' ml' : '–'],
       [S.condParams.apparatus || '2 (Paddle)'],
       [S.condParams.rpm || '50 rpm'],
       [S.condParams.instrument || 'HPLC']
@@ -5390,9 +5481,25 @@ async function sendSummaryMedium(mId, sumSheet){
 }
 
 // ===================== RUNNER UNTUK KETIGA TOMBOL =====================
+function updateExportProgress(pct, label){
+  const wrap = $('#exportProgressWrap');
+  const bar = $('#exportProgressBar');
+  const lbl = $('#exportProgressLabel');
+  const pTxt = $('#exportProgressPct');
+  if(!wrap || !bar) return;
+  if(pct === false){
+    wrap.style.display = 'none';
+    return;
+  }
+  wrap.style.display = 'block';
+  if(label && lbl) lbl.textContent = label;
+  const clamped = Math.min(100, Math.max(0, Math.round(pct)));
+  if(pTxt) pTxt.textContent = clamped + '%';
+  bar.style.width = clamped + '%';
+}
+
 async function executeExportCommand(mode){
   if(S.busy) return;
-  if(!$('#ack').checked){ alert('Centang konfirmasi terlebih dahulu.'); return; }
   const ids = sortedMediaIds(S.model).filter(id => S.include[id] && readiness(id).length===0);
   if(!ids.length){ alert('Tidak ada medium yang siap dikirim.'); return; }
 
@@ -5407,27 +5514,40 @@ async function executeExportCommand(mode){
   logStarted = false;
 
   const modeLabel = mode === 'calc' ? 'CALCULATION' : (mode === 'report' ? 'REPORT' : 'SUMMARY');
+  updateExportProgress(5, `Mulai proses [${modeLabel}]...`);
   log(`Mulai proses [${modeLabel}] untuk medium: ` + ids.map(i=>getMedConfig(i).tabName||('pH '+i)).join(', '));
 
   const done = [];
   try{
     if(mode === 'summary'){
+      updateExportProgress(15, 'Menyiapkan spreadsheet Master Summary...');
       const sumSheet = await ensureSummarySpreadsheet();
+      let stepIdx = 0;
       for(const id of ids){
+        const pct = 20 + Math.round((stepIdx / ids.length) * 70);
+        updateExportProgress(pct, `Mengirim summary medium pH ${id}...`);
         await sendSummaryMedium(id, sumSheet);
+        stepIdx++;
       }
       done.push({ title: `[Summary] ${sumSheet.title}`, url: sumSheet.url });
     } else {
+      let stepIdx = 0;
       for(const id of ids){
+        const basePct = 15 + Math.round((stepIdx / ids.length) * 75);
         if(mode === 'calc'){
+          updateExportProgress(basePct, `Menyalin & menulis Calculation (pH ${id})...`);
           done.push(await sendCalculationMedium(id));
         } else if(mode === 'report'){
+          updateExportProgress(basePct, `Membuat & menulis Report (pH ${id})...`);
           done.push(await sendReportMedium(id));
         }
+        stepIdx++;
       }
     }
+    updateExportProgress(100, `Proses [${modeLabel}] selesai!`);
   } catch(e){
     log(`GAGAL [${modeLabel}] — ${errMsg(e)}`, 'e');
+    updateExportProgress(100, `Proses [${modeLabel}] gagal.`);
   }
 
   const out = $('#sendOut');
@@ -5439,9 +5559,9 @@ async function executeExportCommand(mode){
 
   log(`Proses [${modeLabel}] selesai.`);
   S.busy = false;
+  setExportBtnsDisabled(false);
   renderSend();
 }
-
 // ===================== Inisialisasi =====================
 function init(){
   restore();
