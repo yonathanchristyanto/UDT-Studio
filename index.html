@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>UDT Studio — Uji Disolusi Terbanding</title>
+<title>UDT Studio — Analytical Development - Pharos Indonesia</title>
 <script src="https://accounts.google.com/gsi/client" async defer onload="window.onGisLoad&&window.onGisLoad()"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
@@ -107,9 +107,18 @@ body {
   display: flex; align-items: center; justify-content: space-between;
   height: 52px;
 }
-.topbar-brand { display: flex; align-items: baseline; gap: 8px; }
-.topbar-brand h1 { font-size: 15px; font-weight: 600; margin: 0; letter-spacing: -0.01em; }
-.topbar-brand .sub { font-size: 12px; color: var(--muted); margin: 0; }
+.topbar-brand { display: flex; align-items: center; gap: 10px; }
+.topbar-brand h1 { font-size: 15.5px; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
+.topbar-brand .sub {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-soft);
+  padding: 3px 10px;
+  border-radius: 99px;
+  margin: 0;
+  letter-spacing: 0.01em;
+}
 .topbar-actions { display: flex; align-items: center; gap: 8px; }
 .theme-btn {
   background: var(--surface); border: none; border-radius: 99px;
@@ -609,7 +618,7 @@ details[open] summary { margin-bottom: 8px; }
 <header class="topbar">
   <div class="topbar-brand">
     <h1>UDT Studio</h1>
-    <span class="sub">Disolusi Terbanding (BPOM / FDA / EMA)</span>
+    <span class="sub">Analytical Development - Pharos Indonesia</span>
   </div>
   <div class="topbar-actions">
     <button class="theme-btn" onclick="document.documentElement.dataset.theme=document.documentElement.dataset.theme==='dark'?'light':'dark'">Tampilan</button>
@@ -1838,12 +1847,25 @@ function rebuild(){
   for(const m of Object.keys(model.media)){
     // Inisialisasi konfigurasi media otomatis dari sampel yang diinput bila belum ada
     getMedConfig(m);
+    const inferProdFromBatch = (b) => {
+      let p = String(b.productDetected || '').replace(/^\d{6}[\s_-]*/, '').trim();
+      if(!p && b.file && b.name){
+        const idx = b.file.toLowerCase().indexOf(b.name.toLowerCase());
+        if(idx > 0){
+          const pref = b.file.slice(0, idx).replace(/[\s_-]+$/, '').replace(/^\d{6}[\s_-]*/, '').trim();
+          if(pref && !/^(standar|standard|std|bs)/i.test(pref)) p = pref;
+        }
+      }
+      return p;
+    };
     for(const b of Object.values(model.media[m].testBatches)){
-      if(b.productDetected && !S.testParams.product) S.testParams.product = b.productDetected;
+      const detP = inferProdFromBatch(b);
+      if(detP && !S.testParams.product) S.testParams.product = detP;
       if(b.name && !S.testParams.batch) S.testParams.batch = b.name;
     }
     for(const b of Object.values(model.media[m].refBatches)){
-      if(b.productDetected && !S.refParams.product) S.refParams.product = b.productDetected;
+      const detP = inferProdFromBatch(b);
+      if(detP && !S.refParams.product) S.refParams.product = detP;
       if(b.name && !S.refParams.batch) S.refParams.batch = b.name;
     }
   }
@@ -2624,6 +2646,26 @@ function renderWeightsForRole(containerEl, role='all'){
 }
 
 // ===================== Langkah 4: Hasil & Evaluasi f2 =====================
+// Helper: Format konsisten "<Nama Produk> <Batch>" (contoh: Diflucan NG7930, Zemyc Y5G103B)
+function formatProductBatch(prodParam, batchName, batchObj, fallbackRole){
+  let p = String(prodParam || (batchObj && batchObj.productDetected) || '').replace(/^\d{6}[\s_-]*/, '').trim();
+  const b = String(batchName || (batchObj && batchObj.name) || '').trim();
+  if(!p && batchObj && batchObj.file && b){
+    const idx = batchObj.file.toLowerCase().indexOf(b.toLowerCase());
+    if(idx > 0){
+      const pref = batchObj.file.slice(0, idx).replace(/[\s_-]+$/, '').replace(/^\d{6}[\s_-]*/, '').trim();
+      if(pref && !/^(standar|standard|std|bs)/i.test(pref)) p = pref;
+    }
+  }
+  if(!p) p = fallbackRole || '';
+  if(p && b){
+    if(p.toLowerCase().includes(b.toLowerCase())) return p;
+    if(b.toLowerCase().includes(p.toLowerCase())) return b;
+    return `${p} ${b}`;
+  }
+  return p || b || fallbackRole || '-';
+}
+
 function getMediumF2Summary(mId){
   const M = S.model ? S.model.media[mId] : null;
   if(!M) return {text:'Belum ada data', cls:'muted'};
@@ -2679,17 +2721,18 @@ function renderMediumResultCard(mId){
     const refBatches = Object.keys(M.refBatches);
     let refCalculated = null;
     let refBatchName = refBatches[0] || '';
+    const rBObj = refBatches.length ? M.refBatches[refBatchName] : null;
+    const refFullName = formatProductBatch(S.refParams.product, refBatchName, rBObj, 'Produk Pembanding');
 
     if(refBatches.length){
-      const rB = M.refBatches[refBatchName];
+      const rB = rBObj;
       let sId = S.stdMapping[mId+'|'+refBatchName];
       let sObj = stdSets.find(s=>s.id===sId);
       if(!sObj){ sObj = stdSets[0]; S.stdMapping[mId+'|'+refBatchName] = sObj.id; }
       const p = {...S.refParams, ws: S.wsWeights[sObj.id] !== undefined ? S.wsWeights[sObj.id] : S.refParams.wsDefault};
       refCalculated = calcBatchProfile(M, rB, p, sObj);
 
-      const rProdName = S.refParams.product || 'Produk Pembanding';
-      card.append(h('h3',null,`Profil Pembanding: ${rProdName} (${refBatchName})`));
+      card.append(h('h3',null,`Profil Produk Pembanding: ${refFullName}`));
       card.append(renderProfileTable(refCalculated, 'Pembanding'));
     } else {
       card.append(h('div',{class:'banner warn'},'Data Produk Pembanding belum diunggah untuk pH '+mId+'. Unggah di kotak Produk Pembanding (Langkah 1) untuk evaluasi f2.'));
@@ -2699,7 +2742,7 @@ function renderMediumResultCard(mId){
     const testBatches = Object.keys(M.testBatches);
     const seriesForChart = [];
     if(refCalculated && refCalculated.stats && refCalculated.stats.length){
-      seriesForChart.push({name: 'Pembanding ('+refBatchName+')', vals: refCalculated.stats.map(x=>x.avg), color: '#475569', dash: true, marker: 'square'});
+      seriesForChart.push({name: refFullName, vals: refCalculated.stats.map(x=>x.avg), color: '#475569', dash: true, marker: 'square'});
     }
 
     if(!testBatches.length){
@@ -2714,12 +2757,12 @@ function renderMediumResultCard(mId){
       const p = {...S.testParams, ws: S.wsWeights[sObj.id] !== undefined ? S.wsWeights[sObj.id] : S.testParams.wsDefault};
       const tCalc = calcBatchProfile(M, tB, p, sObj);
 
-      const tProdName = S.testParams.product || 'Produk Uji';
-      card.append(h('h3',{style:'margin-top:18px'},`Profil Produk Uji: ${tProdName} · Batch ${tName}`));
+      const testFullName = formatProductBatch(S.testParams.product, tName, tB, 'Produk Uji');
+      card.append(h('h3',{style:'margin-top:18px'},`Profil Produk Uji: ${testFullName}`));
       card.append(renderProfileTable(tCalc, 'Uji'));
       
       if(tCalc.stats && tCalc.stats.length){
-        seriesForChart.push({name: 'Uji ('+tName+')', vals: tCalc.stats.map(x=>x.avg), color: COLORS[tIdx % COLORS.length], dash: false, marker: tIdx === 0 ? 'circle' : 'triangle'});
+        seriesForChart.push({name: testFullName, vals: tCalc.stats.map(x=>x.avg), color: COLORS[tIdx % COLORS.length], dash: false, marker: tIdx === 0 ? 'circle' : 'triangle'});
       }
 
       // 3. Evaluasi f2 (Highlight Utama)
@@ -2734,7 +2777,7 @@ function renderMediumResultCard(mId){
 
         const badgeClass = f2Res.isSimilar ? 'ok' : (isFinite(f2Res.f2) ? 'warn' : 'info');
         const f2Box = h('div',{class:'f2-box ' + badgeClass});
-        f2Box.append(h('h4',null,`Hasil Evaluasi Faktor Kemiripan f2 (Batch ${tName} vs Pembanding ${refBatchName})`));
+        f2Box.append(h('h4',null,`Hasil Evaluasi Faktor Kemiripan f2 (${testFullName} vs ${refFullName})`));
 
         const f2ValText = isFinite(f2Res.f2) ? `f2 = ${fmt(f2Res.f2, 2)}` : 'f2 = N/A';
         const statusText = f2Res.both85at15
@@ -3107,8 +3150,10 @@ function drawChartCanvas(series, times, w = 520, h = 160) {
     });
   });
 
-  // Kotak Legenda
-  const legW = 165, legH = series.length * 14 + 6;
+  // Kotak Legenda (lebar adaptif sesuai panjang nama produk & batch)
+  ctx.font = '7.5px Arial, sans-serif';
+  const maxTxtW = Math.max(...series.map(s => ctx.measureText(s.name || '').width), 95);
+  const legW = Math.min(230, Math.ceil(maxTxtW + 40)), legH = series.length * 14 + 6;
   const legX = w - legW - 10, legY = T + 2;
   ctx.fillStyle = 'rgba(255, 255, 255, 0.94)';
   ctx.fillRect(legX, legY, legW, legH);
@@ -3199,9 +3244,12 @@ function printReportWindow(){
         tCalc.stats
       );
 
+      const refFullName = formatProductBatch(S.refParams.product, refBatchName, rB, 'Produk Pembanding');
+      const testFullName = formatProductBatch(S.testParams.product, tName, tB, 'Produk Uji');
+
       const chartDataUrl = drawChartCanvas([
-        { name: `Pembanding (${refBatchName})`, vals: refCalc.stats.map(x => x.avg), color: '#475569', dash: true, marker: 'square' },
-        { name: `Uji (${tName})`, vals: tCalc.stats.map(x => x.avg), color: '#0071e3', dash: false, marker: 'circle' }
+        { name: refFullName, vals: refCalc.stats.map(x => x.avg), color: '#475569', dash: true, marker: 'square' },
+        { name: testFullName, vals: tCalc.stats.map(x => x.avg), color: '#0071e3', dash: false, marker: 'circle' }
       ], M.times, 580, 190);
 
       // Selisih & kuadrat selisih untuk tabel evaluasi f2
@@ -3221,11 +3269,11 @@ function printReportWindow(){
       const f2Label = isFinite(f2Res.f2) ? `f2 = ${fmt(f2Res.f2, 2)}` : 'f2: N/A';
       let conclusionBadge = '';
       if(f2Res.both85at15){
-        conclusionBadge = `<div class="f2-badge ok"><div class="f2-badge-score">${f2Label}</div><div class="f2-badge-body"><b>DISSOLUSI SANGAT CEPAT (VERY RAPID DISSOLUTION)</b><br>Kedua produk mencapai &ge; 85% dalam 15 menit (<b>n = ${f2Res.n}</b>). Profil disolusi dinilai serupa.</div></div>`;
+        conclusionBadge = `<div class="f2-badge ok"><div class="f2-badge-score">${f2Label}</div><div class="f2-badge-body"><b>DISSOLUSI SANGAT CEPAT (VERY RAPID DISSOLUTION)</b><br>Kedua produk (${testFullName} vs ${refFullName}) mencapai &ge; 85% dalam 15 menit (<b>n = ${f2Res.n}</b>). Profil disolusi dinilai serupa.</div></div>`;
       } else if(f2Res.isSimilar){
-        conclusionBadge = `<div class="f2-badge ok"><div class="f2-badge-score">${f2Label}</div><div class="f2-badge-body"><b>PROFIL DISOLUSI SERUPA / EKIVALEN (50 &ndash; 100)</b><br><b>n = ${f2Res.n}</b>${f2Res.usedTimes && f2Res.usedTimes.length ? ` (${f2Res.usedTimes.map(t=>t+"'").join(', ')})` : ''} &bull; Total &sum;(Rt-Tt)&sup2; = ${fmt(sumSq, 0)}</div></div>`;
+        conclusionBadge = `<div class="f2-badge ok"><div class="f2-badge-score">${f2Label}</div><div class="f2-badge-body"><b>PROFIL DISOLUSI SERUPA / EKIVALEN (50 &ndash; 100) &mdash; ${testFullName} vs ${refFullName}</b><br><b>n = ${f2Res.n}</b>${f2Res.usedTimes && f2Res.usedTimes.length ? ` (${f2Res.usedTimes.map(t=>t+"'").join(', ')})` : ''} &bull; Total &sum;(Rt-Tt)&sup2; = ${fmt(sumSq, 0)}</div></div>`;
       } else {
-        conclusionBadge = `<div class="f2-badge warn"><div class="f2-badge-score">${f2Label}</div><div class="f2-badge-body"><b>PROFIL DISOLUSI TIDAK SERUPA (&lt; 50)</b><br><b>n = ${f2Res.n}</b>${f2Res.usedTimes && f2Res.usedTimes.length ? ` (${f2Res.usedTimes.map(t=>t+"'").join(', ')})` : ''} &bull; Total &sum;(Rt-Tt)&sup2; = ${fmt(sumSq, 0)}</div></div>`;
+        conclusionBadge = `<div class="f2-badge warn"><div class="f2-badge-score">${f2Label}</div><div class="f2-badge-body"><b>PROFIL DISOLUSI TIDAK SERUPA (&lt; 50) &mdash; ${testFullName} vs ${refFullName}</b><br><b>n = ${f2Res.n}</b>${f2Res.usedTimes && f2Res.usedTimes.length ? ` (${f2Res.usedTimes.map(t=>t+"'").join(', ')})` : ''} &bull; Total &sum;(Rt-Tt)&sup2; = ${fmt(sumSq, 0)}</div></div>`;
       }
 
       // HALAMAN 1: Master Report Summary
@@ -3233,13 +3281,14 @@ function printReportWindow(){
       <div class="sheet-page">
         <div class="rep-header">
           <h1>LAPORAN HASIL UJI DISOLUSI TERBANDING (UDT)</h1>
-          <p>Formulir Evaluasi Profil Disolusi Terbanding (Master Report Format) &bull; Dicetak pada: ${dateStr}</p>
+          <div class="rep-sub">Analytical Development - Pharos Indonesia</div>
+          <p>Dicetak pada: ${dateStr}</p>
         </div>
 
         <div class="sec-title">1. PARAMETER &amp; KONDISI PENGUJIAN</div>
         <table class="sheet-table">
           <tr>
-            <td class="lbl">Produk Pembanding</td><td>${rProdName}</td>
+            <td class="lbl">Produk Pembanding</td><td><b>${refFullName}</b></td>
             <td class="lbl">Aparatus Disolusi</td><td>${S.condParams.apparatus || '2 (Paddle)'}</td>
           </tr>
           <tr>
@@ -3251,7 +3300,7 @@ function printReportWindow(){
             <td class="lbl">MD / ED Pembanding</td><td>${S.refParams.mdEd || '-'}</td>
           </tr>
           <tr>
-            <td class="lbl">Produk Uji</td><td>${tProdName}</td>
+            <td class="lbl">Produk Uji</td><td><b>${testFullName}</b></td>
             <td class="lbl">Media Disolusi</td><td>${cfg.desc || ('Buffer pH ' + mId)}</td>
           </tr>
           <tr>
@@ -3276,8 +3325,7 @@ function printReportWindow(){
         <table class="sheet-table">
           <thead>
             <tr>
-              <th>Identitas Produk</th>
-              <th>Batch</th>
+              <th>Identitas Produk &amp; Batch</th>
               <th>Manufaktur &amp; MD/ED</th>
               <th>Stat</th>
               ${M.times.map(t => `<th>${t}'</th>`).join('')}
@@ -3285,8 +3333,7 @@ function printReportWindow(){
           </thead>
           <tbody>
             <tr>
-              <td rowspan="3" style="vertical-align:middle;font-weight:600">${rProdName}</td>
-              <td rowspan="3" style="vertical-align:middle;text-align:center">${refBatchName}</td>
+              <td rowspan="3" style="vertical-align:middle;font-weight:700">${refFullName}</td>
               <td rowspan="3" style="vertical-align:middle;font-size:11px;color:#475569">${S.refParams.manufacturer || '-'}${S.refParams.mdEd ? '<br><b>MD/ED:</b> ' + S.refParams.mdEd : ''}</td>
               <td style="font-weight:600;background:#f8fafc">Rata-rata</td>
               ${refCalc.stats.map(x => `<td class="num" style="font-weight:600">${fmt(x.avg, 0)}</td>`).join('')}
@@ -3300,8 +3347,7 @@ function printReportWindow(){
               ${refCalc.stats.map(x => `<td class="num">${fmt(x.max, 0)}</td>`).join('')}
             </tr>
             <tr style="border-top:2px solid #cbd5e1">
-              <td rowspan="3" style="vertical-align:middle;font-weight:600">${tProdName}</td>
-              <td rowspan="3" style="vertical-align:middle;text-align:center">${tName}</td>
+              <td rowspan="3" style="vertical-align:middle;font-weight:700">${testFullName}</td>
               <td rowspan="3" style="vertical-align:middle;font-size:11px;color:#475569">${S.testParams.manufacturer || '-'}${S.testParams.mdEd ? '<br><b>MD/ED:</b> ' + S.testParams.mdEd : ''}</td>
               <td style="font-weight:600;background:#f8fafc">Rata-rata</td>
               ${tCalc.stats.map(x => `<td class="num" style="font-weight:600">${fmt(x.avg, 0)}</td>`).join('')}
@@ -3332,11 +3378,11 @@ function printReportWindow(){
           </thead>
           <tbody>
             <tr>
-              <td style="font-weight:600">Reference (Rt) %</td>
+              <td style="font-weight:600">${refFullName} (Rt) %</td>
               ${refCalc.stats.map(x => `<td class="num">${fmt(x.avg, 0)}</td>`).join('')}
             </tr>
             <tr>
-              <td style="font-weight:600">Test (Tt) %</td>
+              <td style="font-weight:600">${testFullName} (Tt) %</td>
               ${tCalc.stats.map(x => `<td class="num">${fmt(x.avg, 0)}</td>`).join('')}
             </tr>
             <tr style="background:#f8fafc">
@@ -3357,10 +3403,11 @@ function printReportWindow(){
       <div class="sheet-page">
         <div class="rep-header">
           <h1>DATA RINCI DISOLUSI INDIVIDUAL (12 VESSEL)</h1>
-          <p>Medium: ${cfg.desc || ('Buffer pH ' + mId)} &bull; Pembanding (${refBatchName}) vs Uji (${tName})</p>
+          <div class="rep-sub">Analytical Development - Pharos Indonesia</div>
+          <p>Medium: ${cfg.desc || ('Buffer pH ' + mId)} &bull; ${refFullName} vs ${testFullName}</p>
         </div>
 
-        <div class="sec-title">A. PRODUK PEMBANDING (REFERENCE): ${rProdName} (Batch: ${refBatchName})</div>
+        <div class="sec-title">A. PRODUK PEMBANDING (REFERENCE): ${refFullName}</div>
         <table class="sheet-table">
           <thead>
             <tr>
@@ -3398,7 +3445,7 @@ function printReportWindow(){
           </tbody>
         </table>
 
-        <div class="sec-title">B. PRODUK UJI (TEST): ${tProdName} (Batch: ${tName})</div>
+        <div class="sec-title">B. PRODUK UJI (TEST): ${testFullName}</div>
         <table class="sheet-table">
           <thead>
             <tr>
@@ -3477,16 +3524,17 @@ function printReportWindow(){
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Laporan Uji Disolusi Terbanding (Master Report) - ${tProdName}</title>
+  <title>Laporan Uji Disolusi Terbanding — Analytical Development - Pharos Indonesia — ${tProdName}</title>
   <style>
     @page { size: A4 portrait; margin: 12mm; }
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #0f172a; margin: 0; padding: 16px; font-size: 10px; line-height: 1.4; background: #f8fafc; }
     .sheet-doc { max-width: 820px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
     .sheet-page { page-break-after: always; padding-bottom: 24px; margin-bottom: 24px; border-bottom: 1px dashed #cbd5e1; }
     .sheet-page:last-child { page-break-after: auto; border-bottom: none; margin-bottom: 0; }
-    .rep-header { border: 1px solid #cbd5e1; background: #f8fafc; padding: 8px 12px; text-align: center; border-radius: 4px; margin-bottom: 10px; }
-    .rep-header h1 { margin: 0 0 3px; font-size: 14px; font-weight: 700; color: #0f172a; }
-    .rep-header p { margin: 0; font-size: 9px; color: #64748b; }
+    .rep-header { border: 1px solid #cbd5e1; border-top: 3.5px solid #0071e3; background: linear-gradient(180deg, #f0f7ff 0%, #f8fafc 100%); padding: 9px 14px; text-align: center; border-radius: 6px; margin-bottom: 10px; }
+    .rep-header h1 { margin: 0 0 2px; font-size: 13.5px; font-weight: 800; color: #0f172a; letter-spacing: 0.01em; }
+    .rep-header .rep-sub { margin: 0 0 2px; font-size: 10.5px; font-weight: 700; color: #0071e3; letter-spacing: 0.02em; }
+    .rep-header p { margin: 0; font-size: 8.5px; color: #64748b; }
     .sec-title { font-size: 10.5px; font-weight: 700; color: #0071e3; margin: 10px 0 5px; border-bottom: 1.5px solid #0071e3; padding-bottom: 2px; }
     table.sheet-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 9.5px; }
     table.sheet-table th, table.sheet-table td { border: 1px solid #cbd5e1; padding: 4px 6px; }
@@ -3578,25 +3626,35 @@ async function exportPDF(){
           tCalc.stats
         );
 
+        const refFullName = formatProductBatch(S.refParams.product, refBatchName, rB, 'Produk Pembanding');
+        const testFullName = formatProductBatch(S.testParams.product, tBatchName, tB, 'Produk Uji');
+
         // ==================== HALAMAN 1: MASTER REPORT SUMMARY ====================
         if(!isFirstPage) doc.addPage();
         isFirstPage = false;
 
         // 1. Kop / Header Laporan
-        doc.setFillColor(248, 250, 252);
+        doc.setFillColor(244, 249, 255);
         doc.setDrawColor(203, 213, 225);
         doc.setLineWidth(0.3);
-        doc.roundedRect(14, 10, 182, 14, 1.5, 1.5, 'FD');
+        doc.roundedRect(14, 10, 182, 16, 1.5, 1.5, 'FD');
+        doc.setFillColor(0, 113, 227);
+        doc.rect(14, 10, 182, 1.2, 'F');
 
-        doc.setFontSize(12);
+        doc.setFontSize(11.5);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(15, 23, 42);
-        doc.text('LAPORAN HASIL UJI DISOLUSI TERBANDING (UDT)', 105, 16.5, { align: 'center' });
+        doc.text('LAPORAN HASIL UJI DISOLUSI TERBANDING (UDT)', 105, 15.8, { align: 'center' });
 
-        doc.setFontSize(7.5);
+        doc.setFontSize(8.5);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(0, 113, 227);
+        doc.text('Analytical Development - Pharos Indonesia', 105, 20.2, { align: 'center' });
+
+        doc.setFontSize(6.8);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(100, 116, 139);
-        doc.text(`Formulir Evaluasi Profil Disolusi Terbanding (Master Report)  |  Dicetak: ${dateStr}`, 105, 21.5, { align: 'center' });
+        doc.text(`Dicetak pada: ${dateStr}`, 105, 24.0, { align: 'center' });
 
         const rManufacturer = S.refParams.manufacturer || '';
         const rMdEd = S.refParams.mdEd || '';
@@ -3605,13 +3663,13 @@ async function exportPDF(){
 
         // 2. Parameter & Kondisi Pengujian (Box Grid Spreadsheet 4 Kolom)
         const condRows = [
-          [{content:'Produk Pembanding', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, rProdName,
+          [{content:'Produk Pembanding', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, {content:refFullName, styles:{fontStyle:'bold'}},
            {content:'Aparatus Disolusi', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, S.condParams.apparatus || '2 (Paddle)'],
           [{content:'Batch Pembanding', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, refBatchName,
            {content:'Kecepatan Putar', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, S.condParams.rpm || '50 rpm'],
           [{content:'Manufaktur Pembanding', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, rManufacturer || '-',
            {content:'MD / ED Pembanding', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, rMdEd || '-'],
-          [{content:'Produk Uji', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, tProdName,
+          [{content:'Produk Uji', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, {content:testFullName, styles:{fontStyle:'bold'}},
            {content:'Media Disolusi', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, cfg.desc || ('Buffer pH ' + mId)],
           [{content:'Batch Produk Uji', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, tBatchName,
            {content:'Volume Media', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, (S.testParams.volMedia || 900) + ' mL'],
@@ -3624,10 +3682,10 @@ async function exportPDF(){
         ];
 
         doc.autoTable({
-          startY: 27,
+          startY: 28.5,
           body: condRows,
           theme: 'grid',
-          styles: { fontSize: 7, cellPadding: 1.3, textColor: [30, 41, 59], lineColor: [203, 213, 225], lineWidth: 0.2 },
+          styles: { fontSize: 7, cellPadding: 1.2, textColor: [30, 41, 59], lineColor: [203, 213, 225], lineWidth: 0.2 },
           columnStyles: {
             0: { cellWidth: 30 },
             1: { cellWidth: 59 },
@@ -3648,14 +3706,14 @@ async function exportPDF(){
         const compHead = [['Identitas Produk & Batch', 'Manufaktur & MD/ED', 'Stat', ...M.times.map(t => t + "'")]];
         const compBody = [
           [
-            { content: `${rProdName}\nBatch: ${refBatchName}`, rowSpan: 3, styles: { valign: 'middle', fontStyle: 'bold' } },
+            { content: refFullName, rowSpan: 3, styles: { valign: 'middle', fontStyle: 'bold' } },
             { content: `${rManufacturer || '-'}\n${rMdEd ? 'MD/ED: ' + rMdEd : ''}`.trim(), rowSpan: 3, styles: { valign: 'middle', fontSize: 6.2 } },
             'Rata-rata', ...refCalc.stats.map(x => fmt(x.avg, 0))
           ],
           ['Min', ...refCalc.stats.map(x => fmt(x.min, 0))],
           ['Max', ...refCalc.stats.map(x => fmt(x.max, 0))],
           [
-            { content: `${tProdName}\nBatch: ${tBatchName}`, rowSpan: 3, styles: { valign: 'middle', fontStyle: 'bold' } },
+            { content: testFullName, rowSpan: 3, styles: { valign: 'middle', fontStyle: 'bold' } },
             { content: `${tManufacturer || '-'}\n${tMdEd ? 'MD/ED: ' + tMdEd : ''}`.trim(), rowSpan: 3, styles: { valign: 'middle', fontSize: 6.2 } },
             'Rata-rata', ...tCalc.stats.map(x => fmt(x.avg, 0))
           ],
@@ -3681,8 +3739,8 @@ async function exportPDF(){
         // 4. Kurva Profil Disolusi Komparatif (Canvas PNG)
         curY = doc.lastAutoTable.finalY + 3;
         const chartDataUrl = drawChartCanvas([
-          { name: `Pembanding (${refBatchName})`, vals: refCalc.stats.map(x => x.avg), color: '#475569', dash: true, marker: 'square' },
-          { name: `Uji (${tBatchName})`, vals: tCalc.stats.map(x => x.avg), color: '#0071e3', dash: false, marker: 'circle' }
+          { name: refFullName, vals: refCalc.stats.map(x => x.avg), color: '#475569', dash: true, marker: 'square' },
+          { name: testFullName, vals: tCalc.stats.map(x => x.avg), color: '#0071e3', dash: false, marker: 'circle' }
         ], M.times, 520, 140);
 
         doc.addImage(chartDataUrl, 'PNG', 14, curY, 182, 42);
@@ -3710,8 +3768,8 @@ async function exportPDF(){
 
         const f2Head = [['Parameter Evaluasi f2', ...M.times.map(t => t + "'")]];
         const f2Body = [
-          ['Reference (Rt) %', ...refCalc.stats.map(x => fmt(x.avg, 0))],
-          ['Test (Tt) %', ...tCalc.stats.map(x => fmt(x.avg, 0))],
+          [`${refFullName} (Rt) %`, ...refCalc.stats.map(x => fmt(x.avg, 0))],
+          [`${testFullName} (Tt) %`, ...tCalc.stats.map(x => fmt(x.avg, 0))],
           ['Selisih (Rt - Tt)', ...diffs.map(d => fmt(d, 0))],
           ['Kuadrat Selisih (Rt - Tt)^2', ...sqDiffs.map(s => fmt(s, 0))]
         ];
@@ -3734,18 +3792,18 @@ async function exportPDF(){
         const f2Label = isFinite(f2Res.f2) ? `f2 = ${fmt(f2Res.f2, 2)}` : 'f2: N/A';
         const usedTimesLabel = f2Res.usedTimes && f2Res.usedTimes.length ? ` (${f2Res.usedTimes.map(t=>t+"'").join(', ')})` : '';
 
-        let boxBg = [236, 253, 245], boxBorder = [5, 150, 105], boxTitle = `PROFIL DISOLUSI SERUPA / EKIVALEN (50 - 100)`;
+        let boxBg = [236, 253, 245], boxBorder = [5, 150, 105], boxTitle = `PROFIL DISOLUSI SERUPA / EKIVALEN (50 - 100) — ${testFullName} vs ${refFullName}`;
         let boxDesc = `n = ${f2Res.n}${usedTimesLabel}  |  Total Sigma(Rt-Tt)^2 = ${fmt(sumSq, 0)}`;
 
         if(f2Res.both85at15){
           boxBg = [236, 253, 245];
           boxBorder = [5, 150, 105];
-          boxTitle = 'DISSOLUSI SANGAT CEPAT (VERY RAPID DISSOLUTION)';
+          boxTitle = `DISSOLUSI SANGAT CEPAT (VERY RAPID DISSOLUTION) — ${testFullName} vs ${refFullName}`;
           boxDesc = `n = ${f2Res.n}  |  Kedua produk mencapai >= 85% dalam 15 menit (Profil Serupa).`;
         } else if(!f2Res.isSimilar){
           boxBg = [255, 251, 235];
           boxBorder = [217, 119, 6];
-          boxTitle = `PROFIL DISOLUSI TIDAK SERUPA (< 50)`;
+          boxTitle = `PROFIL DISOLUSI TIDAK SERUPA (< 50) — ${testFullName} vs ${refFullName}`;
         }
 
         doc.setFillColor(boxBg[0], boxBg[1], boxBg[2]);
@@ -3764,7 +3822,7 @@ async function exportPDF(){
         doc.line(62, curY + 3, 62, curY + 13);
 
         // Status & keterangan n = ... di sisi kanan
-        doc.setFontSize(8.5);
+        doc.setFontSize(8.2);
         doc.setFont('helvetica', 'bold');
         doc.text(boxTitle, 66, curY + 6.5);
 
@@ -3777,27 +3835,34 @@ async function exportPDF(){
         doc.addPage();
 
         // Header Halaman 2
-        doc.setFillColor(248, 250, 252);
+        doc.setFillColor(244, 249, 255);
         doc.setDrawColor(203, 213, 225);
         doc.setLineWidth(0.3);
-        doc.roundedRect(14, 10, 182, 12, 1.5, 1.5, 'FD');
+        doc.roundedRect(14, 10, 182, 14, 1.5, 1.5, 'FD');
+        doc.setFillColor(0, 113, 227);
+        doc.rect(14, 10, 182, 1.1, 'F');
 
         doc.setFontSize(10.5);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(15, 23, 42);
-        doc.text('DATA RINCI DISOLUSI INDIVIDUAL (12 VESSEL)', 105, 15.5, { align: 'center' });
+        doc.text('DATA RINCI DISOLUSI INDIVIDUAL (12 VESSEL)', 105, 15.2, { align: 'center' });
 
-        doc.setFontSize(7.2);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(0, 113, 227);
+        doc.text('Analytical Development - Pharos Indonesia', 105, 19.0, { align: 'center' });
+
+        doc.setFontSize(6.8);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(100, 116, 139);
-        doc.text(`Medium: ${cfg.desc || ('Buffer pH ' + mId)}  |  Pembanding (${refBatchName}) vs Uji (${tBatchName})`, 105, 19.5, { align: 'center' });
+        doc.text(`Medium: ${cfg.desc || ('Buffer pH ' + mId)}  |  ${refFullName} vs ${testFullName}`, 105, 22.3, { align: 'center' });
 
         // 1. Tabel Rinci Produk Pembanding
-        curY = 26;
+        curY = 27.5;
         doc.setFontSize(8);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(71, 85, 105);
-        doc.text(`A. PRODUK PEMBANDING (REFERENCE): ${rProdName} (Batch: ${refBatchName})`, 14, curY);
+        doc.text(`A. PRODUK PEMBANDING (REFERENCE): ${refFullName}`, 14, curY);
         curY += 1.5;
 
         const refHead = [['Vessel \\ Menit', ...M.times.map(t => t + "'")]];
@@ -3827,7 +3892,7 @@ async function exportPDF(){
         doc.setFontSize(8);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(0, 113, 227);
-        doc.text(`B. PRODUK UJI (TEST): ${tProdName} (Batch: ${tBatchName})`, 14, curY);
+        doc.text(`B. PRODUK UJI (TEST): ${testFullName}`, 14, curY);
         curY += 1.5;
 
         const testHead = [['Vessel \\ Menit', ...M.times.map(t => t + "'")]];
