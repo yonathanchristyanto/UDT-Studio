@@ -3,23 +3,17 @@
  * UDT STUDIO — GOOGLE APPS SCRIPT CONNECTOR (100% NATIVE)
  * Analytical Development - Pharos Indonesia
  * =========================================================================
- *
- * Menggunakan layanan bawaan SpreadsheetApp & DriveApp sehingga TIDAK PERLU
- * mengaktifkan Google Sheets API / Drive API di Google Cloud Console.
- *
- * PENTING — AKTIFKAN IZIN PENUH DRIVE:
- * Klik tombol "▷ Run / Jalankan" di baris menu atas editor Google Apps Script
- * satu kali saja, lalu klik "Review permissions / Beri akses" -> "Allow / Izinkan"
- * agar izin menyalin file (DriveApp.File.makeCopy) aktif sepenuhnya.
- * =========================================================================
  */
 
-function aktifkanIzin() {
-  DriveApp.getRootFolder();
-  Logger.log("Izin Google Drive & Sheets telah aktif sepenuhnya.");
-}
-
 function doGet(e) {
+  // Baris di bawah ini wajib ada agar detektor otomatis Google Apps Script
+  // meminta izin PENUH Google Drive (https://www.googleapis.com/auth/drive)
+  // untuk keperluan menyalin template (makeCopy):
+  if (false) {
+    DriveApp.createFile("scope_check", "");
+    SpreadsheetApp.create("scope_check");
+  }
+
   return ContentService.createTextOutput(JSON.stringify({
     ok: true,
     service: "UDT Studio Google Connector (Native)",
@@ -92,12 +86,10 @@ function writeRangeValues(ss, rangeStr, values) {
 }
 
 function handleTool(tool, input) {
-  // 1. Uji koneksi
   if (tool === "test_conn") {
     return { ok: true, timestamp: new Date().toISOString() };
   }
 
-  // 2. Salin template file (DriveApp Native)
   if (tool === "copy_file") {
     var file = DriveApp.getFileById(input.fileId);
     var copied;
@@ -118,7 +110,6 @@ function handleTool(tool, input) {
     };
   }
 
-  // 3. Baca metadata spreadsheet (SpreadsheetApp Native)
   if (tool === "get_spreadsheet") {
     var ss = SpreadsheetApp.openById(input.spreadsheetId);
     var sheets = ss.getSheets().map(function(sh, idx) {
@@ -140,7 +131,6 @@ function handleTool(tool, input) {
     };
   }
 
-  // 4. Batch update struktur tab/sheet (SpreadsheetApp Native)
   if (tool === "update_spreadsheet") {
     var ss = SpreadsheetApp.openById(input.spreadsheetId);
     var requests = input.requests || [];
@@ -209,7 +199,6 @@ function handleTool(tool, input) {
     return { replies: replies };
   }
 
-  // 5. Batch update isi sel & formula (SpreadsheetApp Native)
   if (tool === "batch_update_values") {
     var ss = SpreadsheetApp.openById(input.spreadsheetId);
     var items = input.data || [];
@@ -220,7 +209,6 @@ function handleTool(tool, input) {
     return { totalUpdatedEntries: items.length };
   }
 
-  // 6. Update nilai rentang tunggal (SpreadsheetApp Native)
   if (tool === "update_values") {
     var ss = SpreadsheetApp.openById(input.spreadsheetId);
     writeRangeValues(ss, input.range, input.values);
@@ -228,7 +216,6 @@ function handleTool(tool, input) {
     return { updatedRange: input.range };
   }
 
-  // 7. Baca nilai rentang sel (SpreadsheetApp Native)
   if (tool === "get_values") {
     var ss = SpreadsheetApp.openById(input.spreadsheetId);
     var rg = ss.getRange(input.range);
@@ -238,7 +225,6 @@ function handleTool(tool, input) {
     return { range: input.range, values: vals };
   }
 
-  // 8. Salin sheet/tab antar-file (SpreadsheetApp Native)
   if (tool === "copy_sheet_to") {
     var srcSS = SpreadsheetApp.openById(input.sourceSpreadsheetId);
     var dstSS = SpreadsheetApp.openById(input.destinationSpreadsheetId);
@@ -254,7 +240,6 @@ function handleTool(tool, input) {
     };
   }
 
-  // 9. Cari file di Drive (DriveApp Native)
   if (tool === "find_file") {
     var filesOut = [];
     var iter;
@@ -281,7 +266,6 @@ function handleTool(tool, input) {
     return { files: filesOut };
   }
 
-  // 10. Verifikasi folder output (DriveApp Native)
   if (tool === "verify_folder") {
     try {
       var folder = DriveApp.getFolderById(input.folderId);
