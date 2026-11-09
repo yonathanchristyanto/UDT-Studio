@@ -4819,6 +4819,21 @@ async function sendReportMedium(mId){
     reportWrites.push({ range: `'${repTitle}'!G${sumRow}`, values: [[`=SUM(G${sqRow}:${endCol}${sqRow})`]] });
     reportWrites.push({ range: `'${repTitle}'!G${nRow}`, values: [[n]] });
 
+    // 5. Kesimpulan pada G53 serta rumus SUM pada G55 dan G56 sesuai nilai n
+    const conclRow = 52 + rowOff;     // G53 pada Master Report
+    const f1DiffRow = 53 + rowOff;    // Baris 54 (Rt-Tt) pada Master Report
+    const f1SumDiffRow = 54 + rowOff; // G55 pada Master Report
+    const f1SumRefRow = 55 + rowOff;  // G56 pada Master Report
+    const refAvgRow = 19 + rowOff;    // Baris 20 (AVG Reference) pada Master Report
+
+    const repConclusion = f2Res.both85at15
+      ? 'similar, both products rapidly dissolved (≥85% in 15 minutes).\nF2 calculation for information only'
+      : (f2Res.isSimilar ? 'similar' : 'not similar');
+
+    reportWrites.push({ range: `'${repTitle}'!G${conclRow}`, values: [[repConclusion]] });
+    reportWrites.push({ range: `'${repTitle}'!G${f1SumDiffRow}`, values: [[`=SUM(G${f1DiffRow}:${endCol}${f1DiffRow})`]] });
+    reportWrites.push({ range: `'${repTitle}'!G${f1SumRefRow}`, values: [[`=SUM(G${refAvgRow}:${endCol}${refAvgRow})`]] });
+
     log(`  tab "${repTitle}" siap (f2: ${isFinite(f2Res.f2) ? fmt(f2Res.f2, 2) : 'N/A'}, n=${n}, Ref ${refVCount} vessel, Uji ${testVCount} vessel)`);
   }
 
