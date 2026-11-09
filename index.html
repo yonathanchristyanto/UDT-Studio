@@ -795,7 +795,7 @@ details[open] summary { margin-bottom: 8px; }
   <section class="panel" id="p4">
     <div class="section-header">
       <h2>Hasil &amp; Evaluasi Kemiripan (f2)</h2>
-      <p>Profil pelepasan disolusi dan evaluasi ekivalensi in vitro (BPOM / FDA / EMA).</p>
+      <p>Profil pelepasan disolusi dan evaluasi kemiripan (similarity) in vitro (BPOM / FDA / EMA).</p>
     </div>
     <div id="p4body"></div>
     <div class="nav">
@@ -1676,6 +1676,8 @@ function h(tag,a,...kids){
   return e;
 }
 const fmt=(n,d=2)=>(typeof n==='number'&&isFinite(n))?n.toFixed(d).replace('.',','):'–';
+// f2 ditampilkan sebagai bilangan bulat (tanpa desimal). Nilai < 50 tidak pernah dibulatkan menjadi 50.
+const fmtF2=(v)=>{ if(!(typeof v==='number'&&isFinite(v))) return '–'; const r=Math.round(v); return String((v<50&&r>=50)?49:r); };
 
 function store(){
   try{
@@ -2774,7 +2776,7 @@ function getMediumF2Summary(mId){
     if(refCalc.stats && refCalc.stats.length && testCalc.stats && testCalc.stats.length){
       const f2Res = evalSimilarityF2(M.times, refCalc.stats.map(x=>x.avg), testCalc.stats.map(x=>x.avg), refCalc.stats, testCalc.stats);
       if(f2Res.both85at15) return {text:'Very Rapid (≥85%)', cls:'ok'};
-      if(isFinite(f2Res.f2)) return {text:`f2: ${fmt(f2Res.f2, 1)}`, cls: f2Res.isSimilar ? 'ok' : 'warn'};
+      if(isFinite(f2Res.f2)) return {text:`f2: ${fmtF2(f2Res.f2)}`, cls: f2Res.isSimilar ? 'ok' : 'warn'};
     }
   } catch(e){}
   return {text:'Siap dihitung', cls:'info'};
@@ -2860,11 +2862,11 @@ function renderMediumResultCard(mId){
         const f2Box = h('div',{class:'f2-box ' + badgeClass});
         f2Box.append(h('h4',null,`Hasil Evaluasi Faktor Kemiripan f2 (${testFullName} vs ${refFullName})`));
 
-        const f2ValText = isFinite(f2Res.f2) ? `f2 = ${fmt(f2Res.f2, 2)}` : 'f2 = N/A';
+        const f2ValText = isFinite(f2Res.f2) ? `f2 = ${fmtF2(f2Res.f2)}` : 'f2 = N/A';
         const statusText = f2Res.both85at15
-          ? "Ekivalen / Serupa (Very Rapid ≥ 85% @ 15')"
+          ? "Similar (Very Rapid ≥ 85% @ 15')"
           : (isFinite(f2Res.f2)
-              ? (f2Res.isSimilar ? '50 – 100: Ekivalen / Serupa' : '< 50: Tidak Ekivalen')
+              ? (f2Res.isSimilar ? '50 – 100: Similar' : '< 50: Not Similar')
               : 'Belum dapat dihitung');
 
         f2Box.append(h('div',{class:'f2-hero'},
@@ -2876,8 +2878,8 @@ function renderMediumResultCard(mId){
 
         if(f2Res.both85at15){
           f2Box.append(h('div',{class:'banner ok',style:'margin:8px 0 4px'},
-            h('b',null,'Very Rapid Dissolution / Profil Serupa'),
-            h('div',{class:'small'},'Kedua produk terdisolusi ≥ 85% dalam 15 menit. Berdasarkan pedoman FDA, EMA, dan BPOM, kurva disolusi dianggap serupa tanpa perlu evaluasi statistik f2.')));
+            h('b',null,'Very Rapid Dissolution / Similar'),
+            h('div',{class:'small'},'Kedua produk terdisolusi ≥ 85% dalam 15 menit. Berdasarkan pedoman FDA, EMA, dan BPOM, kurva disolusi dianggap similar tanpa perlu evaluasi statistik f2.')));
         }
 
         f2Box.append(h('div',{class:'f2-meta-row'},
@@ -3140,7 +3142,12 @@ function drawChartCanvas(series, times, w = 520, h = 160) {
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, w, h);
 
-  const L = 36, R = 18, T = 16, B = 30;
+  ctx.font = '7.5px Arial, sans-serif';
+  const legItemW = s => 28 + ctx.measureText(s.name || '').width + 14;
+  const legTotalW = series.reduce((a, s) => a + legItemW(s), 0);
+  const legStacked = legTotalW - 14 > (w - 24);
+  const legBlockH = legStacked ? series.length * 12 + 4 : 16;
+  const L = 36, R = 18, T = legBlockH + 12, B = 30;
   const xs = (times && times.length) ? times : [5, 10, 15, 20, 30, 45, 60];
   const xmax = Math.max(...xs, 60);
   const validVals = series.flatMap(s => (s.vals || []).filter(v => typeof v === 'number' && isFinite(v)));
@@ -3231,45 +3238,39 @@ function drawChartCanvas(series, times, w = 520, h = 160) {
     });
   });
 
-  // Kotak Legenda (lebar adaptif sesuai panjang nama produk & batch)
+  // Legenda diletakkan DI ATAS area plot (tidak menutupi kurva)
   ctx.font = '7.5px Arial, sans-serif';
-  const maxTxtW = Math.max(...series.map(s => ctx.measureText(s.name || '').width), 95);
-  const legW = Math.min(230, Math.ceil(maxTxtW + 40)), legH = series.length * 14 + 6;
-  const legX = w - legW - 10, legY = T + 2;
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.94)';
-  ctx.fillRect(legX, legY, legW, legH);
-  ctx.strokeStyle = '#cbd5e1';
-  ctx.lineWidth = 0.6;
-  ctx.strokeRect(legX, legY, legW, legH);
-
-  series.forEach((s, idx) => {
-    const itemY = legY + idx * 14 + 7.5;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  const drawLegItem = (s, x, y) => {
     const isSq = s.marker === 'square' || s.dash;
     ctx.strokeStyle = s.color || '#0071e3';
     ctx.lineWidth = 1.8;
-    if (s.dash) ctx.setLineDash([4, 2.5]);
-    else ctx.setLineDash([]);
+    ctx.setLineDash(s.dash ? [4, 2.5] : []);
     ctx.beginPath();
-    ctx.moveTo(legX + 6, itemY);
-    ctx.lineTo(legX + 26, itemY);
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + 22, y);
     ctx.stroke();
     ctx.setLineDash([]);
-
     ctx.fillStyle = s.color || '#0071e3';
     if (isSq) {
-      ctx.fillRect(legX + 16 - 3, itemY - 3, 6, 6);
+      ctx.fillRect(x + 11 - 3, y - 3, 6, 6);
     } else {
       ctx.beginPath();
-      ctx.arc(legX + 16, itemY, 3, 0, Math.PI * 2);
+      ctx.arc(x + 11, y, 3, 0, Math.PI * 2);
       ctx.fill();
     }
-
     ctx.fillStyle = '#334155';
-    ctx.font = '7.5px Arial, sans-serif';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(s.name || '', legX + 30, itemY);
-  });
+    ctx.fillText(s.name || '', x + 28, y);
+  };
+  if (legStacked) {
+    const legMaxW = Math.max(...series.map(legItemW));
+    const legX0 = Math.max(4, (w - legMaxW) / 2);
+    series.forEach((s, idx) => drawLegItem(s, legX0, 8 + idx * 12));
+  } else {
+    let legX = (w - (legTotalW - 14)) / 2;
+    series.forEach(s => { drawLegItem(s, legX, 9); legX += legItemW(s); });
+  }
 
   return canvas.toDataURL('image/png');
 }
@@ -3347,14 +3348,14 @@ function printReportWindow(){
         if(i < f2Res.n) sumSq += sq;
       }
 
-      const f2Label = isFinite(f2Res.f2) ? `f2 = ${fmt(f2Res.f2, 2)}` : 'f2: N/A';
+      const f2Label = isFinite(f2Res.f2) ? `f2 = ${fmtF2(f2Res.f2)}` : 'f2: N/A';
       let conclusionBadge = '';
       if(f2Res.both85at15){
-        conclusionBadge = `<div class="f2-badge ok"><div class="f2-badge-score">${f2Label}</div><div class="f2-badge-body"><b>DISSOLUSI SANGAT CEPAT (VERY RAPID DISSOLUTION)</b><br>Kedua produk (${testFullName} vs ${refFullName}) mencapai &ge; 85% dalam 15 menit (<b>n = ${f2Res.n}</b>). Profil disolusi dinilai serupa.</div></div>`;
+        conclusionBadge = `<div class="f2-badge ok"><div class="f2-badge-score">${f2Label}</div><div class="f2-badge-body"><b>DISSOLUSI SANGAT CEPAT (VERY RAPID DISSOLUTION)</b><br>Kedua produk (${testFullName} vs ${refFullName}) mencapai &ge; 85% dalam 15 menit (<b>n = ${f2Res.n}</b>). Profil disolusi dinilai similar.</div></div>`;
       } else if(f2Res.isSimilar){
-        conclusionBadge = `<div class="f2-badge ok"><div class="f2-badge-score">${f2Label}</div><div class="f2-badge-body"><b>PROFIL DISOLUSI SERUPA / EKIVALEN (50 &ndash; 100) &mdash; ${testFullName} vs ${refFullName}</b><br><b>n = ${f2Res.n}</b>${f2Res.usedTimes && f2Res.usedTimes.length ? ` (${f2Res.usedTimes.map(t=>t+"'").join(', ')})` : ''} &bull; Total &sum;(Rt-Tt)&sup2; = ${fmt(sumSq, 0)}</div></div>`;
+        conclusionBadge = `<div class="f2-badge ok"><div class="f2-badge-score">${f2Label}</div><div class="f2-badge-body"><b>PROFIL DISOLUSI SIMILAR (50 &ndash; 100) &mdash; ${testFullName} vs ${refFullName}</b><br><b>n = ${f2Res.n}</b>${f2Res.usedTimes && f2Res.usedTimes.length ? ` (${f2Res.usedTimes.map(t=>t+"'").join(', ')})` : ''} &bull; Total &sum;(Rt-Tt)&sup2; = ${fmt(sumSq, 0)}</div></div>`;
       } else {
-        conclusionBadge = `<div class="f2-badge warn"><div class="f2-badge-score">${f2Label}</div><div class="f2-badge-body"><b>PROFIL DISOLUSI TIDAK SERUPA (&lt; 50) &mdash; ${testFullName} vs ${refFullName}</b><br><b>n = ${f2Res.n}</b>${f2Res.usedTimes && f2Res.usedTimes.length ? ` (${f2Res.usedTimes.map(t=>t+"'").join(', ')})` : ''} &bull; Total &sum;(Rt-Tt)&sup2; = ${fmt(sumSq, 0)}</div></div>`;
+        conclusionBadge = `<div class="f2-badge warn"><div class="f2-badge-score">${f2Label}</div><div class="f2-badge-body"><b>PROFIL DISOLUSI NOT SIMILAR (&lt; 50) &mdash; ${testFullName} vs ${refFullName}</b><br><b>n = ${f2Res.n}</b>${f2Res.usedTimes && f2Res.usedTimes.length ? ` (${f2Res.usedTimes.map(t=>t+"'").join(', ')})` : ''} &bull; Total &sum;(Rt-Tt)&sup2; = ${fmt(sumSq, 0)}</div></div>`;
       }
 
       // HALAMAN 1: Master Report Summary
@@ -3459,11 +3460,11 @@ function printReportWindow(){
           </thead>
           <tbody>
             <tr>
-              <td style="font-weight:600">${refFullName} (Rt) %</td>
+              <td style="font-weight:600">(Rt)%</td>
               ${refCalc.stats.map(x => `<td class="num">${fmt(x.avg, 0)}</td>`).join('')}
             </tr>
             <tr>
-              <td style="font-weight:600">${testFullName} (Tt) %</td>
+              <td style="font-weight:600">(Tt)%</td>
               ${tCalc.stats.map(x => `<td class="num">${fmt(x.avg, 0)}</td>`).join('')}
             </tr>
             <tr style="background:#f8fafc">
@@ -3822,10 +3823,10 @@ async function exportPDF(){
         const chartDataUrl = drawChartCanvas([
           { name: refFullName, vals: refCalc.stats.map(x => x.avg), color: '#475569', dash: true, marker: 'square' },
           { name: testFullName, vals: tCalc.stats.map(x => x.avg), color: '#0071e3', dash: false, marker: 'circle' }
-        ], M.times, 520, 140);
+        ], M.times, 520, 160);
 
-        doc.addImage(chartDataUrl, 'PNG', 14, curY, 182, 42);
-        curY += 44;
+        doc.addImage(chartDataUrl, 'PNG', 14, curY, 182, 56);
+        curY += 58;
 
         // 5. Tabel Evaluasi & Kalkulasi Faktor Kesamaan (f2)
         doc.setFontSize(8.5);
@@ -3849,8 +3850,8 @@ async function exportPDF(){
 
         const f2Head = [['Parameter Evaluasi f2', ...M.times.map(t => t + "'")]];
         const f2Body = [
-          [`${refFullName} (Rt) %`, ...refCalc.stats.map(x => fmt(x.avg, 0))],
-          [`${testFullName} (Tt) %`, ...tCalc.stats.map(x => fmt(x.avg, 0))],
+          [`(Rt)%`, ...refCalc.stats.map(x => fmt(x.avg, 0))],
+          [`(Tt)%`, ...tCalc.stats.map(x => fmt(x.avg, 0))],
           ['Selisih (Rt - Tt)', ...diffs.map(d => fmt(d, 0))],
           ['Kuadrat Selisih (Rt - Tt)^2', ...sqDiffs.map(s => fmt(s, 0))]
         ];
@@ -3870,47 +3871,53 @@ async function exportPDF(){
 
         // 6. Box Kesimpulan & Highlight Utama f2
         curY = doc.lastAutoTable.finalY + 3;
-        const f2Label = isFinite(f2Res.f2) ? `f2 = ${fmt(f2Res.f2, 2)}` : 'f2: N/A';
+        const f2Label = isFinite(f2Res.f2) ? `f2 = ${fmtF2(f2Res.f2)}` : 'f2: N/A';
         const usedTimesLabel = f2Res.usedTimes && f2Res.usedTimes.length ? ` (${f2Res.usedTimes.map(t=>t+"'").join(', ')})` : '';
 
-        let boxBg = [236, 253, 245], boxBorder = [5, 150, 105], boxTitle = `PROFIL DISOLUSI SERUPA / EKIVALEN (50 - 100) — ${testFullName} vs ${refFullName}`;
+        let boxBg = [236, 253, 245], boxBorder = [5, 150, 105], boxTitle = `PROFIL DISOLUSI SIMILAR (50 - 100) — ${testFullName} vs ${refFullName}`;
         let boxDesc = `n = ${f2Res.n}${usedTimesLabel}  |  Total Sigma(Rt-Tt)^2 = ${fmt(sumSq, 0)}`;
 
         if(f2Res.both85at15){
           boxBg = [236, 253, 245];
           boxBorder = [5, 150, 105];
           boxTitle = `DISSOLUSI SANGAT CEPAT (VERY RAPID DISSOLUTION) — ${testFullName} vs ${refFullName}`;
-          boxDesc = `n = ${f2Res.n}  |  Kedua produk mencapai >= 85% dalam 15 menit (Profil Serupa).`;
+          boxDesc = `n = ${f2Res.n}  |  Kedua produk mencapai >= 85% dalam 15 menit (Similar).`;
         } else if(!f2Res.isSimilar){
           boxBg = [255, 251, 235];
           boxBorder = [217, 119, 6];
-          boxTitle = `PROFIL DISOLUSI TIDAK SERUPA (< 50) — ${testFullName} vs ${refFullName}`;
+          boxTitle = `PROFIL DISOLUSI NOT SIMILAR (< 50) — ${testFullName} vs ${refFullName}`;
         }
+
+        doc.setFontSize(8.2);
+        doc.setFont('helvetica', 'bold');
+        const boxTitleLines = doc.splitTextToSize(boxTitle, 126);
+        const boxExtra = (boxTitleLines.length - 1) * 3.4;
+        const boxH = 16 + boxExtra;
 
         doc.setFillColor(boxBg[0], boxBg[1], boxBg[2]);
         doc.setDrawColor(boxBorder[0], boxBorder[1], boxBorder[2]);
         doc.setLineWidth(0.5);
-        doc.roundedRect(14, curY, 182, 16, 2, 2, 'FD');
+        doc.roundedRect(14, curY, 182, boxH, 2, 2, 'FD');
 
         // Highlight besar f2 di sisi kiri kotak
         doc.setFontSize(14.5);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(boxBorder[0], boxBorder[1], boxBorder[2]);
-        doc.text(f2Label, 19, curY + 10);
+        doc.text(f2Label, 19, curY + boxH / 2 + 2.2);
 
         // Garis pemisah vertikal
         doc.setLineWidth(0.3);
-        doc.line(62, curY + 3, 62, curY + 13);
+        doc.line(62, curY + 3, 62, curY + boxH - 3);
 
         // Status & keterangan n = ... di sisi kanan
         doc.setFontSize(8.2);
         doc.setFont('helvetica', 'bold');
-        doc.text(boxTitle, 66, curY + 6.5);
+        doc.text(boxTitleLines, 66, curY + 6.5);
 
         doc.setFontSize(7.5);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(30, 41, 59);
-        doc.text(boxDesc, 66, curY + 11.8);
+        doc.text(boxDesc, 66, curY + 11.8 + boxExtra);
 
         // ==================== HALAMAN 2: DETAIL 12 VESSEL & PENGESAHAN ====================
         doc.addPage();
@@ -5045,7 +5052,7 @@ async function sendReportMedium(mId){
     reportWrites.push({ range: `'${repTitle}'!G${f1SumDiffRow}`, values: [[`=SUM(G${f1DiffRow}:${endCol}${f1DiffRow})`]] });
     reportWrites.push({ range: `'${repTitle}'!G${f1SumRefRow}`, values: [[`=SUM(G${refAvgRow}:${endCol}${refAvgRow})`]] });
 
-    log(`  tab "${repTitle}" siap (f2: ${isFinite(f2Res.f2) ? fmt(f2Res.f2, 2) : 'N/A'}, n=${n}, Ref ${refVCount} vessel, Uji ${testVCount} vessel)`);
+    log(`  tab "${repTitle}" siap (f2: ${isFinite(f2Res.f2) ? fmtF2(f2Res.f2) : 'N/A'}, n=${n}, Ref ${refVCount} vessel, Uji ${testVCount} vessel)`);
   }
 
   log(`  menulis data Report ke file Calculation dalam 1 panggilan batch...`);
@@ -5214,8 +5221,8 @@ function buildSummaryBlockWrites(tabTitle, k, role, prodName, batchName, dateStr
 
     const concl = (f2Res && isFinite(f2Res.f2))
       ? (f2Res.isSimilar
-          ? `Profil disolusi ${prodName} (${batchName}) memiliki kemiripan (ekivalen) terhadap produk pembanding ${refProdName} (${refBatchName}) dengan nilai f2 = ${fmt(f2Res.f2,2)} (≥ 50).`
-          : `Profil disolusi ${prodName} (${batchName}) tidak ekivalen terhadap produk pembanding ${refProdName} (${refBatchName}) dengan nilai f2 = ${fmt(f2Res.f2,2)} (< 50).`)
+          ? `Profil disolusi ${prodName} (${batchName}) similar terhadap produk pembanding ${refProdName} (${refBatchName}) dengan nilai f2 = ${fmtF2(f2Res.f2)} (≥ 50).`
+          : `Profil disolusi ${prodName} (${batchName}) not similar terhadap produk pembanding ${refProdName} (${refBatchName}) dengan nilai f2 = ${fmtF2(f2Res.f2)} (< 50).`)
       : '';
     w(`U${s}`, [[concl]]);
   }
