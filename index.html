@@ -1532,6 +1532,7 @@ function buildTabWrites(a){
 <script>
 // ===================== Konfigurasi Aplikasi =====================
 const CONFIG = {
+  gasUrl:'',
   root:'1EhaQ7N49y2FZpX1DgnK1-M1VZsOgPDFM',
   outputFolder:'14MBWKyYRabZKeKoRvd9wp-UGeFkUDyeB',
   projectFolder:'1hspwVPz4OdxQCc3ddauTFEsE711Y1Qxw',
@@ -1607,7 +1608,7 @@ const S = {
   mediaConfig:{}, // mId -> { preset, code, tabName, desc }
   testParams:{ product:'', batch:'', manufacturer:'', mdEd:'', analyst:'', runDate:'', ...DEF_CALC },
   refParams:{ product:'', batch:'', manufacturer:'', mdEd:'', analyst:'', runDate:'', ...DEF_CALC },
-  step:1, mcp:null, dl:null, googleToken:'', tokenExp:0, customTemplates:JSON.parse(localStorage.getItem('udt_custom_tpl')||'{}'),
+  step:1, mcp:null, gasUrl:localStorage.getItem('udt_gas_url')||CONFIG.gasUrl||'', dl:null, googleToken:'', tokenExp:0, customTemplates:JSON.parse(localStorage.getItem('udt_custom_tpl')||'{}'),
   outputFolderId: localStorage.getItem('udt_output_folder_id')||'',
   outputFolderName: localStorage.getItem('udt_output_folder_name')||'',
   calcSheets: JSON.parse(localStorage.getItem('udt_calc_sheets')||'{}'), // mId -> { id, title, url }
@@ -4204,10 +4205,57 @@ async function callGoogleRestAPI(server, tool, input, token){
     return await res.json();
   }
 
+  if(tool === 'verify_folder'){
+    const res = await fetch(`https://www.googleapis.com/drive/v3/files/${input.folderId}?fields=id,name,mimeType&supportsAllDrives=true`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if(!res.ok){
+      const err = await res.json().catch(()=>({}));
+      throw new Error(err.error?.message || `HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    if(data.mimeType !== 'application/vnd.google-apps.folder') throw new Error('ID tersebut bukan folder Google Drive.');
+    return data;
+  }
+
   throw new Error(`Alat ${tool} tidak dikenali pada adaptor REST Google.`);
 }
 
+async function callGasBridge(tool, input){
+  const payload = JSON.stringify({ tool, input });
+  let res;
+  try {
+    res = await fetch(S.gasUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: payload
+    });
+  } catch (netErr) {
+    throw new Error(`Gagal menghubungi Google Apps Script (${netErr.message || netErr}). Periksa koneksi internet atau validitas URL Web App.`);
+  }
+
+  if(!res.ok){
+    throw new Error(`Google Apps Script merespons dengan HTTP ${res.status}`);
+  }
+
+  let json;
+  try {
+    json = await res.json();
+  } catch(e) {
+    throw new Error('Respons dari Google Apps Script tidak valid. Pastikan Web App disetel ke "Who has access: Anyone".');
+  }
+
+  if(!json.ok){
+    throw new Error(json.error || 'Terjadi kesalahan pada Google Apps Script.');
+  }
+
+  return json.data;
+}
+
 async function call(server,tool,input){
+  if(S.gasUrl){
+    return await callGasBridge(tool, input);
+  }
     if(S.mcp){
     if(tool === 'batch_update_values'){
       for(const item of input.data){
@@ -4237,7 +4285,7 @@ async function call(server,tool,input){
 // ===== Token Google (disimpan di memori saja) =====
 let tokenClient=null, tokenWaiter=null, tokenPromise=null;
 function gisReady(){ return Boolean(GOOGLE_CLIENT_ID && window.google && google.accounts && google.accounts.oauth2); }
-function connAvailable(){ return Boolean(S.mcp || S.googleToken || gisReady()); }
+function connAvailable(){ return Boolean(S.mcp || S.gasUrl || S.googleToken || gisReady()); }
 function initGoogleAuth(){
   if(tokenClient || !gisReady()) return;
   tokenClient = google.accounts.oauth2.initTokenClient({
@@ -4314,6 +4362,23 @@ function renderConnStatus(){
           h('span',{class:'badge ok'},'Terhubung (MCP)'),
           h('span',{class:'small muted',style:'margin-left:8px'},'Konektor Google Sheets & Drive aktif melalui MCP.')),
         h('button',{class:'btn small',onclick:()=>testConn()},'Uji Ulang Koneksi')));
+  } else if(S.gasUrl){
+    const masked = S.gasUrl.length > 50 ? (S.gasUrl.slice(0, 30) + '••••' + S.gasUrl.slice(-14)) : S.gasUrl;
+    c.append(
+      h('div',{class:'row',style:'align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px'},
+        h('div',null,
+          h('span',{class:'badge ok'},'Terhubung (Google Apps Script)'),
+          h('span',{class:'small muted',style:'margin-left:8px'},'Koneksi Google Sheets aktif otomatis tanpa login/token OAuth.')),
+        h('div',{class:'row',style:'gap:6px'},
+          h('button',{class:'btn small',onclick:()=>testConn()},'Uji Akses Template'),
+          h('button',{class:'btn small',onclick:()=>{
+            if(confirm('Putuskan koneksi Google Apps Script?')){
+              S.gasUrl = '';
+              localStorage.removeItem('udt_gas_url');
+              renderConnStatus();
+              renderSend();
+            }
+          }},'Ganti / Putus'))));
   } else if(S.googleToken && gisReady()){
     c.append(
       h('div',{class:'row',style:'align-items:center;justify-content:space-between'},
@@ -4333,43 +4398,104 @@ function renderConnStatus(){
         h('div',{class:'row'},
           h('button',{class:'btn small',onclick:()=>testConn()},'Uji Akses Template'),
           h('button',{class:'btn small',onclick:()=>disconnectGoogle()},'Ganti Token'))));
-  } else if(gisReady()){
-    c.append(
-      h('div',{class:'row',style:'align-items:center;gap:10px'},
-        h('span',{class:'badge warn'},'Belum Terhubung'),
-        h('button',{class:'btn primary small',onclick:()=>{
-          ensureToken().then(()=>testConn()).catch(e=>{ $('#testOut').innerHTML=''; $('#testOut').append(h('div',{class:'banner err'},errMsg(e))); });
-        }},'Masuk dengan Google'),
-        h('span',{class:'small muted'},'Gunakan akun yang memiliki akses ke template dan folder output.')));
   } else {
-    c.append(
-      h('div',null,
-        h('div',{class:'row',style:'margin-bottom:8px'},
-          h('span',{class:'badge warn'},'Belum Terhubung'),
-          h('span',{class:'small muted'},'Masukkan Google OAuth2 Access Token untuk mengaktifkan ekspor otomatis ke Google Sheets:')),
-        h('div',{class:'row',style:'gap:8px;margin-bottom:8px'},
+    const wrap = h('div',null);
+
+    // Bagian 1: Google Apps Script Web App (Direkomendasikan)
+    wrap.append(
+      h('div',{style:'margin-bottom:12px;padding:12px;background:var(--surface);border:1px solid var(--line);border-radius:8px'},
+        h('div',{class:'row',style:'align-items:center;gap:8px;margin-bottom:6px'},
+          h('span',{class:'badge ok small'},'Metode Utama'),
+          h('b',{style:'font-size:13px'},'Konektor Google Apps Script (Tanpa Login / Bebas Token)')
+        ),
+        h('p',{class:'small muted',style:'margin:0 0 10px 0;line-height:1.45'},
+          'Tempelkan URL Web App dari Google Apps Script akun departemen/lab. Koneksi ini aktif permanen dan tidak akan pernah kedaluwarsa.'
+        ),
+        h('div',{class:'row',style:'gap:8px;align-items:center;flex-wrap:wrap'},
           h('input',{
-            id:'tokInput',
-            type:'password',
-            placeholder:'Tempel Access Token Google (ya29...)',
-            style:'max-width:380px'
+            id:'gasInput',
+            type:'text',
+            placeholder:'Tempel Web App URL (https://script.google.com/macros/s/.../exec)',
+            style:'flex:1;min-width:280px;font-family:monospace;font-size:12px'
           }),
           h('button',{
             class:'btn primary small',
             onclick:()=>{
-              const val = ($('#tokInput')?.value || '').trim();
-              if(!val){ alert('Silakan tempel token Google terlebih dahulu.'); return; }
-              S.googleToken = val;
-              S.tokenExp = 0;
+              const inp = $('#gasInput');
+              let val = (inp?.value || '').trim();
+              if(!val){ alert('Silakan tempelkan Web App URL Google Apps Script terlebih dahulu.'); return; }
+              if(val.includes('/edit')){
+                alert('URL yang Anda masukkan adalah halaman editor script, bukan Web App URL. Silakan klik Deploy -> New/Manage deployment -> salin URL yang berakhiran /exec.');
+                return;
+              }
+              if(!val.startsWith('https://script.google.com/')){
+                if(!confirm('URL tidak diawali "https://script.google.com/". Tetap lanjutkan?')) return;
+              }
+              S.gasUrl = val;
+              localStorage.setItem('udt_gas_url', val);
               renderConnStatus();
               renderSend();
               testConn();
             }
-          },'Hubungkan Akun Google')),
-        h('div',{class:'small muted',style:'line-height:1.45'},
-          'Token dapat diperoleh langsung dari ',
-          h('a',{href:'https://developers.google.com/oauthplayground/#step1&scopes=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fspreadsheets%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fdrive',target:'_blank',rel:'noopener',class:'link'},'Google OAuth 2.0 Playground'),
-          ' (pilih scope Drive & Spreadsheets lalu Step 2 klik "Exchange authorization code for tokens").')));
+          },'Hubungkan Web App')
+        ),
+        h('details',{style:'margin-top:10px;font-size:12px'},
+          h('summary',{style:'cursor:pointer;color:var(--accent);font-weight:600'},'📖 Petunjuk Cepat Pembuatan Web App di Google Apps Script (Klik di sini)'),
+          h('div',{style:'padding:8px 0;line-height:1.6;color:var(--fg)'},
+            h('ol',{style:'margin:6px 0 6px 18px;padding:0'},
+              h('li',null,'Buka ',h('a',{href:'https://script.google.com/',target:'_blank',rel:'noopener',class:'link'},'script.google.com'),' dengan akun Google departemen/lab.'),
+              h('li',null,'Klik tombol ',h('b',null,'+ New project'),' (Proyek baru).'),
+              h('li',null,'Salin kode dari folder ',h('b',null,'google-apps-script/Code.gs'),' lalu tempelkan ke editor script dan Simpan (Ctrl+S).'),
+              h('li',null,'Klik tombol ',h('b',null,'Deploy'),' > ',h('b',null,'New deployment'),'.'),
+              h('li',null,'Pilih jenis ',h('b',null,'Web app'),'. Set ',h('b',null,'Execute as: Me'),' dan ',h('b',null,'Who has access: Anyone'),'.'),
+              h('li',null,'Klik ',h('b',null,'Deploy'),', berikan izin (Authorize access), lalu salin ',h('b',null,'Web app URL'),' dan tempel pada kotak di atas.')
+            )
+          )
+        )
+      )
+    );
+
+    // Bagian 2: Alternatif Token OAuth Manual
+    wrap.append(
+      h('details',{style:'font-size:12px;color:var(--muted)'},
+        h('summary',{style:'cursor:pointer;font-weight:600'},'Opsi Alternatif: Masuk via Token OAuth Manual'),
+        h('div',{style:'margin-top:8px;padding:10px;border:1px dashed var(--line);border-radius:6px'},
+          gisReady() ? h('div',{class:'row',style:'align-items:center;gap:10px'},
+            h('button',{class:'btn small',onclick:()=>{
+              ensureToken().then(()=>testConn()).catch(e=>{ $('#testOut').innerHTML=''; $('#testOut').append(h('div',{class:'banner err'},errMsg(e))); });
+            }},'Masuk dengan Google')
+          ) : h('div',null,
+            h('div',{class:'row',style:'gap:8px;margin-bottom:6px'},
+              h('input',{
+                id:'tokInput',
+                type:'password',
+                placeholder:'Tempel Access Token Google (ya29...)',
+                style:'flex:1;max-width:380px;font-size:12px'
+              }),
+              h('button',{
+                class:'btn small',
+                onclick:()=>{
+                  const val = ($('#tokInput')?.value || '').trim();
+                  if(!val){ alert('Silakan tempel token Google terlebih dahulu.'); return; }
+                  S.googleToken = val;
+                  S.tokenExp = 0;
+                  renderConnStatus();
+                  renderSend();
+                  testConn();
+                }
+              },'Hubungkan Token')
+            ),
+            h('div',{class:'small muted'},
+              'Token dari ',
+              h('a',{href:'https://developers.google.com/oauthplayground/#step1&scopes=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fspreadsheets%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fdrive',target:'_blank',rel:'noopener',class:'link'},'OAuth Playground'),
+              ' (berlaku ±1 jam).'
+            )
+          )
+        )
+      )
+    );
+
+    c.append(wrap);
   }
 }
 
@@ -4424,14 +4550,7 @@ async function verifyFolder(){
   out.append(h('div',{class:'small muted'},'Memverifikasi akses folder...'));
 
   try{
-    const token = await ensureToken();
-    const res = await fetch(
-      `https://www.googleapis.com/drive/v3/files/${folderId}?fields=id,name,mimeType&supportsAllDrives=true`,
-      { headers:{ Authorization:'Bearer '+token } }
-    );
-    const data = await res.json();
-    if(!res.ok) throw new Error(data.error?.message || 'HTTP '+res.status);
-    if(data.mimeType !== 'application/vnd.google-apps.folder') throw new Error('ID tersebut bukan folder Google Drive.');
+    const data = await call(DRIVE, 'verify_folder', { folderId });
 
     S.outputFolderId = data.id;
     S.outputFolderName = data.name;
@@ -4508,6 +4627,16 @@ async function testConn(){
   if(!hasConn){ out.append(h('div',{class:'banner err'},'Konektor belum terhubung. Silakan hubungkan token Google di atas.')); return; }
   
   out.append(h('div',{class:'small muted',style:'margin-bottom:6px'},'Memverifikasi akses ketiga Master Template di Google Drive...'));
+
+  if(S.gasUrl){
+    try {
+      await call(DRIVE, 'test_conn', {});
+      out.append(h('div',{class:'small',style:'margin:4px 0'},h('span',{class:'badge ok'},'OK'),' Google Apps Script Web App: Respons Aktif'));
+    } catch(e){
+      out.append(h('div',{class:'small',style:'margin:4px 0'},h('span',{class:'badge err'},'Gagal'),` Google Apps Script: ${errMsg(e)}`));
+      return;
+    }
+  }
 
   const tplCheckList = [
     ['Master Calculation', CONFIG.masterCalculation],
@@ -5229,7 +5358,7 @@ async function executeExportCommand(mode){
   const ids = sortedMediaIds(S.model).filter(id => S.include[id] && readiness(id).length===0);
   if(!ids.length){ alert('Tidak ada medium yang siap dikirim.'); return; }
 
-  if(!S.mcp){
+  if(!S.mcp && !S.gasUrl){
     try{ await ensureToken(); }
     catch(e){ alert(errMsg(e)); return; }
   }
