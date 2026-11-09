@@ -2342,11 +2342,11 @@ function renderCondSection(){
     h('label',{class:'f'},'Kustom / Teks Instrumen', instManualInp)
   );
 
-  // Zat Aktif (API), Kecepatan Putar, & Method Reference (Report E15)
+  // Zat Aktif (API), Kecepatan Putar, & Method Reference
   topGrid.append(
-    paramField(S.condParams, 'Zat Aktif (API)', 'api', {ph:'mis. Empagliflozin / Rosuvastatin Calcium', hint:'Otomatis dari CDS'}),
+    paramField(S.condParams, 'Zat Aktif (API)', 'api', {ph:'mis. Empagliflozin / Rosuvastatin Calcium'}),
     paramField(S.condParams, 'Kecepatan Putar (RPM)', 'rpm', {ph:'mis. 50 rpm / 75 rpm / 100 rpm'}),
-    paramField(S.condParams, 'Method Reference', 'methodRef', {ph:'mis. Farmakope Indonesia (FI) VI / USP', hint:'Ditulis ke sel E15 Report'})
+    paramField(S.condParams, 'Method Reference', 'methodRef', {ph:'mis. Farmakope Indonesia (FI) VI / USP'})
   );
 
   box.append(topGrid);
@@ -2420,13 +2420,12 @@ function renderParams(){
     gTest.innerHTML = '';
     gTest.append(
       paramField(S.testParams, 'Nama Produk Uji', 'product', {ph:'mis. Rosuvastatin 20 mg Tablet'}),
-      paramField(S.testParams, 'Nomor Batch Uji', 'batch', {ph:'mis. F0048J26A', hint:'Otomatis dari CDS'}),
-      paramField(S.testParams, 'Manufaktur / Produsen Uji', 'manufacturer', {ph:'mis. PT Pharos Indonesia', hint:'Ditulis ke sel Report C27'}),
-      paramField(S.testParams, 'MD / ED (Mfg & Exp Date)', 'mdEd', {ph:'mis. Okt26/Okt28', hint:'Ditulis ke sel Report D24'}),
+      paramField(S.testParams, 'Nomor Batch Uji', 'batch', {ph:'mis. F0048J26A'}),
+      paramField(S.testParams, 'Manufaktur / Produsen Uji', 'manufacturer', {ph:'mis. PT Pharos Indonesia'}),
+      paramField(S.testParams, 'MD / ED (Mfg & Exp Date)', 'mdEd', {ph:'mis. Okt26/Okt28'}),
       paramField(S.testParams, 'Nama Analis', 'analyst', {ph:'mis. Kania'}),
       h('label',{class:'f'},'Tanggal Pengujian',
-        h('input',{type:'date', value:S.testParams.runDate||suggestedDate(), oninput:e=>{S.testParams.runDate=e.target.value; store(); renderResults();}}),
-        h('span',{class:'small muted'},S.testParams.runDate?'manual':'otomatis'))
+        h('input',{type:'date', value:S.testParams.runDate||suggestedDate(), oninput:e=>{S.testParams.runDate=e.target.value; store(); renderResults();}}))
     );
   }
 
@@ -2436,13 +2435,12 @@ function renderParams(){
     gRef.innerHTML = '';
     gRef.append(
       paramField(S.refParams, 'Nama Produk Pembanding', 'product', {ph:'mis. Crestor 20 mg Tablet (Inovator)'}),
-      paramField(S.refParams, 'Nomor Batch Pembanding', 'batch', {ph:'mis. F0006H26A', hint:'Otomatis dari CDS'}),
-      paramField(S.refParams, 'Manufaktur / Produsen Pembanding', 'manufacturer', {ph:'mis. PT Meiji Indonesia', hint:'Ditulis ke sel Report C23'}),
-      paramField(S.refParams, 'MD / ED (Mfg & Exp Date)', 'mdEd', {ph:'mis. Nov24/Nov26', hint:'Ditulis ke sel Report D20'}),
+      paramField(S.refParams, 'Nomor Batch Pembanding', 'batch', {ph:'mis. F0006H26A'}),
+      paramField(S.refParams, 'Manufaktur / Produsen Pembanding', 'manufacturer', {ph:'mis. PT Meiji Indonesia'}),
+      paramField(S.refParams, 'MD / ED (Mfg & Exp Date)', 'mdEd', {ph:'mis. Nov24/Nov26'}),
       paramField(S.refParams, 'Nama Analis', 'analyst', {ph:'mis. Kania'}),
       h('label',{class:'f'},'Tanggal Pengujian',
-        h('input',{type:'date', value:S.refParams.runDate||suggestedDate(), oninput:e=>{S.refParams.runDate=e.target.value; store(); renderResults();}}),
-        h('span',{class:'small muted'},S.refParams.runDate?'manual':'otomatis'))
+        h('input',{type:'date', value:S.refParams.runDate||suggestedDate(), oninput:e=>{S.refParams.runDate=e.target.value; store(); renderResults();}}))
     );
   }
 
