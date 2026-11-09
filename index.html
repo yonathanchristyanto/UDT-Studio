@@ -734,10 +734,13 @@ details[open] summary { margin-bottom: 8px; }
 
     <!-- Kondisi Disolusi & Instrumen -->
     <div class="card" style="margin-bottom:16px">
-      <div class="mhead" style="margin-bottom:10px">
+      <div class="mhead" style="margin-bottom:10px;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
         <div>
           <h2>Kondisi Disolusi &amp; Instrumen</h2>
         </div>
+        <button class="btn small" type="button" onclick="resetAllParams()" style="background:#fff;color:#ef4444;border-color:#fca5a5" title="Kosongkan seluruh isian kolom parameter & perhitungan">
+          🗑️ Kosongkan Semua Parameter
+        </button>
       </div>
       <div id="pCondBox"></div>
     </div>
@@ -1714,12 +1717,12 @@ const S = {
   wsWeights:{},
   condParams:{
     api:'',
-    apparatusPreset:'2 (Paddle)',
-    apparatus:'2 (Paddle)',
-    instrumentPreset:'HPLC',
-    instrument:'HPLC',
+    apparatusPreset:'',
+    apparatus:'',
+    instrumentPreset:'',
+    instrument:'',
     rpm:'',
-    methodRef:'Farmakope Indonesia (FI) VI / USP'
+    methodRef:''
   },
   mediaConfig:{}, // mId -> { preset, code, tabName, desc }
   testParams:{ product:'', batch:'', manufacturer:'', mdEd:'', analyst:'', runDate:'', ...DEF_CALC },
@@ -1775,43 +1778,71 @@ const fmtF2=(v)=>{ if(!(typeof v==='number'&&isFinite(v))) return '–'; const r
 
 function store(){
   try{
-    localStorage.setItem('udt.v3', JSON.stringify({
+    localStorage.setItem('udt.v4', JSON.stringify({
       testParams: S.testParams,
       refParams: S.refParams,
       condParams: S.condParams,
       mediaConfig: S.mediaConfig,
-      wsWeights: S.wsWeights
+      wsWeights: S.wsWeights,
+      useMr: S.useMr
     }));
   }catch(e){}
 }
 function restore(){
-  try{ localStorage.removeItem('udt_google_token'); }catch(e){}
   try{
-    const j=JSON.parse(localStorage.getItem('udt.v3')||'null');
+    localStorage.removeItem('udt_google_token');
+    // Bersihkan semua legacy storage yang menyimpan mock default lama
+    localStorage.removeItem('udt.v3');
+    localStorage.removeItem('udt.v2');
+    localStorage.removeItem('udt.v1');
+    localStorage.removeItem('udt_mock_data');
+  }catch(e){}
+  try{
+    const j = JSON.parse(localStorage.getItem('udt.v4') || 'null');
     if(j){
-      Object.assign(S.testParams, j.testParams||{});
-      Object.assign(S.refParams, j.refParams||{});
-      Object.assign(S.condParams, j.condParams||{});
-      // Jika data tersimpan di localStorage masih menggunakan mock default lama Rosuvastatin, bersihkan
-      if(S.testParams && S.testParams.pctWS === 98.23 && S.testParams.lc === 20 && S.testParams.dilStd === 500 && S.testParams.volMedia === 900){
-        Object.assign(S.testParams, DEF_CALC);
-        Object.assign(S.refParams, DEF_CALC);
-      }
+      if(j.testParams) Object.assign(S.testParams, j.testParams);
+      if(j.refParams) Object.assign(S.refParams, j.refParams);
+      if(j.condParams) Object.assign(S.condParams, j.condParams);
       delete S.testParams.tabPrefix;
       delete S.refParams.tabPrefix;
-      if(!S.condParams.methodRef) S.condParams.methodRef = 'Farmakope Indonesia (FI) VI / USP';
-      S.mediaConfig=j.mediaConfig||{};
-      S.wsWeights=j.wsWeights||{};
-      S.stdMapping={};
-      S.manualStdMapping={};
+      S.mediaConfig = j.mediaConfig || {};
+      S.wsWeights = j.wsWeights || {};
+      if(j.useMr !== undefined) S.useMr = j.useMr;
+      S.stdMapping = {};
+      S.manualStdMapping = {};
+
+      // Sanitasi menyeluruh: bersihkan jika ada sisa mock Rosuvastatin / Crestor lama
+      if(S.testParams.product && S.testParams.product.includes('Rosuvastatin 20 mg')) S.testParams.product = '';
+      if(S.testParams.batch === 'F0048J26A') S.testParams.batch = '';
+      if(S.testParams.manufacturer === 'PT Pharos Indonesia') S.testParams.manufacturer = '';
+      if(S.testParams.analyst === 'Kania') S.testParams.analyst = '';
+      if(S.testParams.pctWS === 98.23) S.testParams.pctWS = null;
+      if(S.refParams.product && S.refParams.product.includes('Crestor')) S.refParams.product = '';
+      if(S.refParams.batch === 'F0006H26A') S.refParams.batch = '';
+      if(S.refParams.manufacturer === 'PT Meiji Indonesia') S.refParams.manufacturer = '';
+      if(S.refParams.analyst === 'Kania') S.refParams.analyst = '';
+      if(S.refParams.pctWS === 98.23) S.refParams.pctWS = null;
+      if(S.condParams.api === 'Rosuvastatin Calcium') S.condParams.api = '';
     }
   }catch(e){}
+}
+
+function resetAllParams(){
+  if(!confirm('Kosongkan semua parameter dan perhitungan kembali ke kondisi awal (bersih)?')) return;
+  Object.assign(S.testParams, { product:'', batch:'', manufacturer:'', mdEd:'', analyst:'', runDate:'', ...DEF_CALC });
+  Object.assign(S.refParams, { product:'', batch:'', manufacturer:'', mdEd:'', analyst:'', runDate:'', ...DEF_CALC });
+  Object.assign(S.condParams, { api:'', apparatusPreset:'', apparatus:'', instrumentPreset:'', instrument:'', rpm:'', methodRef:'' });
+  S.wsWeights = {};
+  S.useMr = false;
+  store();
+  renderParams();
+  renderResults();
 }
 
 function todayISO(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function suggestedDate(){
   const ds = [...S.testFiles, ...S.refFiles].map(f => f.meta && f.meta.runDate).filter(Boolean).sort();
-  return ds[0] || todayISO();
+  return ds[0] || '';
 }
 
 // ===================== Navigasi =====================
@@ -2429,14 +2460,15 @@ function renderUnassignedSection(){
 // ===================== Langkah 3: Parameter & Perhitungan =====================
 function paramField(paramsObj, label, key, opts={}){
   const v = paramsObj[key];
+  const valStr = (v === undefined || v === null) ? '' : (opts.num && isFinite(v) ? String(v).replace('.', ',') : String(v));
   const inp = h('input',{
     type: opts.type||'text',
     inputmode: opts.num?'decimal':null,
-    value: v===undefined?'':String(v).replace('.', opts.num?',':'.'),
+    value: valStr,
     placeholder: opts.ph||'',
     oninput: e => {
       const t = e.target.value;
-      paramsObj[key] = opts.num ? toNum(t) : t;
+      paramsObj[key] = opts.num ? (t.trim() === '' ? null : toNum(t)) : t;
       store();
       if(opts.num) e.target.classList.toggle('bad', t.trim()!=='' && !isFinite(toNum(t)));
       renderResults();
@@ -2453,16 +2485,16 @@ function renderCondSection(){
   // 1. Apparatus (Dropdown + Input Manual) & Instrument (Dropdown + Input Manual) & API & RPM
   const topGrid = h('div',{class:'grid',style:'grid-template-columns:repeat(auto-fill,minmax(220px,1fr));margin-bottom:14px'});
 
-  // Apparatus dropdown + manual input
+  // Apparatus dropdown + manual input (kosong dari awal jika belum dipilih)
   const appKnown = APPARATUS_PRESETS.some(p => p.value === S.condParams.apparatus);
-  const appPresetVal = appKnown ? S.condParams.apparatus : '__custom__';
+  const appPresetVal = appKnown ? S.condParams.apparatus : (S.condParams.apparatus ? '__custom__' : '');
   const appManualInp = h('input',{
     type:'text',
     value: S.condParams.apparatus || '',
     placeholder:'Ketik apparatus manual (mis. 2 (Paddle))',
     oninput: e => {
       S.condParams.apparatus = e.target.value;
-      S.condParams.apparatusPreset = APPARATUS_PRESETS.some(p=>p.value===e.target.value) ? e.target.value : '__custom__';
+      S.condParams.apparatusPreset = APPARATUS_PRESETS.some(p=>p.value===e.target.value) ? e.target.value : (e.target.value ? '__custom__' : '');
       store();
     }
   });
@@ -2470,15 +2502,19 @@ function renderCondSection(){
     onchange: e => {
       const val = e.target.value;
       S.condParams.apparatusPreset = val;
-      if(val !== '__custom__'){
+      if(val && val !== '__custom__'){
         S.condParams.apparatus = val;
         appManualInp.value = val;
-      } else {
+      } else if(val === '__custom__'){
         appManualInp.focus();
+      } else {
+        S.condParams.apparatus = '';
+        appManualInp.value = '';
       }
       store();
     }
   },
+    h('option',{value:'', selected:!appPresetVal}, '— Pilih Apparatus —'),
     APPARATUS_PRESETS.map(p => h('option',{value:p.value, selected:appPresetVal===p.value}, p.label)),
     h('option',{value:'__custom__', selected:appPresetVal==='__custom__'},'Input Manual...')
   );
@@ -2487,9 +2523,9 @@ function renderCondSection(){
     h('label',{class:'f'},'Kustom / Teks Apparatus', appManualInp)
   );
 
-  // Instrument dropdown + manual input
+  // Instrument dropdown + manual input (kosong dari awal kecuali terdeteksi otomatis dari berkas raw data)
   const instKnown = INSTRUMENT_PRESETS.some(p => p.value === S.condParams.instrument);
-  const instPresetVal = instKnown ? S.condParams.instrument : '__custom__';
+  const instPresetVal = instKnown ? S.condParams.instrument : (S.condParams.instrument ? '__custom__' : '');
   const instManualInp = h('input',{
     type:'text',
     value: S.condParams.instrument || '',
@@ -2497,7 +2533,7 @@ function renderCondSection(){
     oninput: e => {
       S.condParams._userSetInstrument = true;
       S.condParams.instrument = e.target.value;
-      S.condParams.instrumentPreset = INSTRUMENT_PRESETS.some(p=>p.value===e.target.value) ? e.target.value : '__custom__';
+      S.condParams.instrumentPreset = INSTRUMENT_PRESETS.some(p=>p.value===e.target.value) ? e.target.value : (e.target.value ? '__custom__' : '');
       store();
     }
   });
@@ -2506,15 +2542,19 @@ function renderCondSection(){
       const val = e.target.value;
       S.condParams._userSetInstrument = true;
       S.condParams.instrumentPreset = val;
-      if(val !== '__custom__'){
+      if(val && val !== '__custom__'){
         S.condParams.instrument = val;
         instManualInp.value = val;
-      } else {
+      } else if(val === '__custom__'){
         instManualInp.focus();
+      } else {
+        S.condParams.instrument = '';
+        instManualInp.value = '';
       }
       store();
     }
   },
+    h('option',{value:'', selected:!instPresetVal}, '— Pilih Instrumen —'),
     INSTRUMENT_PRESETS.map(p => h('option',{value:p.value, selected:instPresetVal===p.value}, p.label)),
     h('option',{value:'__custom__', selected:instPresetVal==='__custom__'},'Input Manual...')
   );
@@ -2606,7 +2646,7 @@ function renderParams(){
       paramField(S.testParams, 'MD / ED (Mfg & Exp Date)', 'mdEd', {ph:'mis. Okt26/Okt28'}),
       paramField(S.testParams, 'Nama Analis', 'analyst', {ph:'mis. Kania'}),
       h('label',{class:'f'},'Tanggal Pengujian',
-        h('input',{type:'date', value:S.testParams.runDate||suggestedDate(), oninput:e=>{S.testParams.runDate=e.target.value; store(); renderResults();}}))
+        h('input',{type:'date', value:S.testParams.runDate||'', oninput:e=>{S.testParams.runDate=e.target.value; store(); renderResults();}}))
     );
   }
 
@@ -2621,7 +2661,7 @@ function renderParams(){
       paramField(S.refParams, 'MD / ED (Mfg & Exp Date)', 'mdEd', {ph:'mis. Nov24/Nov26'}),
       paramField(S.refParams, 'Nama Analis', 'analyst', {ph:'mis. Kania'}),
       h('label',{class:'f'},'Tanggal Pengujian',
-        h('input',{type:'date', value:S.refParams.runDate||suggestedDate(), oninput:e=>{S.refParams.runDate=e.target.value; store(); renderResults();}}))
+        h('input',{type:'date', value:S.refParams.runDate||'', oninput:e=>{S.refParams.runDate=e.target.value; store(); renderResults();}}))
     );
   }
 
@@ -3572,11 +3612,11 @@ function printReportWindow(){
         <table class="sheet-table">
           <tr>
             <td class="lbl">Produk Pembanding</td><td><b>${refFullName}</b></td>
-            <td class="lbl">Aparatus Disolusi</td><td>${S.condParams.apparatus || '2 (Paddle)'}</td>
+            <td class="lbl">Aparatus Disolusi</td><td>${S.condParams.apparatus || '–'}</td>
           </tr>
           <tr>
             <td class="lbl">Batch Pembanding</td><td>${refBatchName}</td>
-            <td class="lbl">Kecepatan Putar</td><td>${S.condParams.rpm || '50 rpm'}</td>
+            <td class="lbl">Kecepatan Putar</td><td>${S.condParams.rpm || '–'}</td>
           </tr>
           <tr>
             <td class="lbl">Manufaktur Pembanding</td><td>${S.refParams.manufacturer || '-'}</td>
@@ -3596,11 +3636,11 @@ function printReportWindow(){
           </tr>
           <tr>
             <td class="lbl">Bahan Aktif (API)</td><td>${S.condParams.api || '-'}</td>
-            <td class="lbl">Detektor / Instrumen</td><td>${S.condParams.instrument || 'HPLC'}</td>
+            <td class="lbl">Detektor / Instrumen</td><td>${S.condParams.instrument || '–'}</td>
           </tr>
           <tr>
             <td class="lbl">Label Claim</td><td>${S.testParams.lc ? S.testParams.lc + " mg" : "–"}</td>
-            <td class="lbl">Acuan Metode</td><td>${S.condParams.methodRef || 'Farmakope Indonesia (FI) VI / USP'}</td>
+            <td class="lbl">Acuan Metode</td><td>${S.condParams.methodRef || '–'}</td>
           </tr>
         </table>
 
@@ -3947,9 +3987,9 @@ async function exportPDF(){
         // 2. Parameter & Kondisi Pengujian (Box Grid Spreadsheet 4 Kolom)
         const condRows = [
           [{content:'Produk Pembanding', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, {content:refFullName, styles:{fontStyle:'bold'}},
-           {content:'Aparatus Disolusi', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, S.condParams.apparatus || '2 (Paddle)'],
+           {content:'Aparatus Disolusi', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, S.condParams.apparatus || '–'],
           [{content:'Batch Pembanding', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, refBatchName,
-           {content:'Kecepatan Putar', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, S.condParams.rpm || '50 rpm'],
+           {content:'Kecepatan Putar', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, S.condParams.rpm || '–'],
           [{content:'Manufaktur Pembanding', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, rManufacturer || '-',
            {content:'MD / ED Pembanding', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, rMdEd || '-'],
           [{content:'Produk Uji', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, {content:testFullName, styles:{fontStyle:'bold'}},
@@ -3959,9 +3999,9 @@ async function exportPDF(){
           [{content:'Manufaktur Produk Uji', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, tManufacturer || '-',
            {content:'MD / ED Produk Uji', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, tMdEd || '-'],
           [{content:'Zat Aktif (API)', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, S.condParams.api || '-',
-           {content:'Detektor / Instrumen', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, S.condParams.instrument || 'HPLC'],
+           {content:'Detektor / Instrumen', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, S.condParams.instrument || '–'],
           [{content:'Label Claim', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, S.testParams.lc ? S.testParams.lc + ' mg' : '–',
-           {content:'Acuan Metode', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, S.condParams.methodRef || 'Farmakope Indonesia (FI) VI / USP']
+           {content:'Acuan Metode', styles:{fontStyle:'bold', fillColor:[248,250,252]}}, S.condParams.methodRef || '–']
         ];
 
         doc.autoTable({
