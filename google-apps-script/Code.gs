@@ -1,14 +1,22 @@
 /**
  * =========================================================================
- * UDT STUDIO — GOOGLE APPS SCRIPT CONNECTOR (100% NATIVE SPREADSHEETAPP)
+ * UDT STUDIO — GOOGLE APPS SCRIPT CONNECTOR (FAST NATIVE)
  * Analytical Development - Pharos Indonesia
  * =========================================================================
  */
 
+// Fungsi tanpa if(false) agar Google Apps Script mendeteksi izin penuh Drive
+// (untuk menyimpan langsung ke Folder Output, bukan ke My Drive)
+function aktifkanIzinFolderDrive() {
+  var temp = DriveApp.createFile("tes_izin_folder_udt.txt", "ok");
+  temp.setTrashed(true);
+  Logger.log("BERHASIL! Izin simpan ke Folder Output Google Drive sudah aktif!");
+}
+
 function doGet(e) {
   return ContentService.createTextOutput(JSON.stringify({
     ok: true,
-    service: "UDT Studio Google Connector (Native)",
+    service: "UDT Studio Google Connector (Fast Native)",
     status: "Active",
     message: "Konektor UDT Studio siap digunakan.",
     timestamp: new Date().toISOString()
@@ -50,6 +58,43 @@ function findSheetById(ss, sheetId) {
   return null;
 }
 
+function colToNum(colStr) {
+  var s = colStr.replace(/\$/g, "").toUpperCase();
+  var n = 0;
+  for (var i = 0; i < s.length; i++) {
+    n = n * 26 + (s.charCodeAt(i) - 64);
+  }
+  return n;
+}
+
+function numToCol(n) {
+  var s = "";
+  while (n > 0) {
+    var m = (n - 1) % 26;
+    s = String.fromCharCode(65 + m) + s;
+    n = Math.floor((n - m) / 26);
+  }
+  return s;
+}
+
+function buildExactA1Range(rangeStr, numRows, numCols) {
+  var bangIdx = rangeStr.lastIndexOf("!");
+  var prefix = bangIdx >= 0 ? rangeStr.slice(0, bangIdx + 1) : "";
+  var a1 = bangIdx >= 0 ? rangeStr.slice(bangIdx + 1) : rangeStr;
+  var startCell = a1.split(":")[0];
+  var m = startCell.match(/^\$?([A-Za-z]+)\$?(\d+)$/);
+  if (!m) return rangeStr;
+  var startCol = colToNum(m[1]);
+  var startRow = parseInt(m[2], 10);
+  if (numRows === 1 && numCols === 1) {
+    return prefix + m[1].toUpperCase() + startRow;
+  }
+  var endCol = numToCol(startCol + numCols - 1);
+  var endRow = startRow + numRows - 1;
+  return prefix + m[1].toUpperCase() + startRow + ":" + endCol + endRow;
+}
+
+// Write-only (tanpa memanggil getRow/getColumn) agar dieksekusi instan dalam 1 batch oleh V8
 function writeRangeValues(ss, rangeStr, values) {
   if (!values || !values.length) return;
   var numRows = values.length;
@@ -71,10 +116,8 @@ function writeRangeValues(ss, rangeStr, values) {
     rect.push(row);
   }
 
-  var rg = ss.getRange(rangeStr);
-  var sh = rg.getSheet();
-  var targetRange = sh.getRange(rg.getRow(), rg.getColumn(), numRows, numCols);
-  targetRange.setValues(rect);
+  var exactRange = buildExactA1Range(rangeStr, numRows, numCols);
+  ss.getRange(exactRange).setValues(rect);
 }
 
 function handleTool(tool, input) {
@@ -82,28 +125,33 @@ function handleTool(tool, input) {
     return { ok: true, timestamp: new Date().toISOString() };
   }
 
-  // Menyalin spreadsheet menggunakan SpreadsheetApp.copy() (tidak memerlukan izin tulis DriveApp)
+  // Utamakan menyimpan langsung ke Folder Output via DriveApp.makeCopy(title, folder)
   if (tool === "copy_file") {
     var copiedId = "";
     var copiedName = "";
-    try {
+
+    if (input.parentId) {
+      try {
+        var folder = DriveApp.getFolderById(input.parentId);
+        var file = DriveApp.getFileById(input.fileId);
+        var copiedInFolder = file.makeCopy(input.title, folder);
+        copiedId = copiedInFolder.getId();
+        copiedName = copiedInFolder.getName();
+      } catch (folderCopyErr) {}
+    }
+
+    if (!copiedId) {
       var srcSS = SpreadsheetApp.openById(input.fileId);
       var newSS = srcSS.copy(input.title);
       copiedId = newSS.getId();
       copiedName = newSS.getName();
 
-      // Opsional: jika izin Drive tersedia, pindahkan ke folder tujuan
       if (input.parentId) {
         try {
-          var folder = DriveApp.getFolderById(input.parentId);
-          DriveApp.getFileById(copiedId).moveTo(folder);
+          var targetFolder = DriveApp.getFolderById(input.parentId);
+          DriveApp.getFileById(copiedId).moveTo(targetFolder);
         } catch (moveErr) {}
       }
-    } catch (ssErr) {
-      var file = DriveApp.getFileById(input.fileId);
-      var copied = file.makeCopy(input.title);
-      copiedId = copied.getId();
-      copiedName = copied.getName();
     }
 
     return {

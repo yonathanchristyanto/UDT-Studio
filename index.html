@@ -1475,16 +1475,18 @@ const colL = i => String.fromCharCode(68 + i);
 function buildTabWrites(a){
   const W = []; const F = []; const w = (range, values) => W.push({range, values});
   const P = a.params, H = a.header;
-  w('E3', [[': '+H.product]]);
-  w('E4', [[': '+H.batch+' ']]);
-  if(H.api !== undefined) w('E5', [[': '+H.api]]);
-  if(H.mediumDesc !== undefined) w('E6', [[': '+H.mediumDesc]]);
-  if(H.apparatus !== undefined) w('E7', [[': '+H.apparatus]]);
-  w('E8', [[': NA']]);
-  if(H.purpose !== undefined) w('E9', [[': '+H.purpose]]);
-  w('E10', [[': '+H.analyst]]);
-  w('E11', [[': '+H.dateStr]]);
-  if(H.instrument !== undefined) w('E12', [[': '+H.instrument]]);
+  w('E3:E12', [
+    [': '+(H.product||'')],
+    [': '+(H.batch||'')+' '],
+    [': '+(H.api!==undefined?H.api:'')],
+    [': '+(H.mediumDesc!==undefined?H.mediumDesc:'')],
+    [': '+(H.apparatus!==undefined?H.apparatus:'')],
+    [': NA'],
+    [': '+(H.purpose!==undefined?H.purpose:'')],
+    [': '+(H.analyst||'')],
+    [': '+(H.dateStr||'')],
+    [': '+(H.instrument!==undefined?H.instrument:'')]
+  ]);
   w('N8', [[': '+H.dateStr]]);
   w('N11', [[': '+H.dateStr]]);
   w('E14:E16', [[P.lc],[P.dilStd],[P.dilSample]]);
@@ -1499,34 +1501,37 @@ function buildTabWrites(a){
   
   const calcF = (col,i) => `=(${col}${21+i}/$M$27)*($N$22/$E$14)*($E$16/$E$15)*($M$18/$M$17)*($M$16)`;
   const resF = (col,k,i) => k===0 ? `=${col}${38+i}` : (k===1 ? `=${col}${38+i}+($M$14/$M$15)*D${54+i}` : `=${col}${38+i}+($M$14/$M$15)*SUM(D${54+i}:${colL(k-1)}${54+i})`);
+
+  // Gabungkan seluruh baris vessel (1..12) dan statistik (67..71) menjadi blok matriks 2D agar penulisan 20x lebih cepat
+  const calcGrid = Array.from({length: 12}, () => []);
+  const resGrid  = Array.from({length: 12}, () => []);
+  const statGrid = [[], [], [], [], []];
+
   for (let k=0;k<a.T;k++){
     const col = colL(k);
     if (k>=7){
       F.push([col+'38', `=${col}21`]);
       F.push([col+'54', `=${col}38`]);
     }
-    // Update rentang statistik (MIN, MAX, AVERAGE, STDEV, RSD) HANYA untuk vessel aktif (55 s/d 54+V)
     const vRange = `${col}55:${col}${54 + a.V}`;
-    F.push([col+'67', `=MIN(${vRange})`]);
-    F.push([col+'68', `=MAX(${vRange})`]);
-    F.push([col+'69', `=AVERAGE(${vRange})`]);
-    F.push([col+'70', `=STDEV(${vRange})`]);
-    F.push([col+'71', `=${col}70/${col}69*100`]);
+    statGrid[0].push(`=MIN(${vRange})`);
+    statGrid[1].push(`=MAX(${vRange})`);
+    statGrid[2].push(`=AVERAGE(${vRange})`);
+    statGrid[3].push(`=STDEV(${vRange})`);
+    statGrid[4].push(`=${col}70/${col}69*100`);
 
-    // Tulis formula hanya untuk vessel yang aktif (1 s/d a.V)
-    for (let i=1;i<=a.V;i++){
-      F.push([col+(38+i), calcF(col,i)]);
-      F.push([col+(54+i), resF(col,k,i)]);
-    }
-    // Kosongkan formula & sel vessel yang tidak digunakan (a.V+1 s/d 12) agar tidak terhitung 0.00%
-    for (let i=a.V+1; i<=12; i++){
-      w(col+(38+i), [['']]);
-      w(col+(54+i), [['']]);
+    for (let i=1;i<=12;i++){
+      calcGrid[i-1].push(i <= a.V ? calcF(col,i) : '');
+      resGrid[i-1].push(i <= a.V ? resF(col,k,i) : '');
     }
   }
+  w(`D39:${last}50`, calcGrid);
+  w(`D55:${last}66`, resGrid);
+  w(`D67:${last}71`, statGrid);
+
   if (a.T>=7 && String(a.labels[6]) !== "60'"){ F.push(['J38','=J21']); F.push(['J54','=J38']); }
   for (const [cell,f] of F) w(cell, [[f]]);
-  return {writes:W, formulaCount:F.length};
+  return {writes:W, formulaCount: 2 * a.V * a.T + 5 * a.T + F.length};
 }
 </script>
 
