@@ -3722,7 +3722,7 @@ function printReportWindow(){
         ${conclusionBadge}
       </div>
 
-      <!-- HALAMAN 2: Individual 12 Vessels & Lembar Pengesahan -->
+      <!-- HALAMAN 2: Individual 12 Vessels -->
       <div class="sheet-page">
         <div class="rep-header">
           <h1>DATA RINCI DISOLUSI INDIVIDUAL (12 VESSEL)</h1>
@@ -3806,38 +3806,7 @@ function printReportWindow(){
           </tbody>
         </table>
 
-        <div class="sec-title">C. LEMBAR PENGESAHAN DOKUMEN LABORATORIUM</div>
-        <table class="sign-table">
-          <thead>
-            <tr>
-              <th>Dikerjakan oleh (Analyst)</th>
-              <th>Diperiksa oleh (Supervisor)</th>
-              <th>Disetujui oleh (QA / Lab Manager)</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>
-                <div class="sign-space"></div>
-                <div style="border-bottom:1px solid #94a3b8;width:80%;margin:0 auto 6px"></div>
-                <div><b>${S.testParams.analyst || 'Analis Lab'}</b></div>
-                <div style="font-size:9px;color:#64748b">Tanggal: ${dateStr}</div>
-              </td>
-              <td>
-                <div class="sign-space"></div>
-                <div style="border-bottom:1px solid #94a3b8;width:80%;margin:0 auto 6px"></div>
-                <div><b>Supervisor QC / Formulasi</b></div>
-                <div style="font-size:9px;color:#64748b">Tanggal: ________________</div>
-              </td>
-              <td>
-                <div class="sign-space"></div>
-                <div style="border-bottom:1px solid #94a3b8;width:80%;margin:0 auto 6px"></div>
-                <div><b>QA / Lab Manager</b></div>
-                <div style="font-size:9px;color:#64748b">Tanggal: ________________</div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+
       </div>
       `;
     });
@@ -4246,37 +4215,7 @@ async function exportPDF(){
           margin: { left: 14, right: 14 }
         });
 
-        // 3. Kolom Lembar Pengesahan Laboratorium (Sign-off Box)
-        curY = doc.lastAutoTable.finalY + 5;
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(71, 85, 105);
-        doc.text('C. LEMBAR PENGESAHAN DOKUMEN LABORATORIUM', 14, curY);
-        curY += 1.5;
 
-        const signHead = [['Dikerjakan oleh (Analyst)', 'Diperiksa oleh (Supervisor)', 'Disetujui oleh (QA / Lab Manager)']];
-        const signBody = [
-          [
-            `\n\n\n( ${S.testParams.analyst || 'Analis Lab'} )\nTanggal: ${dateStr}`,
-            '\n\n\n( _________________________ )\nTanggal: ________________',
-            '\n\n\n( _________________________ )\nTanggal: ________________'
-          ]
-        ];
-
-        doc.autoTable({
-          startY: curY,
-          head: signHead,
-          body: signBody,
-          theme: 'grid',
-          headStyles: { fillColor: [248, 250, 252], textColor: [71, 85, 105], fontSize: 7, fontStyle: 'bold', halign: 'center' },
-          bodyStyles: { fontSize: 7, cellPadding: 2, halign: 'center', textColor: [30, 41, 59], lineColor: [203, 213, 225], lineWidth: 0.2 },
-          columnStyles: {
-            0: { cellWidth: 60.0 },
-            1: { cellWidth: 60.0 },
-            2: { cellWidth: 60.0 }
-          },
-          margin: { left: 14, right: 14 }
-        });
       }
     }
 
