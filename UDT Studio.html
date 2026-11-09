@@ -1179,7 +1179,8 @@ function buildUnifiedModel(injections, fileMetaMap){
     const entries = rawStdByMed[m];
     const fileGroups = {};
     for (const e of entries){
-      const fg = fileGroups[e.file] || (fileGroups[e.file] = {file: e.file, role: e.role, runDate: e.runDate, std:[], bsMid:[], bsEnd:[]});
+      const fgKey = (e.role || 'test') + '::' + e.file;
+      const fg = fileGroups[fgKey] || (fileGroups[fgKey] = {file: e.file, role: e.role, runDate: e.runDate, std:[], bsMid:[], bsEnd:[]});
       const maxCap = e.type === 'std' ? 5 : 2;
       if (fg[e.type].length < maxCap){
         fg[e.type].push(e.area);
@@ -1228,7 +1229,7 @@ function buildUnifiedModel(injections, fileMetaMap){
     standardSets[m] = anchorSets.map((a, idx) => {
       const fileNames = a.mergedFiles ? a.mergedFiles.join(' + ') : a.file;
       return {
-        id: 'std_' + m.replace(',','_') + '_' + (idx+1),
+        id: 'std_' + m.replace(',','_') + '_' + (a.role || 'test') + '_' + (idx+1),
         medium: m,
         role: a.role || 'test',
         file: fileNames,
@@ -1594,7 +1595,7 @@ const COLORS = ['#0f766e', '#c2410c', '#6d28d9', '#0369a1', '#be123c', '#4d7c0f'
 const S = {
   testFiles:[], refFiles:[],
   model:null,
-  stdMapping:{},
+  stdMapping:{}, manualStdMapping:{},
   wsWeights:{},
   condParams:{
     api:'',
@@ -1662,8 +1663,7 @@ function store(){
       refParams: S.refParams,
       condParams: S.condParams,
       mediaConfig: S.mediaConfig,
-      wsWeights: S.wsWeights,
-      stdMapping: S.stdMapping
+      wsWeights: S.wsWeights
     }));
   }catch(e){}
 }
@@ -1680,7 +1680,8 @@ function restore(){
       if(!S.condParams.methodRef) S.condParams.methodRef = 'Farmakope Indonesia (FI) VI / USP';
       S.mediaConfig=j.mediaConfig||{};
       S.wsWeights=j.wsWeights||{};
-      S.stdMapping=j.stdMapping||{};
+      S.stdMapping={};
+      S.manualStdMapping={};
     }
   }catch(e){}
 }
@@ -1747,12 +1748,14 @@ async function addFilesForRole(list, role){
       arr.push({role, id:Math.random().toString(36).slice(2), kind:'error', name:f.name, error:String(err.message||err), rows:[]});
     }
   }
+  S.manualStdMapping = {};
   rebuild();
 }
 
 function removeFile(id, role){
   if(role === 'ref') S.refFiles=S.refFiles.filter(f=>f.id!==id);
   else S.testFiles=S.testFiles.filter(f=>f.id!==id);
+  S.manualStdMapping = {};
   rebuild();
 }
 
@@ -1874,7 +1877,7 @@ function rebuild(){
     S.condParams.api = S.testParams.product.split(/\s+/)[0] || '';
   }
 
-  // Auto-map larutan standar ke batch secara sinkron dan valid
+  // Auto-map larutan standar ke batch secara sinkron dan akurat berdasarkan role (test vs ref)
   for(const m of Object.keys(model.media)){
     const sets = model.standardSets[m] || [];
     if(!sets.length) continue;
@@ -1882,11 +1885,15 @@ function rebuild(){
       for(const b of Object.keys(batchDict)){
         const k = m + '|' + b;
         const curId = S.stdMapping[k];
-        const isValid = sets.some(s => s.id === curId);
-        if(!isValid){
-          const matchFile = sets.find(s => s.file.includes(batchDict[b].file));
+        const isManual = Boolean(S.manualStdMapping && S.manualStdMapping[k] && sets.some(s => s.id === curId));
+        if(!isManual){
+          const bFile = batchDict[b].file || '';
+          const matchRoleFile = bFile ? sets.find(s => s.role === role && s.file.includes(bFile)) : null;
           const matchRole = sets.find(s => s.role === role);
-          S.stdMapping[k] = matchFile ? matchFile.id : (matchRole ? matchRole.id : sets[0].id);
+          const matchFile = bFile ? sets.find(s => s.file.includes(bFile)) : null;
+          S.stdMapping[k] = matchRoleFile
+            ? matchRoleFile.id
+            : (matchRole ? matchRole.id : (matchFile ? matchFile.id : sets[0].id));
         }
       }
     };
@@ -2191,16 +2198,19 @@ function renderMediumSection(id){
     card.append(h('h3',null,'Pemetaan Larutan Standar'));
     const mapGrid = h('div',{class:'grid',style:'grid-template-columns:repeat(auto-fill,minmax(280px,1fr));margin-bottom:14px'});
     
-    const renderAssign = (bName, roleBadge) => {
+    const renderAssign = (bName, roleBadge, role) => {
       const k = id + '|' + bName;
       let cur = S.stdMapping[k];
       if(!stdSets.some(s => s.id === cur)){
-        cur = stdSets[0] ? stdSets[0].id : '';
+        const matchRole = stdSets.find(s => s.role === role);
+        cur = matchRole ? matchRole.id : (stdSets[0] ? stdSets[0].id : '');
         S.stdMapping[k] = cur;
       }
       const sel = h('select',{
         onchange: e => {
           S.stdMapping[k] = e.target.value;
+          if(!S.manualStdMapping) S.manualStdMapping = {};
+          S.manualStdMapping[k] = true;
           store();
           renderCheck();
           renderParams();
@@ -2211,8 +2221,8 @@ function renderMediumSection(id){
       return h('label',{class:'f'},h('span',null,roleBadge,' ',h('b',null,bName)),sel);
     };
 
-    Object.keys(M.testBatches).forEach(b => mapGrid.append(renderAssign(b, h('span',{class:'badge ok small'},'Uji'))));
-    Object.keys(M.refBatches).forEach(b => mapGrid.append(renderAssign(b, h('span',{class:'badge info small'},'Ref'))));
+    Object.keys(M.testBatches).forEach(b => mapGrid.append(renderAssign(b, h('span',{class:'badge ok small'},'Uji'), 'test')));
+    Object.keys(M.refBatches).forEach(b => mapGrid.append(renderAssign(b, h('span',{class:'badge info small'},'Ref'), 'ref')));
     card.append(mapGrid);
 
     if(sharedUsages.length > 0){
