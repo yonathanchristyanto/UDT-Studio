@@ -1,0 +1,92 @@
+Advanced Reads Report
+Report Date : 2026-11-04 10:30:00
+Instrument : Agilent Cary 60 UV-Vis Spectrophotometer
+User : Dewi Analis
+Method : METFORMIN_UV_233NM.BSW
+Wavelength : 233.0 nm
+Medium : Buffer Fosfat pH 6.8
+Batch : Metformin HCl 500 mg (F0012A26A)
+
+Sample Readings
+"Sample Name","Readings"
+"Standar 1 MD 6.8",0.5244
+"Standar 2 MD 6.8",0.5267
+"Standar 3 MD 6.8",0.5240
+"Standar 4 MD 6.8",0.5258
+"Standar 5 MD 6.8",0.5247
+"Metformin F0012A26A MD 6.8 5' 1",0.3015
+"Metformin F0012A26A MD 6.8 5' 2",0.3093
+"Metformin F0012A26A MD 6.8 5' 3",0.3068
+"Metformin F0012A26A MD 6.8 5' 4",0.2992
+"Metformin F0012A26A MD 6.8 5' 5",0.3021
+"Metformin F0012A26A MD 6.8 5' 6",0.2986
+"Metformin F0012A26A MD 6.8 5' 7",0.2967
+"Metformin F0012A26A MD 6.8 5' 8",0.2989
+"Metformin F0012A26A MD 6.8 5' 9",0.2995
+"Metformin F0012A26A MD 6.8 5' 10",0.2994
+"Metformin F0012A26A MD 6.8 5' 11",0.2994
+"Metformin F0012A26A MD 6.8 5' 12",0.3031
+"Metformin F0012A26A MD 6.8 10' 1",0.4097
+"Metformin F0012A26A MD 6.8 10' 2",0.4066
+"Metformin F0012A26A MD 6.8 10' 3",0.4056
+"Metformin F0012A26A MD 6.8 10' 4",0.4054
+"Metformin F0012A26A MD 6.8 10' 5",0.4040
+"Metformin F0012A26A MD 6.8 10' 6",0.4030
+"Metformin F0012A26A MD 6.8 10' 7",0.4051
+"Metformin F0012A26A MD 6.8 10' 8",0.4064
+"Metformin F0012A26A MD 6.8 10' 9",0.3972
+"Metformin F0012A26A MD 6.8 10' 10",0.4084
+"Metformin F0012A26A MD 6.8 10' 11",0.4012
+"Metformin F0012A26A MD 6.8 10' 12",0.4017
+"Metformin F0012A26A MD 6.8 15' 1",0.4580
+"Metformin F0012A26A MD 6.8 15' 2",0.4616
+"Metformin F0012A26A MD 6.8 15' 3",0.4693
+"Metformin F0012A26A MD 6.8 15' 4",0.4660
+"Metformin F0012A26A MD 6.8 15' 5",0.4620
+"Metformin F0012A26A MD 6.8 15' 6",0.4592
+"Metformin F0012A26A MD 6.8 15' 7",0.4657
+"Metformin F0012A26A MD 6.8 15' 8",0.4648
+"Metformin F0012A26A MD 6.8 15' 9",0.4580
+"Metformin F0012A26A MD 6.8 15' 10",0.4638
+"Metformin F0012A26A MD 6.8 15' 11",0.4591
+"Metformin F0012A26A MD 6.8 15' 12",0.4578
+"Metformin F0012A26A MD 6.8 20' 1",0.5005
+"Metformin F0012A26A MD 6.8 20' 2",0.4932
+"Metformin F0012A26A MD 6.8 20' 3",0.4944
+"Metformin F0012A26A MD 6.8 20' 4",0.4943
+"Metformin F0012A26A MD 6.8 20' 5",0.4947
+"Metformin F0012A26A MD 6.8 20' 6",0.4934
+"Metformin F0012A26A MD 6.8 20' 7",0.4962
+"Metformin F0012A26A MD 6.8 20' 8",0.4944
+"Metformin F0012A26A MD 6.8 20' 9",0.4886
+"Metformin F0012A26A MD 6.8 20' 10",0.4923
+"Metformin F0012A26A MD 6.8 20' 11",0.4937
+"Metformin F0012A26A MD 6.8 20' 12",0.4976
+"BS Mid 1 MD 6.8",0.5240
+"BS Mid 2 MD 6.8",0.5220
+"Metformin F0012A26A MD 6.8 30' 1",0.5157
+"Metformin F0012A26A MD 6.8 30' 2",0.5162
+"Metformin F0012A26A MD 6.8 30' 3",0.5089
+"Metformin F0012A26A MD 6.8 30' 4",0.5077
+"Metformin F0012A26A MD 6.8 30' 5",0.5174
+"Metformin F0012A26A MD 6.8 30' 6",0.5160
+"Metformin F0012A26A MD 6.8 30' 7",0.5156
+"Metformin F0012A26A MD 6.8 30' 8",0.5208
+"Metformin F0012A26A MD 6.8 30' 9",0.5139
+"Metformin F0012A26A MD 6.8 30' 10",0.5184
+"Metformin F0012A26A MD 6.8 30' 11",0.5153
+"Metformin F0012A26A MD 6.8 30' 12",0.5152
+"Metformin F0012A26A MD 6.8 45' 1",0.5207
+"Metformin F0012A26A MD 6.8 45' 2",0.5272
+"Metformin F0012A26A MD 6.8 45' 3",0.5192
+"Metformin F0012A26A MD 6.8 45' 4",0.5189
+"Metformin F0012A26A MD 6.8 45' 5",0.5246
+"Metformin F0012A26A MD 6.8 45' 6",0.5240
+"Metformin F0012A26A MD 6.8 45' 7",0.5255
+"Metformin F0012A26A MD 6.8 45' 8",0.5204
+"Metformin F0012A26A MD 6.8 45' 9",0.5219
+"Metformin F0012A26A MD 6.8 45' 10",0.5256
+"Metformin F0012A26A MD 6.8 45' 11",0.5212
+"Metformin F0012A26A MD 6.8 45' 12",0.5238
+"BS End 1 MD 6.8",0.5230
+"BS End 2 MD 6.8",0.5238

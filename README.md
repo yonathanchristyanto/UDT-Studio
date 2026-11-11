@@ -20,10 +20,10 @@ Aplikasi web modern berbasis klien murni (HTML5, Vanilla JS, CSS3, PDF.js, jsPDF
    - Pemetaan fleksibel ke masing-masing batch sampel serta penimbangan bobot WS yang terintegrasi di blok perhitungan.
    - Deteksi otomatis nomor batch dan zat aktif (API).
    - Penyesuaian kondisi disolusi: jenis media (dropdown + manual), aparatus (Paddle, Basket, Flow-Through Cell), rotasi RPM, instrumen (HPLC / Spektrofotometer UV), dan *Method Reference* (ditulis ke sel E15 tab Report).
-4. **Evaluasi Otomatis Faktor Kemiripan ($f_2$) Menurut Regulasi (BPOM / FDA / EMA):**
+4. **Evaluasi Otomatis Faktor Kemiripan ($f_2$) Menurut Regulasi (Peraturan BPOM No. 11 Tahun 2022, FDA, EMA):**
    - **Kaidah Cut-off 85%:** Maksimal 1 titik pengamatan setelah pelepasan mencapai $\ge 85\%$ untuk kedua formulasi.
    - **Kondisi Very Rapid Dissolution:** Profil dinyatakan serupa tanpa perlu uji statistik $f_2$ jika keduanya $\ge 85\%$ pada 15 menit.
-   - **Pemeriksaan Batas Variabilitas (% RSD):** Maksimal 20% pada titik awal ($\le 15$ menit) dan maksimal 10% pada titik berikutnya.
+   - **Pemeriksaan Batas Variabilitas (% RSD / Koefisien Variasi):** Maksimal 20% pada titik waktu pertama dan maksimal 10% pada titik-titik waktu berikutnya sesuai Lampiran PerBPOM No. 11 Tahun 2022.
    - Visualisasi kurva profil disolusi interaktif (SVG) mulai dari titik origin $(0, 0)$.
 5. **Ekspor Laporan PDF Langsung:**
    - Tombol **Unduh Laporan (PDF)** menghasilkan dokumen A4 siap cetak memuat identitas pengujian, tabel % terlarut per vessel, nilai statistik (Rata-rata, SD, % RSD), dan kotak evaluasi $f_2$ beserta catatan cutoff regulasi.
