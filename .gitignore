@@ -1,0 +1,9 @@
+# Logs
+debug.log
+*.log
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store

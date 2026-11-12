@@ -902,24 +902,70 @@ function extractMediumFromString(str){
   return null;
 }
 
-function classifyName(raw){
+function extractBatchFromFilename(fn){
+  if (!fn) return '';
+  const clean = String(fn).replace(/\.[^/.]+$/, '');
+  const tokens = clean.split(/[\s_+,-]+/);
+  for (const t of tokens){
+    if (/^(standar|standard|std|sampel|sample|disolusi|dissolution|md|ph|buffer|dapar|air|water|release|rilis)$/i.test(t)) continue;
+    if (/^[A-Za-z]\d{4,}[A-Za-z0-9_-]*$/i.test(t)) return t;
+  }
+  for (const t of tokens){
+    if (/^(standar|standard|std|sampel|sample|disolusi|dissolution|md|ph|buffer|dapar|air|water|release|rilis)$/i.test(t)) continue;
+    if (/^[A-Za-z0-9_-]{5,}$/.test(t) && !/^\d+$/.test(t)) return t;
+  }
+  return '';
+}
+
+function classifyName(raw, fileName = ''){
   const n = String(raw).replace(/\s+/g,' ').trim();
 
-  // 1. Deteksi Standar Kalibrasi
+  // 1. Deteksi Standar Kalibrasi (Standar 1, Std 1, Standard 1, dll)
   if (/^(standar|standard|std)\b/i.test(n)){
-    return {type:'std', medium: extractMediumFromString(n), name:n};
+    return {type:'std', medium: extractMediumFromString(n) || extractMediumFromString(fileName), name:n};
   }
 
   // 2. Deteksi Bracketing Standard (BS Mid / BS End)
   if (/^bs\s*[-_]?\s*mid\b/i.test(n)){
-    return {type:'bsMid', medium: extractMediumFromString(n), name:n};
+    return {type:'bsMid', medium: extractMediumFromString(n) || extractMediumFromString(fileName), name:n};
   }
   if (/^bs\s*[-_]?\s*end\b/i.test(n)){
-    return {type:'bsEnd', medium: extractMediumFromString(n), name:n};
+    return {type:'bsEnd', medium: extractMediumFromString(n) || extractMediumFromString(fileName), name:n};
   }
 
-  // 3. Deteksi Sampel UDT: [Produk] <Batch> MD <pH/Media> <Waktu>' <Vessel>
-  const sm = n.match(/^(?:(.+?)\s+)?([A-Za-z0-9_-]+)\s+(?:MD|pH|ph)\s*([0-9]+[.,][0-9]+|[0-9]+|Air|Water|Release|Rilis)\s+(\d+)\s*(?:['\u2019\u2032`\u00B4]|min|m|menit)?\s*(?:V|vessel|v)?\s*(\d+)$/i);
+  // 3. Pola A: [Media First] [MD/Buffer/Dapar] [pH] <Media> [Produk] <Batch> <Waktu>' <Vessel>
+  // Misal: "1.2 F00371026A 5' 1", "pH 1.2 F00371026A 5' v1", "1.2 F00371026A 5'1"
+  const pMediaFirst = n.match(/^(?:(?:MD|Buffer|Dapar)\s+)?(?:MD|pH|ph)?\s*([0-9]+[.,][0-9]+|[0-9]+|Air|Water|Release|Rilis)\s+(?:(.+?)\s+)?([A-Za-z0-9_-]{3,})\s+(\d+)\s*(?:['\u2019\u2032`\u00B4]|min|m|menit)?\s*(?:V|vessel|v)?\s*(\d+)$/i);
+  if (pMediaFirst){
+    return {
+      type: 'sample',
+      product: (pMediaFirst[2]||'').trim(),
+      batch: pMediaFirst[3].trim(),
+      medium: normMedium(pMediaFirst[1]),
+      time: parseInt(pMediaFirst[4], 10),
+      vessel: parseInt(pMediaFirst[5], 10),
+      name: n
+    };
+  }
+
+  // Pola A2: [Media Saja] [MD/Buffer/Dapar] [pH] <Media> <Waktu>' <Vessel> (tanpa batch di nama sampel)
+  // Misal: "1.2 5' 1", "1.2 5'1", "pH 1.2 5' 1", "MD 1.2 5' 1", "Air 5' 1"
+  const pMediaOnly = n.match(/^(?:(?:MD|Buffer|Dapar)\s+)?(?:MD|pH|ph)?\s*([0-9]+[.,][0-9]+|[0-9]+|Air|Water|Release|Rilis)\s+(\d+)\s*(?:['\u2019\u2032`\u00B4]|min|m|menit)?\s*(?:V|vessel|v)?\s*(\d+)$/i);
+  if (pMediaOnly){
+    return {
+      type: 'sample',
+      product: '',
+      batch: extractBatchFromFilename(fileName) || '',
+      medium: normMedium(pMediaOnly[1]),
+      time: parseInt(pMediaOnly[2], 10),
+      vessel: parseInt(pMediaOnly[3], 10),
+      name: n
+    };
+  }
+
+  // 4. Pola B: [Batch First] [Produk] <Batch> [MD/Buffer/Dapar] [pH] <Media> <Waktu>' <Vessel>
+  // Misal: "F00371026A pH 1.2 5' 1", "F00371026A 1.2 5' 1", "F0048J26A Buffer pH 1.2 5' v1"
+  const sm = n.match(/^(?:(.+?)\s+)?(?!(?:buffer|dapar|md)\s+ph)([A-Za-z0-9_-]+)\s+(?:(?:MD|Buffer|Dapar)\s+)?(?:MD|pH|ph)\s*([0-9]+[.,][0-9]+|[0-9]+|Air|Water|Release|Rilis)\s+(\d+)\s*(?:['\u2019\u2032`\u00B4]|min|m|menit)?\s*(?:V|vessel|v)?\s*(\d+)$/i);
   if (sm){
     return {
       type: 'sample',
@@ -932,8 +978,8 @@ function classifyName(raw){
     };
   }
 
-  // Pola alternatif: [Produk] <Batch> <pH/Media> <Waktu>' <Vessel>
-  const sm2 = n.match(/^(?:(.+?)\s+)?([A-Za-z0-9_-]+)\s+([0-9]+[.,][0-9]+|Air|Water|Release|Rilis)\s+(\d+)\s*(?:['\u2019\u2032`\u00B4]|min|m)?\s*(?:V|v)?\s*(\d+)$/i);
+  // 5. Pola C: [Produk] <Batch> <Media> <Waktu>' <Vessel> (tanpa kata MD/pH)
+  const sm2 = n.match(/^(?:(.+?)\s+)?([A-Za-z0-9_-]+)\s+([0-9]+[.,][0-9]+|Air|Water|Release|Rilis)\s+(\d+)\s*(?:['\u2019\u2032`\u00B4]|min|m|menit)?\s*(?:V|vessel|v)?\s*(\d+)$/i);
   if (sm2){
     return {
       type: 'sample',
@@ -946,7 +992,52 @@ function classifyName(raw){
     };
   }
 
-  // Pola dengan pemisah underscore/dash
+  // 6. Pola D: <Batch> <Waktu>' <Vessel> (tanpa media di nama sampel, diinjeksi dari konteks file)
+  // Misal: "F00371026A 5' 1", "F00371026A 5' v1", "F00371026A 5'1", "F00371026A 5 min 1"
+  const pBatchOnly = n.match(/^([A-Za-z0-9_-]{3,})\s+(\d+)\s*(?:['\u2019\u2032`\u00B4]|min|m|menit)\s*(?:V|vessel|v)?\s*(\d+)$/i);
+  if (pBatchOnly){
+    return {
+      type: 'sample',
+      product: '',
+      batch: pBatchOnly[1].trim(),
+      medium: extractMediumFromString(fileName) || null,
+      time: parseInt(pBatchOnly[2], 10),
+      vessel: parseInt(pBatchOnly[3], 10),
+      name: n
+    };
+  }
+
+  // 7. Pola E: Hanya <Waktu>' <Vessel> atau <Waktu>'<Vessel>
+  // Misal: "5' 1", "5'1", "5' v1", "5'v1", "5 min 1", "5m 1", "5menit 1"
+  const pTimeOnly = n.match(/^(\d+)\s*(?:['\u2019\u2032`\u00B4]|min|m|menit)\s*(?:V|vessel|v)?\s*(\d+)$/i);
+  if (pTimeOnly){
+    return {
+      type: 'sample',
+      product: '',
+      batch: extractBatchFromFilename(fileName) || '',
+      medium: extractMediumFromString(fileName) || null,
+      time: parseInt(pTimeOnly[1], 10),
+      vessel: parseInt(pTimeOnly[2], 10),
+      name: n
+    };
+  }
+
+  // 8. Pola F: <Vessel> <Waktu>' (Vessel dulu baru waktu)
+  // Misal: "V1 5'", "v1 5'", "1 5'", "vessel 1 5'"
+  const pVesselFirst = n.match(/^(?:V|vessel|v)?\s*(\d+)\s+(\d+)\s*(?:['\u2019\u2032`\u00B4]|min|m|menit)$/i);
+  if (pVesselFirst){
+    return {
+      type: 'sample',
+      product: '',
+      batch: extractBatchFromFilename(fileName) || '',
+      medium: extractMediumFromString(fileName) || null,
+      time: parseInt(pVesselFirst[2], 10),
+      vessel: parseInt(pVesselFirst[1], 10),
+      name: n
+    };
+  }
+
+  // 9. Pola G: Delimiter dash/underscore dengan media
   const sm3 = n.match(/^([A-Za-z0-9]+)[-_](?:MD|pH|ph)?([0-9]+[.,][0-9]+|Air|Water|Release|Rilis)[-_](\d+)(?:min|m|')?[-_](?:V|v)?(\d+)$/i);
   if (sm3){
     return {
@@ -960,7 +1051,21 @@ function classifyName(raw){
     };
   }
 
-  return {type:'other', medium: extractMediumFromString(n), name:n};
+  // 10. Pola H: Delimiter dash/underscore tanpa media: "F00371026A-5-1" atau "F00371026A_5_1"
+  const sm4 = n.match(/^([A-Za-z0-9_-]{3,})[-_](\d+)(?:min|m|')?[-_](?:V|v)?(\d+)$/i);
+  if (sm4){
+    return {
+      type: 'sample',
+      product: '',
+      batch: sm4[1].trim(),
+      medium: extractMediumFromString(fileName) || null,
+      time: parseInt(sm4[2], 10),
+      vessel: parseInt(sm4[3], 10),
+      name: n
+    };
+  }
+
+  return {type:'other', medium: extractMediumFromString(n) || extractMediumFromString(fileName), name:n};
 }
 
 // --- PDF parser ---
@@ -1243,7 +1348,7 @@ function buildUnifiedModel(injections, fileMetaMap){
   const allDetectedMedia = new Set();
 
   for (const inj of injections){
-    const c = classifyName(inj.name);
+    const c = classifyName(inj.name, inj.file);
     if (c.medium){
       allDetectedMedia.add(c.medium);
       if (c.type === 'sample' && inj.file){
@@ -1268,7 +1373,7 @@ function buildUnifiedModel(injections, fileMetaMap){
   // --- LANGKAH B: Kumpulkan Standar & Bracketing dengan Inferred Medium ---
   const rawStdByMed = {};
   for (const inj of injections){
-    const c = classifyName(inj.name);
+    const c = classifyName(inj.name, inj.file);
     let m = c.medium || fileMediumMap[inj.file] || singleGlobalMedium;
     if (!m && allDetectedMedia.size > 0){
       m = [...allDetectedMedia][0];
@@ -1360,15 +1465,16 @@ function buildUnifiedModel(injections, fileMetaMap){
 
   // --- LANGKAH D: Proses Injeksi Sampel ---
   for (const inj of injections){
-    const c = classifyName(inj.name);
+    const c = classifyName(inj.name, inj.file);
     let m = c.medium || fileMediumMap[inj.file] || singleGlobalMedium;
     if (c.type === 'sample'){
       if (!m) m = '1,2';
       const M = getMed(m);
       if (inj.file) M.files.add(inj.file);
+      const batchName = c.batch || extractBatchFromFilename(inj.file) || (inj.role === 'ref' ? (S.refParams.batch || 'BETS-REF') : (S.testParams.batch || 'BETS-UJI'));
       const target = inj.role === 'ref' ? M.refBatches : M.testBatches;
-      const B = target[c.batch] || (target[c.batch] = {
-        name: c.batch,
+      const B = target[batchName] || (target[batchName] = {
+        name: batchName,
         productDetected: c.product || '',
         role: inj.role,
         cells: {},
@@ -1377,7 +1483,7 @@ function buildUnifiedModel(injections, fileMetaMap){
       const k = c.vessel + '|' + c.time;
       if (B.cells[k]){
         if (B.cells[k].area === inj.area) M.dupes++;
-        else M.conflicts.push({batch: c.batch, vessel: c.vessel, time: c.time, a: B.cells[k].area, b: inj.area});
+        else M.conflicts.push({batch: batchName, vessel: c.vessel, time: c.time, a: B.cells[k].area, b: inj.area});
         continue;
       }
       B.cells[k] = {area: inj.area, file: inj.file};
@@ -1977,7 +2083,7 @@ function rebuild(){
       fileMetaMap[f.name] = f.meta || {};
       for(const r of fileRows(f)){
         allInjections.push({...r, file:f.name, role});
-        if(classifyName(r.name).type!=='other' && decimalsOf(r.areaStr)!==4) S.badDec++;
+        if(classifyName(r.name, f.name).type!=='other' && decimalsOf(r.areaStr)!==4) S.badDec++;
       }
     }
   };
@@ -2110,6 +2216,23 @@ function renderCheck(){
   const root = $('#p2body'); root.innerHTML = '';
   const mIds = S.model ? sortedMediaIds(S.model) : [];
   if(!S.model || !mIds.length){
+    if(S.model && S.model.unassigned && S.model.unassigned.length){
+      root.append(h('div',{class:'card'},
+        h('h2',{style:'color:var(--warn-fg, #b45309)'},'Data Injeksi Terdeteksi, Namun Belum Terpetakan Otomatis'),
+        h('p',null,`Sistem mendeteksi <b>${S.model.unassigned.length} baris injeksi</b> dari file raw data yang diunggah, namun format penamaan sampel (Sample Name) belum cocok dengan pola yang dikenali.`),
+        h('div',{class:'banner info',style:'margin:12px 0'},
+          h('b',null,'Format penamaan sekuens yang didukung secara otomatis:'),
+          h('ul',{style:'margin:6px 0 0 18px;padding:0'},
+            h('li',null,h('code',null,'<Batch> <Media> <Waktu>\' <Vessel>'),' misal: ',h('code',null,'F00371026A pH 1.2 5\' 1')),
+            h('li',null,h('code',null,'<Media> <Batch> <Waktu>\' <Vessel>'),' misal: ',h('code',null,'1.2 F00371026A 5\' 1')),
+            h('li',null,h('code',null,'<Batch> <Waktu>\' <Vessel>'),' misal: ',h('code',null,'F00371026A 5\' 1'),' (media diambil otomatis dari nama file)'),
+            h('li',null,h('code',null,'<Waktu>\' <Vessel>'),' misal: ',h('code',null,'5\' 1'),' atau ',h('code',null,'5\'1'),' (bets & media diambil otomatis dari nama file)')
+          )
+        ),
+        renderUnassignedSection(true)
+      ));
+      return;
+    }
     root.append(h('div',{class:'card'},h('h2',null,'Belum ada data terbaca'),
       h('p',{class:'muted'},'Silakan unggah PDF atau CSV Produk Uji dan Produk Pembanding di Langkah 1.')));
     return;
@@ -2461,12 +2584,37 @@ function renderBatchTable(M, B, title, mId){
   return wrap;
 }
 
-function renderUnassignedSection(){
-  const u = S.model.unassigned;
-  return h('details',{class:'card'},
-    h('summary',null,u.length+' baris diabaikan (bukan format sampel atau standar yang dikenali)'),
-    h('p',{class:'muted small'},'Baris-baris ini tidak diikutsertakan dalam kalkulasi. Pastikan nama sampel mengikuti kaidah baku pada panduan di Langkah 1.'),
-    h('div',{class:'small'}, u.slice(0,30).map(x=>h('div',null,`${x.name} · area ${x.area} (${x.file||''})`))));
+function renderUnassignedSection(openByDefault = false){
+  const u = (S.model && S.model.unassigned) || [];
+  if (!u.length) return h('div',null);
+  return h('details',{class:'card', open: openByDefault ? true : null},
+    h('summary',null,`${u.length} baris injeksi belum terpetakan ke matriks sampel`),
+    h('p',{class:'muted small',style:'margin:8px 0'},'Daftar injeksi yang terbaca dari file kromatogram/spektro namun tidak cocok dengan aturan penamaan sampel/standar:'),
+    h('div',{class:'tblwrap',style:'max-height:360px;overflow-y:auto;margin-top:8px'},
+      h('table',null,
+        h('thead',null,
+          h('tr',null,
+            h('th',null,'No'),
+            h('th',null,'File Sumber'),
+            h('th',null,'Sample Name Terbaca'),
+            h('th',null,'Role'),
+            h('th',null,'Area'),
+            h('th',null,'RT')
+          )
+        ),
+        h('tbody',null,
+          u.map((x, idx) => h('tr',null,
+            h('td',{class:'muted small'}, String(idx + 1)),
+            h('td',{class:'small'}, x.file || '-'),
+            h('td',null, h('code',null, x.name)),
+            h('td',null, h('span',{class:`badge ${x.role==='ref'?'info':'ok'} small`}, x.role==='ref'?'Pembanding':'Uji')),
+            h('td',{class:'num'}, isFinite(x.area) ? String(x.area) : '-'),
+            h('td',{class:'num muted small'}, isFinite(x.rt) ? String(x.rt) : '-')
+          ))
+        )
+      )
+    )
+  );
 }
 
 // ===================== Langkah 3: Parameter & Perhitungan =====================
