@@ -1144,44 +1144,57 @@ const ROW_PATTERNS = [
 ];
 
 function parseRowsFromLines(lines){
-  const rows = [];
-  for (const ln of lines){
-    const s = String(ln||'').trim();
-    if (!s) continue;
-    if (/^(sum|mean|stddev|rsd)\b/i.test(s)) continue;
-    if (/time\s*\[min\]|vwd\d|\bmAU\b|Theoretical Plates|Peak Tail|Acquired Date/i.test(s)) continue;
-    if (/^(?:Data file|Instrument|Sample Name|Acq\.|Analysis|Injection|Column|Serial)\b/i.test(s)) continue;
+  const datePatterns = ROW_PATTERNS.slice(0, 3);
+  const nonDatePatterns = ROW_PATTERNS.slice(3);
 
-    for (const p of ROW_PATTERNS){
-      const m = s.match(p);
-      if (m){
-        const name = m[1].trim();
-        if (!name || /^[\d\s.,]+$/.test(name)) continue;
-        if (/\b(Name|RT|Area|Plates|Tail)\b/i.test(name) && name.split(/\s+/).length <= 2) continue;
-        let tail = NaN, plates = NaN;
-        if (m[4] && m[5]){
-          const v4 = parseFloat(m[4].replace(',','.'));
-          const v5 = parseFloat(m[5].replace(',','.'));
-          if (v4 > 50 && v5 < 50){ plates = v4; tail = v5; }
-          else if (v5 > 50 && v4 < 50){ plates = v5; tail = v4; }
-          else { tail = v4; plates = v5; }
-        } else if (m[4]){
-          const v4 = parseFloat(m[4].replace(',','.'));
-          if (v4 > 50) plates = v4; else tail = v4;
+  const extractWithPatterns = (targetPatterns) => {
+    const matched = [];
+    for (const ln of lines){
+      const s = String(ln||'').trim();
+      if (!s) continue;
+      if (/^(sum|mean|stddev|rsd)\b/i.test(s)) continue;
+      if (/time\s*\[min\]|vwd\d|\bmAU\b|Theoretical Plates|Peak Tail|Acquired Date/i.test(s)) continue;
+      if (/^(?:Data file|Instrument|Sample Name|Acq\.|Analysis|Injection|Column|Serial)\b/i.test(s)) continue;
+
+      for (const p of targetPatterns){
+        const m = s.match(p);
+        if (m){
+          const name = m[1].trim();
+          if (!name || /^[\d\s.,]+$/.test(name)) continue;
+          if (/\b(Name|RT|Area|Plates|Tail)\b/i.test(name) && name.split(/\s+/).length <= 2) continue;
+          let tail = NaN, plates = NaN;
+          if (m[4] && m[5]){
+            const v4 = parseFloat(m[4].replace(',','.'));
+            const v5 = parseFloat(m[5].replace(',','.'));
+            if (v4 > 50 && v5 < 50){ plates = v4; tail = v5; }
+            else if (v5 > 50 && v4 < 50){ plates = v5; tail = v4; }
+            else { tail = v4; plates = v5; }
+          } else if (m[4]){
+            const v4 = parseFloat(m[4].replace(',','.'));
+            if (v4 > 50) plates = v4; else tail = v4;
+          }
+          matched.push({
+            name,
+            rt: parseFloat(m[2].replace(',','.')),
+            area: parseFloat(m[3].replace(',','.')),
+            areaStr: pad4(m[3]),
+            tail,
+            plates
+          });
+          break;
         }
-        rows.push({
-          name,
-          rt: parseFloat(m[2].replace(',','.')),
-          area: parseFloat(m[3].replace(',','.')),
-          areaStr: pad4(m[3]),
-          tail,
-          plates
-        });
-        break;
       }
     }
+    return matched;
+  };
+
+  // Jika file memiliki baris lengkap CDS dengan tanggal, gunakan hanya baris bertanggal
+  // untuk mencegah baris ringkasan RT / peak table sekunder tanpa tanggal terserap sebagai injeksi duplikat
+  const dateRows = extractWithPatterns(datePatterns);
+  if (dateRows.length > 0){
+    return dateRows;
   }
-  return rows;
+  return extractWithPatterns(nonDatePatterns);
 }
 function parseRowsFromStream(text){
   const idx = text.search(/(?:Theoritical|Theoretical|Plates)\s*(?:Plates|USP)?/i);
@@ -1505,8 +1518,6 @@ function buildUnifiedModel(injections, fileMetaMap){
       const maxCap = e.type === 'std' ? 5 : 2;
       if (fg[e.type].length < maxCap){
         fg[e.type].push(e.area);
-      } else if (!fg[e.type].includes(e.area)){
-        fg[e.type].push(e.area);
       }
     }
 
@@ -1635,11 +1646,14 @@ function checkMediumValidation(M, stdSets){
     add('nostd', 'err', 'Belum ada larutan standar terbaca untuk pH ' + M.id);
   } else {
     stdSets.forEach(s => {
-      const sOk = fin(s.std).length >= 5;
-      const bmOk = fin(s.bsMid).length >= 2;
-      const beOk = fin(s.bsEnd).length >= 2;
+      const sVals = fin(s.std).slice(0, 5);
+      const bmM = fin(s.bsMid).slice(0, 2);
+      const beM = fin(s.bsEnd).slice(0, 2);
+      const sOk = sVals.length >= 5;
+      const bmOk = bmM.length >= 2;
+      const beOk = beM.length >= 2;
       add('std:'+s.id, (sOk&&bmOk&&beOk)?'ok':'err',
-        `${s.name}: Std ${fin(s.std).length}/5, BS Mid ${fin(s.bsMid).length}/2, BS End ${fin(s.bsEnd).length}/2`);
+        `${s.name}: Std ${sVals.length}/5, BS Mid ${bmM.length}/2, BS End ${beM.length}/2`);
     });
   }
 
@@ -1678,7 +1692,7 @@ function calcBatchProfile(M, B, p, stdSet){
     };
   }
 
-  const st = fin(stdSet.std);
+  const st = fin(stdSet.std).slice(0, 5);
   const stdMean = mean(st);
   if (!st.length || stdMean <= 0){
     return {
@@ -2485,16 +2499,16 @@ function renderMediumSection(id){
     card.append(h('div',{class:'banner err'},'Tidak ada larutan standar terdeteksi untuk pH '+id+'. Pastikan sequence memuat injeksi standar.'));
   } else {
     stdSets.forEach(s => {
-      const stdVals = fin(s.std);
+      const stdVals = fin(s.std).slice(0, 5);
       const stdM = mean(stdVals);
       const stdSd = sdev(stdVals);
       const stdRsd = (stdVals.length >= 2 && stdM > 0) ? (stdSd / stdM * 100) : NaN;
       const isStdOk = stdVals.length >= 5 && isFinite(stdRsd) && stdRsd <= 2.0;
 
-      const bsMidVals = fin(s.bsMid);
+      const bsMidVals = fin(s.bsMid).slice(0, 2);
       const bsMidM = mean(bsMidVals);
 
-      const bsEndVals = fin(s.bsEnd);
+      const bsEndVals = fin(s.bsEnd).slice(0, 2);
       const bsEndM = mean(bsEndVals);
 
       const sBox = h('div',{style:'border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:12px;background:var(--card)'});
@@ -5249,9 +5263,9 @@ async function sendCalculationMedium(mId){
       V, T: times.length,
       labels: times.map(t=>t+"'"),
       areas,
-      std: fin(sObj.std),
-      bsMid: fin(sObj.bsMid),
-      bsEnd: fin(sObj.bsEnd),
+      std: fin(sObj.std).slice(0, 5),
+      bsMid: fin(sObj.bsMid).slice(0, 2),
+      bsEnd: fin(sObj.bsEnd).slice(0, 2),
       params: p,
       header: {
         product: prodName,
