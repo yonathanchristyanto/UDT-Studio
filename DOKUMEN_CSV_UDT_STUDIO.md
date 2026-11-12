@@ -8,7 +8,7 @@
 | Atribut Dokumen | Detail Informasi |
 | :--- | :--- |
 | **Nama Sistem** | **UDT Studio** (*Comparative Dissolution Test Calculation & Reporting System*) |
-| **Versi Perangkat Lunak** | v1.0 (Build Hash SHA-256: `627197b2de2e386a6d3e22f74e3619bd88f43179ee885c58841192163ee689ae`) |
+| **Versi Perangkat Lunak** | v1.0 (Build Hash SHA-256: `d5a1912776038b9adf9be86b558da4f8ce16538852e36b1c9f7fe4f0cf19a588`) |
 | **Nomor Dokumen CSV** | `CSV-AD-UDT-2026-001` |
 | **Status Dokumen** | DRAFT — Untuk Ditinjau oleh Quality Assurance (QA) |
 | **Departemen Pemilik Sistem (*System Owner*)** | Analytical Development (AD) — PT Pharos Indonesia |
@@ -203,7 +203,7 @@ Apabila $\% \text{RSD}_{\text{Ref}, i} > \text{Batas}_i$ atau $\% \text{RSD}_{\t
 
 | ID Uji | Parameter Pemeriksaan | Metode Verifikasi | Kriteria Keberterimaan | Hasil Aktual | Status |
 | :--- | :--- | :--- | :--- | :--- | :---: |
-| **IQ-01** | Integritas Berkas Kode Sumber (*Baseline Checksum*) | Hitung nilai hash kriptografi SHA-256 pada berkas [`index.html`](file:///c:/Users/Win%2010/.gemini/antigravity/scratch/udt-assistant/index.html) dan [`UDT Studio.html`](file:///c:/Users/Win%2010/.gemini/antigravity/scratch/udt-assistant/UDT%20Studio.html). | Kedua berkas tersedia, berukuran `266.914 bytes`, dan memiliki SHA-256 identik: `627197b2de2e386a6d3e22f74e3619bd88f43179ee885c58841192163ee689ae`. | Ukuran `266.914 bytes`; SHA-256 kedua berkas identik 100%. | **LULUS (PASS)** |
+| **IQ-01** | Integritas Berkas Kode Sumber (*Baseline Checksum*) | Hitung nilai hash kriptografi SHA-256 pada berkas [`index.html`](file:///c:/Users/Win%2010/.gemini/antigravity/scratch/udt-assistant/index.html) dan [`UDT Studio.html`](file:///c:/Users/Win%2010/.gemini/antigravity/scratch/udt-assistant/UDT%20Studio.html). | Kedua berkas tersedia, berukuran `267.827 bytes`, dan memiliki SHA-256 identik: `d5a1912776038b9adf9be86b558da4f8ce16538852e36b1c9f7fe4f0cf19a588`. | Ukuran `267.827 bytes`; SHA-256 kedua berkas identik 100%. | **LULUS (PASS)** |
 | **IQ-02** | Verifikasi Pustaka Eksternal & Pemuatan Non-Blocking | Periksa tag `<script>` pada `<head>` dan inisialisasi Web Worker PDF.js. | Pustaka `pdf.min.js` (v3.11.174), `jspdf.umd.min.js` (v2.5.1), dan `jspdf.plugin.autotable.min.js` (v3.8.2) dimuat dengan atribut `defer` tanpa memblokir *main thread* UI. | Terverifikasi pada baris `#L74-L76` dan `#L1874-L1876`. UI langsung aktif (< 1 detik). | **LULUS (PASS)** |
 | **IQ-03** | Verifikasi Daftar Proteksi *Master Template* (`BLOCK`) | Periksa konstanta `CONFIG` dan `BLOCK` pada kode sumber (`#L1658-L1671`). | Seluruh ID *Master Template* terlindungi dari operasi *overwrite* langsung. | 13 ID berkas induk terdaftar pada himpunan `BLOCK` dan divalidasi oleh `assertTemplate()`. | **LULUS (PASS)** |
 | **IQ-04** | Verifikasi Sanitasi Penyimpanan Lokal (`localStorage`) | Jalankan `restore()` pada sesi peramban baru. | Tidak ada data *dummy/mock* bawaan yang tertinggal pada input parameter; aplikasi mulai dalam kondisi bersih. | Fungsi `restore()` (`#L1796-L1833`) membersihkan kunci legacy dan memastikan state awal bersih. | **LULUS (PASS)** |
@@ -274,7 +274,7 @@ Kualifikasi Kinerja (PQ) dieksekusi menggunakan 4 paket dataset baku multi-instr
 ### 7.2 Pengendalian Perubahan (*Change Control*), *Backup*, & Pengamanan Kode Sumber
 1. **Pengamanan Berkas Aplikasi (*Version & Checksum Control*):**
    - Berkas produksi resmi [`UDT Studio.html`](file:///c:/Users/Win%2010/.gemini/antigravity/scratch/udt-assistant/UDT%20Studio.html) disimpan pada repositori terkendali dengan tanda tangan kriptografi **SHA-256**:
-     `627197b2de2e386a6d3e22f74e3619bd88f43179ee885c58841192163ee689ae`.
+     `d5a1912776038b9adf9be86b558da4f8ce16538852e36b1c9f7fe4f0cf19a588`.
    - Salinan rilis yang didistribusikan ke komputer kerja *Analytical Development* harus diatur sebagai **Read-Only** oleh Administrator/IT dan diverifikasi nilai hash SHA-256-nya secara berkala.
 2. **Prosedur Pengendalian Perubahan (*Change Control*):**
    - Setiap perubahan pada rumus perhitungan, logika *cut-off* $f_2$, batas regulasi, atau struktur laporan pada kode sumber **wajib** melalui prosedur *Change Control* QA, diikuti dengan eksekusi ulang skrip verifikasi regresi (`verify_scenarios.py` dan uji OQ/PQ terkait) serta pembaruan nilai checksum SHA-256 pada dokumen ini.

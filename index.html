@@ -4662,15 +4662,29 @@ function renderConnStatus(){
           },'Hubungkan Web App')
         ),
         h('details',{style:'margin-top:10px;font-size:12px'},
-          h('summary',{style:'cursor:pointer;color:var(--accent);font-weight:600'},'📖 Petunjuk Cepat Pembuatan Web App di Google Apps Script (Klik di sini)'),
+          h('summary',{style:'cursor:pointer;color:var(--accent);font-weight:600'},'📖 Petunjuk Cepat Deploy Google Apps Script (Hanya 3 Langkah — Klik di sini)'),
           h('div',{style:'padding:8px 0;line-height:1.6;color:var(--fg)'},
-            h('ol',{style:'margin:6px 0 6px 18px;padding:0'},
-              h('li',null,'Buka ',h('a',{href:'https://script.google.com/',target:'_blank',rel:'noopener',class:'link'},'script.google.com'),' dengan akun Google departemen/lab.'),
-              h('li',null,'Klik tombol ',h('b',null,'+ New project'),' (Proyek baru).'),
-              h('li',null,'Salin kode dari folder ',h('b',null,'google-apps-script/Code.gs'),' lalu tempelkan ke editor script dan Simpan (Ctrl+S).'),
-              h('li',null,'Klik tombol ',h('b',null,'Deploy'),' > ',h('b',null,'New deployment'),'.'),
-              h('li',null,'Pilih jenis ',h('b',null,'Web app'),'. Set ',h('b',null,'Execute as: Me'),' dan ',h('b',null,'Who has access: Anyone'),'.'),
-              h('li',null,'Klik ',h('b',null,'Deploy'),', berikan izin (Authorize access), lalu salin ',h('b',null,'Web app URL'),' dan tempel pada kotak di atas.')
+            h('div',{style:'margin:6px 0 10px 0'},
+              h('a',{
+                href:'https://script.google.com/d/1iLVYbU3kOAxFbPSy2K5MJ9H9ykh7_mtaA00qpEe_QbOVVkUhtTqjGx4a/edit?usp=drive_link',
+                target:'_blank',
+                rel:'noopener',
+                class:'btn small',
+                style:'display:inline-flex;align-items:center;gap:6px;text-decoration:none;font-weight:600;padding:5px 12px;background:var(--primary);color:#fff;border-radius:6px'
+              },'🚀 Buka File Script: UDT Studio Connector ↗')
+            ),
+            h('ol',{style:'margin:4px 0 6px 18px;padding:0'},
+              h('li',null,'Buka file script siap pakai melalui tombol di atas (proyek ',h('b',null,'UDT Studio Connector'),' di Google Apps Script / Drive).'),
+              h('li',null,'Di pojok kanan atas, klik ',h('b',null,'Deploy'),' (Terapkan) → ',h('b',null,'New deployment'),' (Penerapan baru). Pastikan jenisnya ',h('b',null,'Web app'),', lalu atur:',
+                h('ul',{style:'margin:4px 0 4px 18px;padding:0;font-size:11.5px'},
+                  h('li',null,h('b',null,'Execute as:'),' Me (email akun Anda)'),
+                  h('li',null,h('b',null,'Who has access:'),' Anyone (Siapa saja)')
+                )
+              ),
+              h('li',null,'Klik ',h('b',null,'Deploy'),', berikan izin akses (Authorize access), lalu salin ',h('b',null,'Web app URL'),' (yang berakhiran ',h('code',null,'/exec'),') dan tempelkan pada kotak di atas.')
+            ),
+            h('div',{class:'small muted',style:'margin-top:8px;font-size:11px;line-height:1.4'},
+              '💡 ',h('b',null,'Tips:'),' Langkah ini hanya perlu dilakukan ',h('b',null,'1 kali'),'. URL Web App yang Anda hubungkan akan tersimpan otomatis di peramban ini untuk penggunaan seterusnya.'
             )
           )
         )
