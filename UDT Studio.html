@@ -1075,12 +1075,41 @@ function itemsToLines(items){
     const s = (it.str||'').replace(/\u00A0/g,' ');
     if (!s.trim()) continue;
     const x = it.transform[4], y = it.transform[5];
-    let row = rows.find(r => Math.abs(r.y - y) <= 2.5);
-    if (!row){ row = {y, items:[]}; rows.push(row); }
-    row.items.push({x, s});
+    // Gunakan toleransi vertikal 9.0pt agar sel multi-baris (misal nama produk di baris atas & bets/vessel di baris bawah)
+    // terkelompokkan dalam baris tabel yang sama dengan kolom angka (RT, Area, Plates, Tail, Date) di y-tengah
+    let row = rows.find(r => Math.abs(r.y - y) <= 9.0);
+    if (!row){
+      row = {y, items:[{x, y, s}]};
+      rows.push(row);
+    } else {
+      const n = row.items.length;
+      row.y = (row.y * n + y) / (n + 1);
+      row.items.push({x, y, s});
+    }
   }
   rows.sort((a,b)=> b.y - a.y);
-  return rows.map(r => r.items.sort((a,b)=>a.x-b.x).map(i=>i.s.trim()).join(' ').replace(/\s+/g,' ').trim());
+  return rows.map(r => {
+    // Kelompokkan teks ke kolom berdasarkan kedekatan koordinat X (toleransi ~25pt)
+    const cols = [];
+    for (const it of r.items.slice().sort((a,b)=>a.x - b.x)){
+      let placed = false;
+      for (const col of cols){
+        if (Math.abs(col[0].x - it.x) <= 25){
+          col.push(it);
+          placed = true;
+          break;
+        }
+      }
+      if (!placed) cols.push([it]);
+    }
+    // Untuk tiap kolom, urutkan dari atas ke bawah (Y menurun: baris atas sel dulu, baru baris bawah sel)
+    const parts = [];
+    for (const col of cols.sort((a,b)=>a[0].x - b[0].x)){
+      col.sort((a,b)=>b.y - a.y);
+      parts.push(col.map(i=>i.s.trim()).join(' '));
+    }
+    return parts.join(' ').replace(/\s+/g,' ').trim();
+  });
 }
 const ROW_PATTERNS = [
   // 1. Agilent OpenLab CDS Sequence Summary Report: Name RT Area Plates Tail Date
@@ -1093,7 +1122,7 @@ const ROW_PATTERNS = [
   // 3. Format CDS dengan Date langsung setelah Area: Name RT Area Date
   /^(.*?)\s+(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)\s+\d{4}[-/]\d{1,2}[-/]\d{1,2}.*$/i,
 
-  // 4. Format 4 kolom tanpa Date di akhir: Name RT Area Tail Plates
+  // 4. Format 4 kolom tanpa Date di akhir: Name RT Area Tail Plates (atau Plates Tail)
   /^(.*?)\s+(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)$/,
 
   // 5. Format 3 kolom tanpa Date di akhir: Name RT Area Col3
@@ -1118,13 +1147,24 @@ function parseRowsFromLines(lines){
         const name = m[1].trim();
         if (!name || /^[\d\s.,]+$/.test(name)) continue;
         if (/\b(Name|RT|Area|Plates|Tail)\b/i.test(name) && name.split(/\s+/).length <= 2) continue;
+        let tail = NaN, plates = NaN;
+        if (m[4] && m[5]){
+          const v4 = parseFloat(m[4].replace(',','.'));
+          const v5 = parseFloat(m[5].replace(',','.'));
+          if (v4 > 50 && v5 < 50){ plates = v4; tail = v5; }
+          else if (v5 > 50 && v4 < 50){ plates = v5; tail = v4; }
+          else { tail = v4; plates = v5; }
+        } else if (m[4]){
+          const v4 = parseFloat(m[4].replace(',','.'));
+          if (v4 > 50) plates = v4; else tail = v4;
+        }
         rows.push({
           name,
           rt: parseFloat(m[2].replace(',','.')),
           area: parseFloat(m[3].replace(',','.')),
           areaStr: m[3].replace(',','.'),
-          tail: m[4] ? parseFloat(m[4].replace(',','.')) : NaN,
-          plates: m[5] ? parseFloat(m[5].replace(',','.')) : NaN
+          tail,
+          plates
         });
         break;
       }
@@ -1144,13 +1184,30 @@ function parseRowsFromStream(text){
     if (/^[\d\s.,]+$/.test(name) || /time\s*\[min\]/i.test(name) || /vwd\d/i.test(name) || /\bmAU\b/i.test(name)) continue;
     name = name.replace(/^.*?(?:Acquired Date|Plates USP|Tail Factor)\s*/i, '').replace(/^\d{4}[-/]\d{1,2}[-/]\d{1,2}[^\r\n]*\s*/, '').trim();
     if (!name) continue;
+    let rt = parseFloat(m[1].replace(',','.'));
+    let area = parseFloat(m[2].replace(',','.'));
+    let tail = parseFloat(m[3].replace(',','.'));
+    let plates = parseFloat(m[4].replace(',','.'));
+    // Jika rt adalah integer kecil (1-12) dan area adalah nilai RT tipikal (< 20) sementara tail > 20,
+    // maka m[1] adalah nomor vessel yang terseret ke angka dari nama sampel
+    if (Number.isInteger(rt) && rt >= 1 && rt <= 12 && area > 0 && area < 20 && tail > 20){
+      name = `${name} ${m[1]}`.trim();
+      rt = area;
+      area = tail;
+      tail = plates;
+      plates = NaN;
+    }
+    if (tail > 50 && isNaN(plates)){
+      plates = tail;
+      tail = NaN;
+    }
     rows.push({
       name,
-      rt: parseFloat(m[1].replace(',','.')),
-      area: parseFloat(m[2].replace(',','.')),
-      areaStr: m[2].replace(',','.'),
-      tail: parseFloat(m[3].replace(',','.')),
-      plates: parseFloat(m[4].replace(',','.'))
+      rt,
+      area,
+      areaStr: String(area),
+      tail,
+      plates
     });
   }
   return rows;
