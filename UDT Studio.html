@@ -1753,16 +1753,35 @@ function evalSimilarityF2(times, refMeans, testMeans, refStats, testStats){
     };
   }
 
-  const idx15 = times.indexOf(15);
-  const both85at15 = idx15 >= 0 && refMeans[idx15] >= 85 && testMeans[idx15] >= 85;
+  // Very Rapid Dissolution: pelepasan >= 85% dalam 15 menit atau kurang (FDA / EMA / BPOM)
+  let both85at15 = false;
+  for (let i = 0; i < T; i++){
+    if (times[i] <= 15 && refMeans[i] >= 85 && testMeans[i] >= 85){
+      both85at15 = true;
+      break;
+    }
+  }
 
+  // Kaidah Cut-off 85% (PerBPOM No. 11/2022, EMA CPMP/EWP/QWP/1401/98, ICH M9):
+  // Tidak lebih dari 1 titik sampling dengan rerata pelepasan >= 85% untuk masing-masing formulasi
+  // (Not more than one mean value of > 85% dissolved for any/either of the formulations).
+  // Titik pertama di mana salah satu atau kedua produk mencapai >= 85% diikutsertakan,
+  // dan titik-titik selanjutnya dieksklusi untuk mencegah bias fase plateau.
   let cutoffIdx = T - 1;
   let reason = 'Semua titik waktu diikutsertakan';
 
   for (let i = 0; i < T; i++){
-    if (refMeans[i] >= 85 && testMeans[i] >= 85){
+    const rHigh = refMeans[i] >= 85;
+    const tHigh = testMeans[i] >= 85;
+    if (rHigh || tHigh){
       cutoffIdx = i;
-      reason = `Dipotong pada menit ${times[i]}' (kedua produk telah mencapai ≥ 85%)`;
+      if (rHigh && tHigh){
+        reason = `Dipotong pada menit ${times[i]}' (kedua produk telah mencapai ≥ 85% — batas maks. 1 titik ≥ 85% per regulasi BPOM/EMA)`;
+      } else if (rHigh){
+        reason = `Dipotong pada menit ${times[i]}' (produk pembanding mencapai ≥ 85% — batas maks. 1 titik ≥ 85% per regulasi BPOM/EMA)`;
+      } else {
+        reason = `Dipotong pada menit ${times[i]}' (produk uji mencapai ≥ 85% — batas maks. 1 titik ≥ 85% per regulasi BPOM/EMA)`;
+      }
       break;
     }
   }
