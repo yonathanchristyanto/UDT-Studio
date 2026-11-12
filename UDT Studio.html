@@ -887,6 +887,17 @@ function toNum(s){
   const n = Number(t); return isFinite(n) ? n : NaN;
 }
 function decimalsOf(str){ const m = String(str).match(/\.(\d+)$/); return m ? m[1].length : 0; }
+// Lengkapi nilai area menjadi 4 desimal dengan menambah angka 0 di belakang (mis. 375.579 -> 375.5790, 260 -> 260.0000).
+// Nilai numerik tidak berubah; nilai dengan >= 4 desimal dibiarkan apa adanya.
+function pad4(v){
+  if (v === null || v === undefined || v === '') return '';
+  if (typeof v === 'number' && !isFinite(v)) return '';
+  const s = String(v).trim().replace(',', '.');
+  if (!/^-?\d+(\.\d+)?$/.test(s)) return String(v);
+  const d = decimalsOf(s);
+  if (d >= 4) return s;
+  return (d === 0 ? s + '.' : s) + '0'.repeat(4 - d);
+}
 
 // --- Name grammar with robust regex & medium extractor ---
 function extractMediumFromString(str){
@@ -1162,7 +1173,7 @@ function parseRowsFromLines(lines){
           name,
           rt: parseFloat(m[2].replace(',','.')),
           area: parseFloat(m[3].replace(',','.')),
-          areaStr: m[3].replace(',','.'),
+          areaStr: pad4(m[3]),
           tail,
           plates
         });
@@ -1205,7 +1216,7 @@ function parseRowsFromStream(text){
       name,
       rt,
       area,
-      areaStr: String(area),
+      areaStr: pad4(area),
       tail,
       plates
     });
@@ -1249,7 +1260,7 @@ function parseCaryPdfPages(pagesLines){
       if (valMatch){
         const val = parseFloat(valMatch[1]);
         const name = line.slice(0, valMatch.index).trim();
-        rows.push({name, area: val, areaStr: valMatch[1], rt: NaN});
+        rows.push({name, area: val, areaStr: pad4(valMatch[1]), rt: NaN});
       }
       i++;
       continue;
@@ -1264,7 +1275,7 @@ function parseCaryPdfPages(pagesLines){
       } else if (valMatch && timeVesselMatch){
         const tv = timeVesselMatch[0];
         const name = `${curPrefix} ${tv}`;
-        rows.push({name, area: parseFloat(valMatch[1]), areaStr: valMatch[1], rt: NaN});
+        rows.push({name, area: parseFloat(valMatch[1]), areaStr: pad4(valMatch[1]), rt: NaN});
       }
       i++;
       continue;
@@ -1276,7 +1287,7 @@ function parseCaryPdfPages(pagesLines){
       const name = `${curPrefix} ${tv}`.trim();
       const valStr = valMatch ? valMatch[1] : pendingVal;
       if (valStr){
-        rows.push({name, area: parseFloat(valStr), areaStr: valStr, rt: NaN});
+        rows.push({name, area: parseFloat(valStr), areaStr: pad4(valStr), rt: NaN});
         pendingVal = null;
       }
       i++;
@@ -1411,7 +1422,7 @@ function csvToRows(parsed, map){
     if (/^(sum|mean|stddev|rsd)\b/i.test(name)) continue;
     if (f[1] && /^(sum|mean|stddev|rsd)$/i.test(String(f[1]).trim())) continue;
     const area = toNum(aStr); if (!isFinite(area)) continue;
-    rows.push({name, area, areaStr:aStr, rt: map.rt>=0 ? toNum(f[map.rt]) : NaN});
+    rows.push({name, area, areaStr:pad4(aStr), rt: map.rt>=0 ? toNum(f[map.rt]) : NaN});
   }
   return rows;
 }
@@ -2286,7 +2297,7 @@ function numInput(targetArr, i, label, onChangeCallback){
   return h('input',{
     class:'cellin'+((v===undefined||!isFinite(v))?' miss':''),
     inputmode:'decimal',
-    value:(v!==undefined&&isFinite(v))?String(v):'',
+    value:(v!==undefined&&isFinite(v))?pad4(v):'',
     placeholder:label,
     onchange:e=>{
       const t = e.target.value.trim();
@@ -2650,7 +2661,7 @@ function renderBatchTable(M, B, title, mId){
       const inp = h('input',{
         class:'num'+(c?(c.edited?' edited':''):' miss'),
         inputmode:'decimal',
-        value:c?String(c.area):'',
+        value:c?pad4(c.area):'',
         onchange:e=>{
           const s = e.target.value.trim();
           const n = s===''?null:toNum(s);
@@ -2697,7 +2708,7 @@ function renderUnassignedSection(openByDefault = false){
             h('td',{class:'small'}, x.file || '-'),
             h('td',null, h('code',null, x.name)),
             h('td',null, h('span',{class:`badge ${x.role==='ref'?'info':'ok'} small`}, x.role==='ref'?'Pembanding':'Uji')),
-            h('td',{class:'num'}, isFinite(x.area) ? String(x.area) : '-'),
+            h('td',{class:'num'}, isFinite(x.area) ? pad4(x.area) : '-'),
             h('td',{class:'num muted small'}, isFinite(x.rt) ? String(x.rt) : '-')
           ))
         )
