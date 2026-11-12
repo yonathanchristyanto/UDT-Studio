@@ -1082,36 +1082,68 @@ function itemsToLines(items){
   rows.sort((a,b)=> b.y - a.y);
   return rows.map(r => r.items.sort((a,b)=>a.x-b.x).map(i=>i.s.trim()).join(' ').replace(/\s+/g,' ').trim());
 }
-const ROW_RE = /^(.*?)\s+(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)$/;
+const ROW_PATTERNS = [
+  // 1. Agilent OpenLab CDS Sequence Summary Report: Name RT Area Plates Tail Date
+  // Misal: "Vonoprazan 20mg F00371026A MD pH 1,2 15' 1 2.2 379.6109 4962 1.4 2026-11-06 09:45:57+07:00"
+  /^(.*?)\s+(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)\s+\d{4}[-/]\d{1,2}[-/]\d{1,2}.*$/i,
+
+  // 2. Format CDS dengan Date dan 1 kolom ekstra: Name RT Area Col3 Date
+  /^(.*?)\s+(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)\s+\d{4}[-/]\d{1,2}[-/]\d{1,2}.*$/i,
+
+  // 3. Format CDS dengan Date langsung setelah Area: Name RT Area Date
+  /^(.*?)\s+(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)\s+\d{4}[-/]\d{1,2}[-/]\d{1,2}.*$/i,
+
+  // 4. Format 4 kolom tanpa Date di akhir: Name RT Area Tail Plates
+  /^(.*?)\s+(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)$/,
+
+  // 5. Format 3 kolom tanpa Date di akhir: Name RT Area Col3
+  /^(.*?)\s+(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)$/,
+
+  // 6. Format 2 kolom: Name RT Area
+  /^(.*?)\s+(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)$/
+];
+
 function parseRowsFromLines(lines){
   const rows = [];
   for (const ln of lines){
-    const m = ln.match(ROW_RE);
-    if (!m) continue;
-    const name = m[1].trim();
-    if (!name || /^(sum|mean|stddev|rsd)\b/i.test(name)) continue;
-    if (/^[\d\s.,]+$/.test(name) || /time\s*\[min\]/i.test(name) || /vwd\d/i.test(name) || /\bmAU\b/i.test(name)) continue;
-    rows.push({
-      name,
-      rt: parseFloat(m[2].replace(',','.')),
-      area: parseFloat(m[3].replace(',','.')),
-      areaStr: m[3].replace(',','.'),
-      tail: parseFloat(m[4].replace(',','.')),
-      plates: parseFloat(m[5].replace(',','.'))
-    });
+    const s = String(ln||'').trim();
+    if (!s) continue;
+    if (/^(sum|mean|stddev|rsd)\b/i.test(s)) continue;
+    if (/time\s*\[min\]|vwd\d|\bmAU\b|Theoretical Plates|Peak Tail|Acquired Date/i.test(s)) continue;
+    if (/^(?:Data file|Instrument|Sample Name|Acq\.|Analysis|Injection|Column|Serial)\b/i.test(s)) continue;
+
+    for (const p of ROW_PATTERNS){
+      const m = s.match(p);
+      if (m){
+        const name = m[1].trim();
+        if (!name || /^[\d\s.,]+$/.test(name)) continue;
+        if (/\b(Name|RT|Area|Plates|Tail)\b/i.test(name) && name.split(/\s+/).length <= 2) continue;
+        rows.push({
+          name,
+          rt: parseFloat(m[2].replace(',','.')),
+          area: parseFloat(m[3].replace(',','.')),
+          areaStr: m[3].replace(',','.'),
+          tail: m[4] ? parseFloat(m[4].replace(',','.')) : NaN,
+          plates: m[5] ? parseFloat(m[5].replace(',','.')) : NaN
+        });
+        break;
+      }
+    }
   }
   return rows;
 }
 function parseRowsFromStream(text){
   const idx = text.search(/(?:Theoritical|Theoretical|Plates)\s*(?:Plates|USP)?/i);
   let t = idx >= 0 ? text.slice(idx).replace(/^(?:Theoritical|Theoretical|Plates)\s*(?:Plates|USP)?/i,'') : text;
-  const re = /(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)(?=\s|$)/g;
+  const re = /(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)(?:\s+\d{4}[-/]\d{1,2}[-/]\d{1,2}[^\r\n]*)?(?=\s|$)/g;
   const rows = []; let last = 0, m;
   while ((m = re.exec(t))){
-    const name = t.slice(last, m.index).trim();
+    let name = t.slice(last, m.index).trim();
     last = m.index + m[0].length;
     if (!name || /^(sum|mean|stddev|rsd)\b/i.test(name)) continue;
     if (/^[\d\s.,]+$/.test(name) || /time\s*\[min\]/i.test(name) || /vwd\d/i.test(name) || /\bmAU\b/i.test(name)) continue;
+    name = name.replace(/^.*?(?:Acquired Date|Plates USP|Tail Factor)\s*/i, '').replace(/^\d{4}[-/]\d{1,2}[-/]\d{1,2}[^\r\n]*\s*/, '').trim();
+    if (!name) continue;
     rows.push({
       name,
       rt: parseFloat(m[1].replace(',','.')),
