@@ -648,75 +648,194 @@ details[open] summary { margin-bottom: 8px; }
   overflow: hidden;
 }
 .udt-modal-head {
+  flex-shrink: 0;
   padding: 16px 20px;
   border-bottom: 1px solid var(--line);
   display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;
   background: var(--card-subtle);
 }
-.udt-modal-head h3 { margin: 0 0 4px; font-size: 16px; }
-.udt-modal-head p { margin: 0; font-size: 12.5px; color: var(--muted); }
+.udt-modal-head h3 { margin: 0 0 4px; font-size: 16px; line-height: 1.3; }
+.udt-modal-head p { margin: 0; font-size: 12.5px; color: var(--muted); line-height: 1.4; }
+.udt-modal-head .btn { flex-shrink: 0; white-space: nowrap; }
 .udt-modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
   padding: 16px 20px;
   overflow-y: auto;
   display: flex; flex-direction: column; gap: 16px;
 }
 .udt-modal-foot {
+  flex-shrink: 0;
   padding: 12px 20px;
   border-top: 1px solid var(--line);
   background: var(--card-subtle);
   display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;
 }
-.res-tabs { display: flex; gap: 6px; border-bottom: 1px solid var(--line); padding: 0 20px; background: var(--card-subtle); }
+.udt-modal input[type="checkbox"],
+.udt-modal input[type="radio"] {
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  max-width: 16px;
+  padding: 0;
+  margin: 2px 0 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  flex: 0 0 16px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.udt-modal input[type="checkbox"]:focus-visible,
+.udt-modal input[type="radio"]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+.res-tabs {
+  flex-shrink: 0;
+  display: flex; gap: 6px;
+  border-bottom: 1px solid var(--line);
+  padding: 0 20px;
+  background: var(--card-subtle);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+.res-tabs::-webkit-scrollbar { display: none; }
 .res-tab {
   border: none; background: transparent; color: var(--muted);
-  padding: 10px 12px; font-size: 12.5px; font-weight: 600; cursor: pointer;
-  border-bottom: 2px solid transparent; margin-bottom: -1px;
+  padding: 10px 12px 9px; font-size: 12.5px; font-weight: 600; cursor: pointer;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
 }
+.res-tab:hover { color: var(--fg); }
 .res-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
 .res-sec {
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: 12px 14px;
+  padding: 14px 16px;
   background: var(--card-subtle);
-  display: flex; flex-direction: column; gap: 10px;
+  display: flex; flex-direction: column; gap: 12px;
 }
-.res-sec-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
-.res-sec-head h4 { margin: 0; font-size: 13.5px; display: flex; align-items: center; gap: 8px; }
+.res-sec-head { display: flex; justify-content: space-between; align-items: center; gap: 8px 12px; flex-wrap: wrap; }
+.res-sec-head h4 { margin: 0; font-size: 13.5px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .res-card {
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
-  padding: 10px 12px;
-  display: flex; flex-direction: column; gap: 8px;
+  padding: 12px 14px;
+  display: flex; flex-direction: column; gap: 10px;
 }
+.res-card-head {
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 8px 12px; flex-wrap: wrap;
+}
+.res-card-title {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap; min-width: 0;
+  font-size: 13px; line-height: 1.4;
+}
+.res-file-list {
+  display: flex; flex-direction: column; gap: 5px;
+  padding: 7px 10px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.res-file-lbl { font-size: 11px; font-weight: 600; color: var(--muted); }
+.res-file-chips {
+  display: flex; flex-wrap: wrap; gap: 4px;
+  max-height: 76px; overflow-y: auto;
+}
+.res-file-chip {
+  display: inline-flex; align-items: center;
+  padding: 2px 7px; border-radius: 5px;
+  background: var(--card); border: 1px solid var(--line);
+  font-size: 11px; line-height: 1.35; color: var(--fg);
+  max-width: 100%; word-break: break-all;
+}
+.res-note {
+  padding: 7px 10px;
+  border-radius: 6px;
+  border-left: 3px solid var(--warn);
+  background: var(--surface);
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--fg);
+  max-height: 96px;
+  overflow-y: auto;
+}
+.res-note > div + div { margin-top: 3px; }
+.res-note.is-info { border-left-color: var(--accent); color: var(--muted); }
+.res-note.is-err { border-left-color: var(--err); }
 .res-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+  gap: 10px;
   align-items: end;
 }
-.res-field { display: flex; flex-direction: column; gap: 4px; }
+.res-grid > .btn { justify-self: start; align-self: end; white-space: nowrap; height: 32px; }
+.res-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .res-field label { font-size: 11px; color: var(--muted); font-weight: 600; }
 .res-field input, .res-field select {
-  width: 100%; padding: 6px 8px; font-size: 12.5px;
+  width: 100%; padding: 6px 9px; font-size: 12.5px;
   border: 1px solid var(--line-strong); border-radius: 6px;
   background: var(--input); color: var(--fg);
 }
-.res-preview { font-size: 11.5px; color: var(--muted); background: var(--surface); padding: 6px 8px; border-radius: 6px; overflow-x: auto; white-space: nowrap; }
-.res-opt {
-  display: flex; gap: 8px; align-items: flex-start;
-  padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px;
-  background: var(--card-subtle); cursor: pointer; font-size: 12.5px;
+.res-preview {
+  font-size: 11.5px; color: var(--muted);
+  background: var(--surface); border: 1px solid var(--line);
+  padding: 7px 10px; border-radius: 6px;
+  overflow-x: auto; white-space: nowrap;
 }
-.res-opt.is-rec { border-color: var(--accent); background: var(--accent-soft); }
+.res-check {
+  display: flex; align-items: flex-start; gap: 8px;
+  cursor: pointer; font-size: 12px; line-height: 1.45;
+  color: var(--fg); text-align: left; padding: 2px 0;
+}
+.res-check.res-check-box {
+  padding: 8px 10px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.res-check-text { flex: 1 1 auto; min-width: 0; word-break: break-word; }
+.res-opts { display: flex; flex-direction: column; gap: 6px; }
+.res-opt {
+  display: flex; gap: 10px; align-items: flex-start; text-align: left;
+  padding: 9px 12px; border: 1px solid var(--line); border-radius: var(--radius-sm);
+  background: var(--card-subtle); cursor: pointer; font-size: 12.5px; line-height: 1.4;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+.res-opt:hover { border-color: var(--line-strong); background: var(--surface); }
+.res-opt.is-rec { border-color: rgba(0, 113, 227, 0.35); }
+.res-opt.is-selected { border-color: var(--accent); background: var(--accent-soft); }
+.res-opt-body { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; text-align: left; }
+.res-opt-title { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; line-height: 1.35; }
 .res-badge-rec {
-  display: inline-block; padding: 1px 6px; border-radius: 99px;
-  font-size: 10.5px; font-weight: 700;
+  display: inline-flex; align-items: center; padding: 1px 7px; border-radius: 99px;
+  font-size: 10.5px; font-weight: 700; white-space: nowrap;
   background: var(--accent); color: var(--accent-fg);
 }
+.res-tbl-wrap {
+  max-height: 240px; overflow: auto;
+  border: 1px solid var(--line); border-radius: 6px;
+  background: var(--card);
+}
 .res-tbl { width: 100%; border-collapse: collapse; font-size: 12px; }
-.res-tbl th, .res-tbl td { padding: 6px 8px; border-bottom: 1px solid var(--line); text-align: left; }
-.res-tbl th { color: var(--muted); font-weight: 600; font-size: 11px; }
+.res-tbl th, .res-tbl td { padding: 7px 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: middle; }
+.res-tbl th {
+  color: var(--muted); font-weight: 600; font-size: 11px;
+  background: var(--card-subtle); position: sticky; top: 0; z-index: 1;
+}
+.res-tbl tbody tr:last-child td { border-bottom: 0; }
+.res-tbl td:first-child { white-space: nowrap; }
+@media (max-width: 600px) {
+  .udt-modal-backdrop { padding: 8px; }
+  .udt-modal { max-height: 94vh; }
+  .udt-modal-head, .udt-modal-body, .udt-modal-foot { padding-left: 14px; padding-right: 14px; }
+  .res-tabs { padding: 0 14px; }
+  .res-sec { padding: 10px 12px; }
+}
 </style>
 </head>
 <body>
@@ -6543,7 +6662,19 @@ function openPreStep2Modal(pending){
 
   let activeTab = 'resolve';
 
+  const renderResFileList = (files, labelPrefix) => {
+    if (!files || !files.length) return null;
+    return h('div', { class: 'res-file-list' },
+      h('div', { class: 'res-file-lbl' }, `${labelPrefix || 'File sumber'} (${files.length}):`),
+      h('div', { class: 'res-file-chips' },
+        files.map(fn => h('span', { class: 'res-file-chip', title: fn }, fn))
+      )
+    );
+  };
+
   const renderModal = () => {
+    const prevBody = root.querySelector('.udt-modal-body');
+    const prevScroll = prevBody ? prevBody.scrollTop : 0;
     root.innerHTML = '';
     const backdrop = h('div', { class: 'udt-modal-backdrop', onclick: e => { if (e.target === backdrop) closeResModal(); } });
     const modal = h('div', { class: 'udt-modal', role: 'dialog', 'aria-modal': 'true' });
@@ -6578,12 +6709,17 @@ function openPreStep2Modal(pending){
         pending.mediaIssues.forEach(mi => {
           const st = mediaDraft[mi.mId];
           const card = h('div', { class: 'res-card' });
+          const stText = mi.st === 'err' ? 'Perlu Dipetakan' : (mi.st === 'warn' ? 'Perlu Cek' : 'Siap');
           card.append(
-            h('div', { class: 'row', style: 'justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap' },
-              h('div', null, h('b', null, `Media terdeteksi: "${mi.mId}"`), ' ', h('span', { class: 'small muted' }, `(${mi.batchCount} batch · ${mi.stdCount} standar)`)),
-              h('span', { class: 'badge ' + mi.st + ' small' }, mi.files.join(', ') || '-')
+            h('div', { class: 'res-card-head' },
+              h('div', { class: 'res-card-title' },
+                h('b', null, `Media terdeteksi: "${mi.mId}"`),
+                h('span', { class: 'small muted' }, `(${mi.batchCount} batch · ${mi.stdCount} standar · ${mi.files.length} file)`)
+              ),
+              h('span', { class: 'badge ' + mi.st + ' small' }, stText)
             ),
-            mi.issues.length ? h('div', { class: 'small muted' }, mi.issues.join(' • ')) : null
+            renderResFileList(mi.files, 'File sumber'),
+            mi.issues.length ? h('div', { class: 'res-note' }, mi.issues.map(msg => h('div', null, '• ' + msg))) : null
           );
           const selTarget = h('select', {
             onchange: e => {
@@ -6605,9 +6741,9 @@ function openPreStep2Modal(pending){
             customInp ? h('div', { class: 'res-field' }, h('label', null, 'Media Kustom'), customInp) : null
           ));
           if (st.target !== '__keep__' && st.target !== '__ignore__'){
-            card.append(h('label', { class: 'small', style: 'display:flex;align-items:center;gap:6px;cursor:pointer' },
+            card.append(h('label', { class: 'res-check' },
               h('input', { type: 'checkbox', checked: st.savePerm, onchange: e => { st.savePerm = e.target.checked; } }),
-              `Simpan alias permanen ke Kamus ("${mi.mId}" -> media terpilih)`
+              h('span', { class: 'res-check-text' }, `Simpan alias permanen ke Kamus ("${mi.mId}" -> media terpilih)`)
             ));
           }
           sec.append(card);
@@ -6627,14 +6763,15 @@ function openPreStep2Modal(pending){
           const st = prefixDraft[pg.groupKey];
           const card = h('div', { class: 'res-card' });
           card.append(
-            h('div', { class: 'row', style: 'justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap' },
-              h('div', null,
-                h('span', { class: 'badge ' + (pg.role==='ref'?'info':'ok') + ' small' }, pg.role === 'ref' ? 'Pembanding' : 'Uji'), ' ',
-                h('b', null, pg.prefixKey), ' ',
+            h('div', { class: 'res-card-head' },
+              h('div', { class: 'res-card-title' },
+                h('span', { class: 'badge ' + (pg.role==='ref'?'info':'ok') + ' small' }, pg.role === 'ref' ? 'Pembanding' : 'Uji'),
+                h('b', null, pg.prefixKey),
                 h('span', { class: 'badge warn small' }, pg.items.length + ' baris')
               ),
-              h('span', { class: 'small muted' }, pg.files.join(', '))
+              h('span', { class: 'small muted' }, `${pg.files.length} file sumber`)
             ),
+            renderResFileList(pg.files, 'File sumber'),
             h('div', { class: 'res-preview' },
               'Contoh: ' + pg.items.slice(0, 3).map(x => `${x.name} (${pad4(x.area)})`).join('  |  ')
             )
@@ -6673,11 +6810,11 @@ function openPreStep2Modal(pending){
           }
           card.append(grid);
           if (!pg.hasTV && st.action === 'ignore'){
-            card.append(h('div', { class: 'small muted' }, 'Catatan: Baris ini tidak memuat format waktu & vessel; cocok untuk Blank/Wash/SST atau baris ringkasan non-sampel.'));
+            card.append(h('div', { class: 'res-note is-info' }, 'Catatan: Baris ini tidak memuat format waktu & vessel; cocok untuk Blank/Wash/SST atau baris ringkasan non-sampel.'));
           }
-          card.append(h('label', { class: 'small', style: 'display:flex;align-items:center;gap:6px;cursor:pointer' },
+          card.append(h('label', { class: 'res-check' },
             h('input', { type: 'checkbox', checked: st.savePerm, onchange: e => { st.savePerm = e.target.checked; } }),
-            `Simpan aturan awalan "${pg.prefixKey}" ke Kamus (otomatis di upload berikutnya)`
+            h('span', { class: 'res-check-text' }, `Simpan aturan awalan "${pg.prefixKey}" ke Kamus (otomatis di upload berikutnya)`)
           ));
           sec.append(card);
         });
@@ -6697,65 +6834,76 @@ function openPreStep2Modal(pending){
           const card = h('div', { class: 'res-card' });
           const ptSample = cg.items.slice(0, 4).map(c => `v${c.vessel}@${c.time}'`).join(', ') + (cg.items.length > 4 ? ` (+${cg.items.length - 4} titik)` : '');
           card.append(
-            h('div', { class: 'row', style: 'justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap' },
-              h('div', null,
-                h('b', null, `Batch ${cg.batch}`), ' · ',
-                h('span', { class: 'small' }, `${cg.mId === 'Air' || cg.mId === 'Release' ? cg.mId : ('pH ' + cg.mId)}`), ' · ',
+            h('div', { class: 'res-card-head' },
+              h('div', { class: 'res-card-title' },
+                h('b', null, `Batch ${cg.batch}`),
+                h('span', { class: 'muted' }, '·'),
+                h('span', { class: 'small' }, `${cg.mId === 'Air' || cg.mId === 'Release' ? cg.mId : ('pH ' + cg.mId)}`),
                 h('span', { class: 'badge ' + (cg.role === 'ref' ? 'info' : 'ok') + ' small' }, cg.role === 'ref' ? 'Pembanding' : 'Uji')
               ),
               h('span', { class: 'badge err small' }, `${cg.items.length} titik bentrok`)
             ),
-            h('div', { class: 'small muted' }, 'Titik bentrok: ' + ptSample)
+            h('div', { class: 'res-note is-err' }, 'Titik bentrok: ' + ptSample)
           );
 
-          const optsWrap = h('div', { style: 'display:flex;flex-direction:column;gap:6px' });
+          const optsWrap = h('div', { class: 'res-opts' });
           if (cg.sources.length > 1){
             cg.sources.forEach((src, sIdx) => {
               const isRec = sIdx === 0 && cg.hasDateDiff;
               const isSel = st.mode === 'file' && st.file === src.file;
               const exText = src.examples.map(e => `${e.label}=${pad4(e.area)}`).join(', ');
-              optsWrap.append(h('label', { class: 'res-opt' + (isRec ? ' is-rec' : '') },
+              optsWrap.append(h('label', { class: 'res-opt' + (isRec ? ' is-rec' : '') + (isSel ? ' is-selected' : '') },
                 h('input', {
                   type: 'radio', name: 'conf_' + cg.groupKey, checked: isSel,
                   onchange: () => { st.mode = 'file'; st.file = src.file; renderModal(); }
                 }),
-                h('div', { style: 'flex:1;min-width:0' },
-                  h('div', null,
-                    h('b', null, src.file), ' ',
-                    src.runDate ? h('span', { class: 'badge info small' }, 'CDS: ' + src.runDate) : h('span', { class: 'small muted' }, '(tanpa tanggal CDS)'), ' ',
+                h('div', { class: 'res-opt-body' },
+                  h('div', { class: 'res-opt-title' },
+                    h('b', null, src.file),
+                    src.runDate ? h('span', { class: 'badge info small' }, 'CDS: ' + src.runDate) : h('span', { class: 'small muted' }, '(tanpa tanggal CDS)'),
                     isRec ? h('span', { class: 'res-badge-rec' }, 'Saran: Tanggal CDS Terbaru') : null
                   ),
-                  h('div', { class: 'small muted', style: 'margin-top:2px' }, `${src.pointCount} titik (${exText})`)
+                  h('div', { class: 'small muted' }, `${src.pointCount} titik (${exText})`)
                 )
               ));
             });
           } else {
             [['last', 'Gunakan injeksi terakhir (re-injeksi terbaru)', true], ['first', 'Gunakan injeksi pertama', false]].forEach(([md, lbl, isRec]) => {
-              optsWrap.append(h('label', { class: 'res-opt' + (isRec ? ' is-rec' : '') },
+              optsWrap.append(h('label', { class: 'res-opt' + (isRec ? ' is-rec' : '') + (st.mode === md ? ' is-selected' : '') },
                 h('input', {
                   type: 'radio', name: 'conf_' + cg.groupKey, checked: st.mode === md,
                   onchange: () => { st.mode = md; renderModal(); }
                 }),
-                h('div', null, h('b', null, lbl), ' ', isRec ? h('span', { class: 'res-badge-rec' }, 'Saran') : null)
+                h('div', { class: 'res-opt-body' },
+                  h('div', { class: 'res-opt-title' },
+                    h('b', null, lbl),
+                    isRec ? h('span', { class: 'res-badge-rec' }, 'Saran') : null
+                  )
+                )
               ));
             });
           }
 
-          optsWrap.append(h('label', { class: 'res-opt' },
+          optsWrap.append(h('label', { class: 'res-opt' + (st.mode === 'perCell' ? ' is-selected' : '') },
             h('input', {
               type: 'radio', name: 'conf_' + cg.groupKey, checked: st.mode === 'perCell',
               onchange: () => { st.mode = 'perCell'; st.showManual = true; renderModal(); }
             }),
-            h('div', null, h('b', null, 'Pilih manual per titik waktu & vessel'), ' ', h('span', { class: 'small muted' }, `(${cg.items.length} sel)`))
+            h('div', { class: 'res-opt-body' },
+              h('div', { class: 'res-opt-title' },
+                h('b', null, 'Pilih manual per titik waktu & vessel'),
+                h('span', { class: 'small muted' }, `(${cg.items.length} sel)`)
+              )
+            )
           ));
           card.append(optsWrap);
 
           if (cg.sources.length > 1 && st.mode === 'file'){
             const others = cg.sources.filter(s => s.file !== st.file).map(s => s.file);
             if (others.length){
-              card.append(h('label', { class: 'small', style: 'display:flex;align-items:flex-start;gap:6px;cursor:pointer;padding:6px 8px;background:var(--surface);border-radius:6px' },
+              card.append(h('label', { class: 'res-check res-check-box' },
                 h('input', { type: 'checkbox', checked: st.excludeOthers, onchange: e => { st.excludeOthers = e.target.checked; } }),
-                h('span', null,
+                h('span', { class: 'res-check-text' },
                   `Kecualikan file lain (${others.join(', ')}) dari seluruh analisis`,
                   cg.otherFilesHaveDupStd ? ' — direkomendasikan agar Standar lama di file tersebut juga ikut terbersihkan' : ''
                 )
@@ -6779,7 +6927,7 @@ function openPreStep2Modal(pending){
                 })
               )
             );
-            card.append(h('div', { style: 'max-height:210px;overflow-y:auto;border:1px solid var(--line);border-radius:6px' }, tbl));
+            card.append(h('div', { class: 'res-tbl-wrap' }, tbl));
           }
 
           sec.append(card);
@@ -6875,6 +7023,7 @@ function openPreStep2Modal(pending){
     modal.append(foot);
     backdrop.append(modal);
     root.append(backdrop);
+    if (prevScroll > 0) body.scrollTop = prevScroll;
   };
 
   renderModal();
@@ -6922,7 +7071,7 @@ function buildAliasManagerContent(onRefresh){
     addRow
   );
   if (medKeys.length){
-    medSec.append(h('table', { class: 'res-tbl' },
+    medSec.append(h('div', { class: 'res-tbl-wrap' }, h('table', { class: 'res-tbl' },
       h('thead', null, h('tr', null, h('th', null, 'Kata Kunci'), h('th', null, 'Target Media'), h('th', null, 'Aksi'))),
       h('tbody', null,
         medKeys.map(k => h('tr', null,
@@ -6931,7 +7080,7 @@ function buildAliasManagerContent(onRefresh){
           h('td', null, h('button', { class: 'link', onclick: () => { delete S.mediaAliases[k]; saveAliasesToStorage(); rebuild(); onRefresh(); } }, 'hapus'))
         ))
       )
-    ));
+    )));
   } else {
     medSec.append(h('div', { class: 'small muted' }, 'Belum ada alias media tersimpan.'));
   }
@@ -6946,7 +7095,7 @@ function buildAliasManagerContent(onRefresh){
     )
   );
   if (prefKeys.length){
-    prefSec.append(h('table', { class: 'res-tbl' },
+    prefSec.append(h('div', { class: 'res-tbl-wrap' }, h('table', { class: 'res-tbl' },
       h('thead', null, h('tr', null, h('th', null, 'Awalan'), h('th', null, 'Peran'), h('th', null, 'Target'), h('th', null, 'Aksi'))),
       h('tbody', null,
         prefKeys.map(k => {
@@ -6960,7 +7109,7 @@ function buildAliasManagerContent(onRefresh){
           );
         })
       )
-    ));
+    )));
   } else {
     prefSec.append(h('div', { class: 'small muted' }, 'Belum ada aturan awalan tersimpan.'));
   }
@@ -6986,7 +7135,7 @@ function buildAliasManagerContent(onRefresh){
     )
   );
   if (ignoredList.length){
-    sesSec.append(h('table', { class: 'res-tbl' },
+    sesSec.append(h('div', { class: 'res-tbl-wrap' }, h('table', { class: 'res-tbl' },
       h('thead', null, h('tr', null, h('th', null, 'Role'), h('th', null, 'Nama File'), h('th', null, 'Aksi'))),
       h('tbody', null,
         ignoredList.map(k => {
@@ -7000,7 +7149,7 @@ function buildAliasManagerContent(onRefresh){
           );
         })
       )
-    ));
+    )));
   } else {
     sesSec.append(h('div', { class: 'small muted' }, 'Tidak ada file yang dikecualikan pada sesi ini.'));
   }
@@ -7013,9 +7162,12 @@ function openAliasManagerModal(){
   const root = $('#resModalRoot');
   if (!root) return;
   const renderMgr = () => {
+    const prevBody = root.querySelector('.udt-modal-body');
+    const prevScroll = prevBody ? prevBody.scrollTop : 0;
     root.innerHTML = '';
     const backdrop = h('div', { class: 'udt-modal-backdrop', onclick: e => { if (e.target === backdrop) closeResModal(); } });
     const modal = h('div', { class: 'udt-modal', role: 'dialog', 'aria-modal': 'true' });
+    const mgrBody = h('div', { class: 'udt-modal-body' }, buildAliasManagerContent(renderMgr));
     modal.append(
       h('div', { class: 'udt-modal-head' },
         h('div', null,
@@ -7024,7 +7176,7 @@ function openAliasManagerModal(){
         ),
         h('button', { type: 'button', class: 'btn btn-sm', onclick: closeResModal }, 'Tutup')
       ),
-      h('div', { class: 'udt-modal-body' }, buildAliasManagerContent(renderMgr)),
+      mgrBody,
       h('div', { class: 'udt-modal-foot' },
         h('span', { class: 'small muted' }, 'Perubahan langsung diterapkan ke pratinjau data.'),
         h('button', { type: 'button', class: 'btn primary', onclick: closeResModal }, 'Selesai')
@@ -7032,6 +7184,7 @@ function openAliasManagerModal(){
     );
     backdrop.append(modal);
     root.append(backdrop);
+    if (prevScroll > 0) mgrBody.scrollTop = prevScroll;
   };
   renderMgr();
 }
