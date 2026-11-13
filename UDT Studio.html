@@ -626,6 +626,97 @@ details[open] summary { margin-bottom: 8px; }
   .topbar-brand .sub { display: none; }
   nav#steps button { padding: 6px 10px; font-size: 11.5px; }
 }
+
+/* Pre-Step 2 Resolver Modal & Kamus */
+.btn.btn-sm { padding: 5px 10px; font-size: 12px; border-radius: var(--radius-sm); }
+.file.is-ignored { opacity: .62; background: var(--surface); border-style: dashed; }
+.udt-modal-backdrop {
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(15, 23, 42, 0.56);
+  backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px;
+}
+.udt-modal {
+  background: var(--card); color: var(--fg);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-lg);
+  width: min(940px, 100%);
+  max-height: 90vh;
+  display: flex; flex-direction: column;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.32);
+  overflow: hidden;
+}
+.udt-modal-head {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--line);
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;
+  background: var(--card-subtle);
+}
+.udt-modal-head h3 { margin: 0 0 4px; font-size: 16px; }
+.udt-modal-head p { margin: 0; font-size: 12.5px; color: var(--muted); }
+.udt-modal-body {
+  padding: 16px 20px;
+  overflow-y: auto;
+  display: flex; flex-direction: column; gap: 16px;
+}
+.udt-modal-foot {
+  padding: 12px 20px;
+  border-top: 1px solid var(--line);
+  background: var(--card-subtle);
+  display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+.res-tabs { display: flex; gap: 6px; border-bottom: 1px solid var(--line); padding: 0 20px; background: var(--card-subtle); }
+.res-tab {
+  border: none; background: transparent; color: var(--muted);
+  padding: 10px 12px; font-size: 12.5px; font-weight: 600; cursor: pointer;
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
+}
+.res-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.res-sec {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  background: var(--card-subtle);
+  display: flex; flex-direction: column; gap: 10px;
+}
+.res-sec-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.res-sec-head h4 { margin: 0; font-size: 13.5px; display: flex; align-items: center; gap: 8px; }
+.res-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.res-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px;
+  align-items: end;
+}
+.res-field { display: flex; flex-direction: column; gap: 4px; }
+.res-field label { font-size: 11px; color: var(--muted); font-weight: 600; }
+.res-field input, .res-field select {
+  width: 100%; padding: 6px 8px; font-size: 12.5px;
+  border: 1px solid var(--line-strong); border-radius: 6px;
+  background: var(--input); color: var(--fg);
+}
+.res-preview { font-size: 11.5px; color: var(--muted); background: var(--surface); padding: 6px 8px; border-radius: 6px; overflow-x: auto; white-space: nowrap; }
+.res-opt {
+  display: flex; gap: 8px; align-items: flex-start;
+  padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px;
+  background: var(--card-subtle); cursor: pointer; font-size: 12.5px;
+}
+.res-opt.is-rec { border-color: var(--accent); background: var(--accent-soft); }
+.res-badge-rec {
+  display: inline-block; padding: 1px 6px; border-radius: 99px;
+  font-size: 10.5px; font-weight: 700;
+  background: var(--accent); color: var(--accent-fg);
+}
+.res-tbl { width: 100%; border-collapse: collapse; font-size: 12px; }
+.res-tbl th, .res-tbl td { padding: 6px 8px; border-bottom: 1px solid var(--line); text-align: left; }
+.res-tbl th { color: var(--muted); font-weight: 600; font-size: 11px; }
 </style>
 </head>
 <body>
@@ -708,16 +799,19 @@ details[open] summary { margin-bottom: 8px; }
     </details>
 
     <div class="nav">
-      <span></span>
+      <button class="btn" id="openAliasMgrBtn1" type="button">Kamus Media &amp; Awalan</button>
       <button class="btn primary" data-go="2">Lanjut ke Verifikasi</button>
     </div>
   </section>
 
   <!-- STEP 2: VERIFIKASI -->
   <section class="panel" id="p2">
-    <div class="section-header">
-      <h2>Verifikasi Sampel &amp; Standar</h2>
-      <p>Periksa data injeksi yang terbaca dan konfirmasi larutan standar tiap batch.</p>
+    <div class="section-header" style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
+      <div>
+        <h2>Verifikasi Sampel &amp; Standar</h2>
+        <p>Periksa data injeksi yang terbaca dan konfirmasi larutan standar tiap batch.</p>
+      </div>
+      <button class="btn btn-sm" id="openAliasMgrBtn2" type="button">Kamus Media &amp; Resolusi</button>
     </div>
     <div id="p2body"></div>
     <div class="nav">
@@ -875,9 +969,37 @@ function fmtDateEN(d){
 function normMedium(s){
   if (!s) return '';
   const str = String(s).trim();
-  if (/^(air|water)$/i.test(str)) return 'Air';
+  if (/^(air|water|aquades|aquadest)$/i.test(str)) return 'Air';
   if (/^(release|rilis)$/i.test(str)) return 'Release';
+  if (/^hcl\s*0[.,]1\s*[nm]$/i.test(str)) return str.replace(/^hcl/i,'HCl').replace(/\./g,',').replace(/\s+/g,' ');
   return str.replace(/\./g, ',');
+}
+const STANDARD_MEDIA_IDS = ['1,2', '4,5', '6,8', 'Air', '1,0', '7,2', '7,5'];
+function normMediaAliasKey(s){
+  return String(s || '').trim().toLowerCase().replace(/\s+/g, ' ').replace(/\./g, ',');
+}
+function normPrefixKey(s){
+  return String(s || '').trim().replace(/\s+/g, ' ').replace(/^[\s_-]+|[\s_-]+$/g, '');
+}
+function getMediaAliasesMap(){ return (typeof S !== 'undefined' && S && S.mediaAliases) ? S.mediaAliases : {}; }
+function getSessionMediaMap(){ return (typeof S !== 'undefined' && S && S.sessionMediaMap) ? S.sessionMediaMap : {}; }
+function getPrefixAliasesMap(){ return (typeof S !== 'undefined' && S && S.prefixAliases) ? S.prefixAliases : {}; }
+function getSessionPrefixMap(){ return (typeof S !== 'undefined' && S && S.sessionPrefixMap) ? S.sessionPrefixMap : {}; }
+function escapeRegExp(s){ return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+function applyMediaAlias(rawMed, applyAlias = true){
+  if (!rawMed) return null;
+  const med = normMedium(rawMed);
+  if (!applyAlias) return med;
+  const keyLower = med.toLowerCase();
+  const keyComma = keyLower.replace(/\./g, ',');
+  const ses = getSessionMediaMap();
+  if (ses[med] && ses[med] !== '__keep__') return normMedium(ses[med]);
+  if (ses[keyComma] && ses[keyComma] !== '__keep__') return normMedium(ses[keyComma]);
+  const per = getMediaAliasesMap();
+  if (per[keyComma]) return normMedium(per[keyComma]);
+  if (per[keyLower]) return normMedium(per[keyLower]);
+  return med;
 }
 function toNum(s){
   if (typeof s === 'number') return s;
@@ -899,17 +1021,63 @@ function pad4(v){
   return (d === 0 ? s + '.' : s) + '0'.repeat(4 - d);
 }
 
-// --- Name grammar with robust regex & medium extractor ---
-function extractMediumFromString(str){
+// --- Name grammar with tail-first parser, robust medium & additive cleaner ---
+function cleanContextForBareMedium(str){
+  return String(str || '')
+    .replace(/\.[^/.]+$/, '')
+    .replace(/\b\d{4}[-./]\d{1,2}[-./]\d{1,2}\b/g, ' ')
+    .replace(/(?:^|[^0-9])\d{1,2}[-./]\d{1,2}[-./]\d{2,4}(?=$|[^0-9])/g, ' ')
+    .replace(/(?:\+|&|dengan|with|\()\s*(?:tween|sls|sds|span|brij|peg|poloxamer|surfaktan)\b[^'\u2019\u2032`\u00B4)]*\)?/ig, ' ')
+    .replace(/\b\d+(?:[.,]\d+)?\s*%/g, ' ')
+    .replace(/\b\d+(?:[.,]\d+)?\s*(?:mg|mcg|ug|µg|g|ml|l|rpm|min|mnt|menit|jam|hr|detik|s)\b/ig, ' ')
+    .replace(/\b\d+\s*[-–]\s*\d+(?:\s*(?:min|mnt|menit|['\u2019\u2032`\u00B4]))?/ig, ' ');
+}
+
+function extractMediumFromString(str, applyAlias = true){
   if(!str) return null;
-  const mAir = str.match(/\b(Air|Water)\b/i);
-  if(mAir) return 'Air';
-  const mRel = str.match(/\b(Release|Rilis)\b/i);
-  if(mRel) return 'Release';
-  const m1 = str.match(/(?:MD|pH|ph)\s*([0-9]+[.,\-][0-9]+|[0-9]+)/i);
-  if(m1) return normMedium(m1[1].replace('-', ','));
-  const m2 = str.match(/([0-9]+[.,\-][0-9]+)/);
-  if(m2) return normMedium(m2[1].replace('-', ','));
+  const raw = String(str).replace(/\s+/g, ' ').trim();
+  if(!raw) return null;
+
+  // 1. Kamus alias kustom user (terpanjang didahulukan; jangan timpa MD/pH eksplisit oleh kata "release"/"air")
+  const hasExplicitNumPH = /(?:MD|pH|ph)\s*[0-9]+(?:[.,][0-9]+)?/i.test(raw);
+  if (applyAlias){
+    const per = getMediaAliasesMap();
+    const keys = Object.keys(per).sort((a,b) => b.length - a.length);
+    const rawNorm = normMediaAliasKey(raw);
+    for (const k of keys){
+      if (!k) continue;
+      if (hasExplicitNumPH && /^(release|rilis|air|water|aquades|aquadest)$/i.test(k)) continue;
+      const re = new RegExp('(?:^|[\\s_\\-+,(])' + escapeRegExp(k) + '(?=$|[\\s_\\-+,.)])', 'i');
+      if (re.test(rawNorm)) return normMedium(per[k]);
+    }
+  }
+
+  // 2. Prioritas tertinggi: penanda MD / pH diikuti angka eksplisit (mis. "Immediate Release MD 1,2")
+  const m1 = raw.match(/(?:MD|pH|ph)\s*([0-9]+(?:[.,][0-9]+)?|[1-9]-[0-9])(?=$|[\s_\-+,.)])/i);
+  if(m1) return applyMediaAlias(m1[1].replace('-', ','), applyAlias);
+
+  // 3. Air / Water / Aquadest
+  const mAir = raw.match(/(?:^|[\s_\-+,(])(Air|Water|Aquades|Aquadest)(?=$|[\s_\-+,.)])/i);
+  if(mAir) return applyMediaAlias('Air', applyAlias);
+
+  // 4. Nama buffer/media farmasi umum (SGF, SIF, HCl 0,1N, Buffer Asetat, dll)
+  const mBuf = raw.match(/(?:^|[\s_\-+,(])(?:(SGF|FaSSGF|FeSSGF|SIF|FaSSIF|FeSSIF)|(HCl\s*0[.,]1\s*[NM])|((?:Buffer|Dapar)\s+(?:Asetat|Acetate|Fosfat|Phosphate|Sitrat|Citrate|Borat|Borate)))(?=$|[\s_\-+,.)])/i);
+  if (mBuf){
+    const tok = (mBuf[1] || mBuf[2] || mBuf[3]).replace(/\s+/g, ' ').trim();
+    const canon = /^hcl/i.test(tok) ? tok.replace(/^hcl/i, 'HCl').replace(/\./g, ',').replace(/\s+/g, ' ')
+      : (/^(buffer|dapar)/i.test(tok) ? tok.replace(/^(buffer|dapar)/i, 'Buffer') : tok.toUpperCase());
+    return applyMediaAlias(canon, applyAlias);
+  }
+
+  // 5. Release / Rilis (setelah MD/pH angka eksplisit & buffer bernama)
+  const mRel = raw.match(/(?:^|[\s_\-+,(])(Release|Rilis)(?=$|[\s_\-+,.)])/i);
+  if(mRel) return applyMediaAlias('Release', applyAlias);
+
+  // 6. Desimal pH polos setelah konteks dosis/persentase/tanggal dibersihkan (hindari "0,35%" atau "5-10")
+  const cleaned = cleanContextForBareMedium(raw);
+  const m2 = cleaned.match(/(?:^|[^0-9A-Za-z])([0-9]{1,2}[.,][0-9]{1,2})(?=$|[^0-9A-Za-z])/);
+  if(m2) return applyMediaAlias(m2[1], applyAlias);
+
   return null;
 }
 
@@ -918,160 +1086,204 @@ function extractBatchFromFilename(fn){
   const clean = String(fn).replace(/\.[^/.]+$/, '');
   const tokens = clean.split(/[\s_+,-]+/);
   for (const t of tokens){
-    if (/^(standar|standard|std|sampel|sample|disolusi|dissolution|md|ph|buffer|dapar|air|water|release|rilis)$/i.test(t)) continue;
+    if (/^(standar|standard|std|sampel|sample|disolusi|dissolution|udt|md|ph|buffer|dapar|air|water|release|rilis|sgf|sif)$/i.test(t)) continue;
     if (/^[A-Za-z]\d{4,}[A-Za-z0-9_-]*$/i.test(t)) return t;
   }
   for (const t of tokens){
-    if (/^(standar|standard|std|sampel|sample|disolusi|dissolution|md|ph|buffer|dapar|air|water|release|rilis)$/i.test(t)) continue;
+    if (/^(standar|standard|std|sampel|sample|disolusi|dissolution|udt|md|ph|buffer|dapar|air|water|release|rilis|sgf|sif)$/i.test(t)) continue;
     if (/^[A-Za-z0-9_-]{5,}$/.test(t) && !/^\d+$/.test(t)) return t;
+  }
+  for (const t of tokens){
+    if (/^\d{7,}$/.test(t) && !/^20\d{6}$/.test(t)) return t;
   }
   return '';
 }
 
-function classifyName(raw, fileName = ''){
-  const n = String(raw).replace(/\s+/g,' ').trim();
+function extractTimeVesselTail(str){
+  const n = String(str || '').replace(/\s+/g, ' ').trim();
+  if (!n) return null;
 
-  // 1. Deteksi Standar Kalibrasi (Standar 1, Std 1, Standard 1, dll)
-  if (/^(standar|standard|std)\b/i.test(n)){
+  let m = n.match(/^(?:(.*?)[\s_-]+)?(\d+)\s*(?:['\u2019\u2032`\u00B4]|min|m|menit|mnt)\s*(?:V|vessel|v)?[\s_-]*(\d+)$/i);
+  if (m) return { prefix: (m[1] || '').trim(), time: parseInt(m[2], 10), vessel: parseInt(m[3], 10) };
+
+  m = n.match(/^(?:(.*?)[\s_-]+)?(?:V|vessel|v)\s*(\d+)[\s_-]+@?(\d+)\s*(?:['\u2019\u2032`\u00B4]|min|m|menit|mnt)$/i);
+  if (m) return { prefix: (m[1] || '').trim(), time: parseInt(m[3], 10), vessel: parseInt(m[2], 10) };
+  m = n.match(/^(\d+)\s+@?(\d+)\s*(?:['\u2019\u2032`\u00B4]|min|m|menit|mnt)$/i);
+  if (m) return { prefix: '', time: parseInt(m[2], 10), vessel: parseInt(m[1], 10) };
+
+  m = n.match(/^(?:(.*?)[\s_-]+)?(\d+)[\s_-]+(?:V|vessel|v)\s*(\d+)$/i);
+  if (m && !/^(?:standar|standard|std|bs)\b/i.test(m[1] || '')){
+    return { prefix: (m[1] || '').trim(), time: parseInt(m[2], 10), vessel: parseInt(m[3], 10) };
+  }
+
+  m = n.match(/^([A-Za-z0-9]+)[-_](?:MD|pH|ph)?([0-9]+[.,][0-9]+|Air|Water|Release|Rilis)[-_](\d+)(?:min|m|')?[-_](?:V|v)?(\d+)$/i);
+  if (m) return { prefix: m[1] + ' MD ' + m[2], time: parseInt(m[3], 10), vessel: parseInt(m[4], 10), forcedBatch: m[1].trim(), forcedMedium: m[2] };
+
+  m = n.match(/^([A-Za-z0-9_-]{3,})[-_](\d+)(?:min|m|')?[-_](?:V|v)?(\d+)$/i);
+  if (m) return { prefix: m[1], time: parseInt(m[2], 10), vessel: parseInt(m[3], 10), forcedBatch: m[1].trim() };
+
+  m = n.match(/^(?:(.*?)[\s_-]+)?[Tt]\s*=?\s*(\d+)\s*(?:['\u2019\u2032`\u00B4]|min|m|menit|mnt)?[\s_-]*[Vv](?:essel)?\s*=?\s*(\d+)$/);
+  if (m) return { prefix: (m[1] || '').trim(), time: parseInt(m[2], 10), vessel: parseInt(m[3], 10) };
+
+  return null;
+}
+
+function extractTimeVesselLoose(str){
+  const exact = extractTimeVesselTail(str);
+  if (exact) return exact;
+  const n = String(str || '').replace(/\s+/g, ' ').trim();
+  if (!n) return null;
+  const m = n.match(/^(.*?)\s+(\d+)\s+(\d+)$/);
+  if (m && parseInt(m[3], 10) >= 1 && parseInt(m[3], 10) <= 12){
+    return { prefix: m[1].trim(), time: parseInt(m[2], 10), vessel: parseInt(m[3], 10) };
+  }
+  return null;
+}
+
+function extractBatchAndProductFromPrefix(prefix, fileName = ''){
+  let cleaned = String(prefix || '').replace(/\s+/g, ' ').trim();
+  if (!cleaned) return { batch: extractBatchFromFilename(fileName) || '', product: '' };
+
+  cleaned = cleaned
+    .replace(/\([^)]*(?:tween|sls|sds|span|brij|peg|poloxamer|surfaktan|%)[^)]*\)/ig, ' ')
+    .replace(/(?:\+|&|dengan|with)?\s*(?:\d+(?:[.,]\d+)?\s*%\s*)?\b(?:tween|sls|sds|span|brij|peg|poloxamer)\b(?:\s*(?:20|40|60|80))?(?:\s*\d+(?:[.,]\d+)?\s*%?)?/ig, ' ')
+    .replace(/(?:\+|&|dengan|with)\s*\d+(?:[.,]\d+)?\s*%(?:\s*(?:w\/v|v\/v|b\/v))?/ig, ' ');
+
+  cleaned = cleaned
+    .replace(/(?:^|[\s_-])(?:(?:MD|Buffer|Dapar)\s+)?(?:MD|pH|ph)\s*(?:[0-9]+(?:[.,][0-9]+)?|[1-9]-[0-9])(?=$|[\s_-])/ig, ' ')
+    .replace(/(?:^|[\s_-])(?:Buffer|Dapar)\s+(?:Asetat|Acetate|Fosfat|Phosphate|Sitrat|Citrate|Borat|Borate)(?=$|[\s_-])/ig, ' ')
+    .replace(/(?:^|[\s_-])HCl\s*0[.,]1\s*[NM](?=$|[\s_-])/ig, ' ')
+    .replace(/(?:^|[\s_-])(?:MD|pH|ph|Buffer|Dapar|Air|Water|Aquades|Aquadest|Release|Rilis|SGF|FaSSGF|FeSSGF|SIF|FaSSIF|FeSSIF)(?=$|[\s_-])/ig, ' ')
+    .replace(/(?:^|\s)[0-9]{1,2}[.,][0-9]{1,2}(?=$|\s)/g, ' ')
+    .replace(/[+]/g, ' ')
+    .replace(/\s+/g, ' ').trim();
+
+  if (!cleaned) return { batch: extractBatchFromFilename(fileName) || '', product: '' };
+
+  const tokens = cleaned.split(/\s+/).filter(Boolean);
+  const noiseRe = /^(sampel|sample|disolusi|dissolution|udt|test|uji|ref|pembanding|komparator|tablet|kaplet|kapsul|tab|cap|mg|mcg|ug|g|ml|l|-|\/)$/i;
+  const doseRe = /^\d+(?:[.,]\d+)?(?:mg|mcg|ug|µg|g|ml|%|iu)$/i;
+  const additiveRe = /^(?:tween\d*|sls|sds|span\d*|peg\d*)$/i;
+
+  let batchIdx = -1;
+  for (let i = tokens.length - 1; i >= 0; i--){
+    if (noiseRe.test(tokens[i]) || doseRe.test(tokens[i]) || additiveRe.test(tokens[i])) continue;
+    if (/^[A-Za-z]\d{4,}[A-Za-z0-9_-]*$/.test(tokens[i])){ batchIdx = i; break; }
+  }
+  if (batchIdx < 0){
+    for (let i = tokens.length - 1; i >= 0; i--){
+      if (noiseRe.test(tokens[i]) || doseRe.test(tokens[i]) || additiveRe.test(tokens[i])) continue;
+      if (/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z0-9_-]{4,}$/.test(tokens[i])){ batchIdx = i; break; }
+    }
+  }
+  if (batchIdx < 0){
+    for (let i = tokens.length - 1; i >= 0; i--){
+      if (/^\d{5,}$/.test(tokens[i])){ batchIdx = i; break; }
+    }
+  }
+  const fileBatch = extractBatchFromFilename(fileName) || '';
+  if (batchIdx < 0){
+    if (fileBatch){
+      return { batch: fileBatch, product: tokens.filter(t => !noiseRe.test(t)).join(' ') };
+    }
+    for (let i = tokens.length - 1; i >= 0; i--){
+      if (noiseRe.test(tokens[i]) || doseRe.test(tokens[i]) || additiveRe.test(tokens[i])) continue;
+      if (/^[A-Za-z0-9_-]{3,}$/.test(tokens[i])){ batchIdx = i; break; }
+    }
+  }
+
+  if (batchIdx >= 0){
+    const batch = tokens[batchIdx].trim();
+    const prodTokens = tokens.filter((tok, idx) => idx !== batchIdx && !noiseRe.test(tok));
+    return { batch, product: prodTokens.join(' ').trim() };
+  }
+  return { batch: fileBatch, product: tokens.filter(t => !noiseRe.test(t)).join(' ').trim() };
+}
+
+function getUnassignedGroupKey(raw, fileName = '', role = ''){
+  const n = String(raw || '').replace(/\s+/g, ' ').trim();
+  const tv = extractTimeVesselLoose(n);
+  let pref = tv ? tv.prefix : n.replace(/\s+\d+$/, '').trim();
+  pref = normPrefixKey(pref || n);
+  if (/^(?:blank|blanks|wash|sst|system\s*suitability|diluent|pengencer|placebo|plasebo|mobile\s*phase)\b/i.test(pref)){
+    const mCtrl = pref.match(/^((?:blank|blanks|wash|sst|system\s*suitability|diluent|pengencer|placebo|plasebo|mobile\s*phase))\b/i);
+    if (mCtrl) pref = mCtrl[1];
+  }
+  return { groupKey: (role || '') + '::' + (fileName || '') + '::' + pref, prefixKey: pref, rolePrefixKey: (role ? role + '::' : '') + pref };
+}
+
+function classifyName(raw, fileName = '', injRole = ''){
+  const n = String(raw || '').replace(/\s+/g,' ').trim();
+  if (!n) return {type:'other', medium: extractMediumFromString(fileName), name:n};
+
+  // 0. Override alias awalan tersimpan / sesi (Layer 2)
+  const sesPref = getSessionPrefixMap();
+  const perPref = getPrefixAliasesMap();
+  const looseTV = extractTimeVesselLoose(n);
+  const exactTV = extractTimeVesselTail(n);
+  const rawPref = normPrefixKey((exactTV && exactTV.prefix) || (looseTV && looseTV.prefix) || n.replace(/\s+\d+$/, '').trim() || n);
+  const ctrlM = rawPref.match(/^((?:blank|blanks|wash|sst|system\s*suitability|diluent|pengencer|placebo|plasebo|mobile\s*phase))\b/i);
+  const prefCandidates = [rawPref];
+  if (ctrlM) prefCandidates.push(normPrefixKey(ctrlM[1]));
+
+  let matchedAlias = null;
+  for (const pk of prefCandidates){
+    const rpk = injRole ? (injRole + '::' + pk) : '';
+    matchedAlias = (rpk && (sesPref[rpk] || perPref[rpk])) || sesPref[pk] || perPref[pk];
+    if (matchedAlias) break;
+  }
+  if (matchedAlias){
+    if (matchedAlias.action === 'ignore'){
+      return { type: 'ignored', name: n, prefixKey: rawPref };
+    }
+    if (matchedAlias.action === 'std' || matchedAlias.action === 'bsMid' || matchedAlias.action === 'bsEnd'){
+      const med = matchedAlias.medium ? applyMediaAlias(matchedAlias.medium) : (extractMediumFromString(n) || extractMediumFromString(fileName));
+      return { type: matchedAlias.action, medium: med, name: n, fromAlias: true };
+    }
+    if (matchedAlias.action === 'sample' && looseTV){
+      const med = matchedAlias.medium ? applyMediaAlias(matchedAlias.medium) : (extractMediumFromString(looseTV.prefix || n) || extractMediumFromString(fileName));
+      return {
+        type: 'sample',
+        product: matchedAlias.product || '',
+        batch: matchedAlias.batch || extractBatchFromFilename(fileName) || '',
+        medium: med,
+        time: looseTV.time,
+        vessel: looseTV.vessel,
+        name: n,
+        fromAlias: true
+      };
+    }
+  }
+
+  // 1. Deteksi Standar Kalibrasi & Bracketing (di awal nama, atau di tengah bila tidak ada ekor waktu+vessel)
+  if (/^(?:standar|standard|std)\b/i.test(n) || (!exactTV && /(?:^|[\s_-])(?:standar|standard|std)\b/i.test(n))){
     return {type:'std', medium: extractMediumFromString(n) || extractMediumFromString(fileName), name:n};
   }
-
-  // 2. Deteksi Bracketing Standard (BS Mid / BS End)
-  if (/^bs\s*[-_]?\s*mid\b/i.test(n)){
+  if (/^bs\s*[-_]?\s*mid\b/i.test(n) || (!exactTV && /(?:^|[\s_-])bs\s*[-_]?\s*mid\b/i.test(n))){
     return {type:'bsMid', medium: extractMediumFromString(n) || extractMediumFromString(fileName), name:n};
   }
-  if (/^bs\s*[-_]?\s*end\b/i.test(n)){
+  if (/^bs\s*[-_]?\s*end\b/i.test(n) || (!exactTV && /(?:^|[\s_-])bs\s*[-_]?\s*end\b/i.test(n))){
     return {type:'bsEnd', medium: extractMediumFromString(n) || extractMediumFromString(fileName), name:n};
   }
 
-  // 3. Pola A: [Media First] [MD/Buffer/Dapar] [pH] <Media> [Produk] <Batch> <Waktu>' <Vessel>
-  // Misal: "1.2 F00371026A 5' 1", "pH 1.2 F00371026A 5' v1", "1.2 F00371026A 5'1"
-  const pMediaFirst = n.match(/^(?:(?:MD|Buffer|Dapar)\s+)?(?:MD|pH|ph)?\s*([0-9]+[.,][0-9]+|[0-9]+|Air|Water|Release|Rilis)\s+(?:(.+?)\s+)?([A-Za-z0-9_-]{3,})\s+(\d+)\s*(?:['\u2019\u2032`\u00B4]|min|m|menit)?\s*(?:V|vessel|v)?\s*(\d+)$/i);
-  if (pMediaFirst){
+  // 2. Layer 1: Tail-First Parser (<Waktu>' <Vessel> dari belakang)
+  if (exactTV){
+    if (/^(?:blank|blanks|wash|sst|system\s*suitability|diluent|pengencer|placebo|plasebo|mobile\s*phase)\b/i.test(exactTV.prefix)){
+      return {type:'other', medium: extractMediumFromString(n) || extractMediumFromString(fileName), name:n};
+    }
+    const rawMed = exactTV.forcedMedium
+      ? applyMediaAlias(exactTV.forcedMedium)
+      : (extractMediumFromString(exactTV.prefix) || extractMediumFromString(fileName));
+    const bp = exactTV.forcedBatch
+      ? { batch: exactTV.forcedBatch, product: '' }
+      : extractBatchAndProductFromPrefix(exactTV.prefix, fileName);
     return {
       type: 'sample',
-      product: (pMediaFirst[2]||'').trim(),
-      batch: pMediaFirst[3].trim(),
-      medium: normMedium(pMediaFirst[1]),
-      time: parseInt(pMediaFirst[4], 10),
-      vessel: parseInt(pMediaFirst[5], 10),
-      name: n
-    };
-  }
-
-  // Pola A2: [Media Saja] [MD/Buffer/Dapar] [pH] <Media> <Waktu>' <Vessel> (tanpa batch di nama sampel)
-  // Misal: "1.2 5' 1", "1.2 5'1", "pH 1.2 5' 1", "MD 1.2 5' 1", "Air 5' 1"
-  const pMediaOnly = n.match(/^(?:(?:MD|Buffer|Dapar)\s+)?(?:MD|pH|ph)?\s*([0-9]+[.,][0-9]+|[0-9]+|Air|Water|Release|Rilis)\s+(\d+)\s*(?:['\u2019\u2032`\u00B4]|min|m|menit)?\s*(?:V|vessel|v)?\s*(\d+)$/i);
-  if (pMediaOnly){
-    return {
-      type: 'sample',
-      product: '',
-      batch: extractBatchFromFilename(fileName) || '',
-      medium: normMedium(pMediaOnly[1]),
-      time: parseInt(pMediaOnly[2], 10),
-      vessel: parseInt(pMediaOnly[3], 10),
-      name: n
-    };
-  }
-
-  // 4. Pola B: [Batch First] [Produk] <Batch> [MD/Buffer/Dapar] [pH] <Media> <Waktu>' <Vessel>
-  // Misal: "F00371026A pH 1.2 5' 1", "F00371026A 1.2 5' 1", "F0048J26A Buffer pH 1.2 5' v1"
-  const sm = n.match(/^(?:(.+?)\s+)?(?!(?:buffer|dapar|md)\s+ph)([A-Za-z0-9_-]+)\s+(?:(?:MD|Buffer|Dapar)\s+)?(?:MD|pH|ph)\s*([0-9]+[.,][0-9]+|[0-9]+|Air|Water|Release|Rilis)\s+(\d+)\s*(?:['\u2019\u2032`\u00B4]|min|m|menit)?\s*(?:V|vessel|v)?\s*(\d+)$/i);
-  if (sm){
-    return {
-      type: 'sample',
-      product: (sm[1]||'').trim(),
-      batch: sm[2].trim(),
-      medium: normMedium(sm[3]),
-      time: parseInt(sm[4], 10),
-      vessel: parseInt(sm[5], 10),
-      name: n
-    };
-  }
-
-  // 5. Pola C: [Produk] <Batch> <Media> <Waktu>' <Vessel> (tanpa kata MD/pH)
-  const sm2 = n.match(/^(?:(.+?)\s+)?([A-Za-z0-9_-]+)\s+([0-9]+[.,][0-9]+|Air|Water|Release|Rilis)\s+(\d+)\s*(?:['\u2019\u2032`\u00B4]|min|m|menit)?\s*(?:V|vessel|v)?\s*(\d+)$/i);
-  if (sm2){
-    return {
-      type: 'sample',
-      product: (sm2[1]||'').trim(),
-      batch: sm2[2].trim(),
-      medium: normMedium(sm2[3]),
-      time: parseInt(sm2[4], 10),
-      vessel: parseInt(sm2[5], 10),
-      name: n
-    };
-  }
-
-  // 6. Pola D: <Batch> <Waktu>' <Vessel> (tanpa media di nama sampel, diinjeksi dari konteks file)
-  // Misal: "F00371026A 5' 1", "F00371026A 5' v1", "F00371026A 5'1", "F00371026A 5 min 1"
-  const pBatchOnly = n.match(/^([A-Za-z0-9_-]{3,})\s+(\d+)\s*(?:['\u2019\u2032`\u00B4]|min|m|menit)\s*(?:V|vessel|v)?\s*(\d+)$/i);
-  if (pBatchOnly){
-    return {
-      type: 'sample',
-      product: '',
-      batch: pBatchOnly[1].trim(),
-      medium: extractMediumFromString(fileName) || null,
-      time: parseInt(pBatchOnly[2], 10),
-      vessel: parseInt(pBatchOnly[3], 10),
-      name: n
-    };
-  }
-
-  // 7. Pola E: Hanya <Waktu>' <Vessel> atau <Waktu>'<Vessel>
-  // Misal: "5' 1", "5'1", "5' v1", "5'v1", "5 min 1", "5m 1", "5menit 1"
-  const pTimeOnly = n.match(/^(\d+)\s*(?:['\u2019\u2032`\u00B4]|min|m|menit)\s*(?:V|vessel|v)?\s*(\d+)$/i);
-  if (pTimeOnly){
-    return {
-      type: 'sample',
-      product: '',
-      batch: extractBatchFromFilename(fileName) || '',
-      medium: extractMediumFromString(fileName) || null,
-      time: parseInt(pTimeOnly[1], 10),
-      vessel: parseInt(pTimeOnly[2], 10),
-      name: n
-    };
-  }
-
-  // 8. Pola F: <Vessel> <Waktu>' (Vessel dulu baru waktu)
-  // Misal: "V1 5'", "v1 5'", "1 5'", "vessel 1 5'"
-  const pVesselFirst = n.match(/^(?:V|vessel|v)?\s*(\d+)\s+(\d+)\s*(?:['\u2019\u2032`\u00B4]|min|m|menit)$/i);
-  if (pVesselFirst){
-    return {
-      type: 'sample',
-      product: '',
-      batch: extractBatchFromFilename(fileName) || '',
-      medium: extractMediumFromString(fileName) || null,
-      time: parseInt(pVesselFirst[2], 10),
-      vessel: parseInt(pVesselFirst[1], 10),
-      name: n
-    };
-  }
-
-  // 9. Pola G: Delimiter dash/underscore dengan media
-  const sm3 = n.match(/^([A-Za-z0-9]+)[-_](?:MD|pH|ph)?([0-9]+[.,][0-9]+|Air|Water|Release|Rilis)[-_](\d+)(?:min|m|')?[-_](?:V|v)?(\d+)$/i);
-  if (sm3){
-    return {
-      type: 'sample',
-      product: '',
-      batch: sm3[1].trim(),
-      medium: normMedium(sm3[2]),
-      time: parseInt(sm3[3], 10),
-      vessel: parseInt(sm3[4], 10),
-      name: n
-    };
-  }
-
-  // 10. Pola H: Delimiter dash/underscore tanpa media: "F00371026A-5-1" atau "F00371026A_5_1"
-  const sm4 = n.match(/^([A-Za-z0-9_-]{3,})[-_](\d+)(?:min|m|')?[-_](?:V|v)?(\d+)$/i);
-  if (sm4){
-    return {
-      type: 'sample',
-      product: '',
-      batch: sm4[1].trim(),
-      medium: extractMediumFromString(fileName) || null,
-      time: parseInt(sm4[2], 10),
-      vessel: parseInt(sm4[3], 10),
+      product: bp.product || '',
+      batch: bp.batch || '',
+      medium: rawMed || null,
+      time: exactTV.time,
+      vessel: exactTV.vessel,
       name: n
     };
   }
@@ -1452,6 +1664,7 @@ function buildUnifiedModel(injections, fileMetaMap){
     refBatches: {},
     times: [],
     conflicts: [],
+    resolvedConflicts: [],
     dupes: 0,
     files: new Set()
   });
@@ -1461,11 +1674,14 @@ function buildUnifiedModel(injections, fileMetaMap){
   const allDetectedMedia = new Set();
 
   for (const inj of injections){
-    const c = classifyName(inj.name, inj.file);
+    const c = classifyName(inj.name, inj.file, inj.role);
+    if (c.type === 'ignored') continue;
     if (c.medium){
-      allDetectedMedia.add(c.medium);
+      const rm = applyMediaAlias(c.medium) || c.medium;
+      if (rm === '__ignore__') continue;
+      allDetectedMedia.add(rm);
       if (c.type === 'sample' && inj.file){
-        fileMediumMap[inj.file] = c.medium;
+        fileMediumMap[inj.file] = rm;
       }
     }
   }
@@ -1474,7 +1690,7 @@ function buildUnifiedModel(injections, fileMetaMap){
   for (const fName of Object.keys(fileMetaMap)){
     if (!fileMediumMap[fName]){
       const fm = extractMediumFromString(fName);
-      if (fm){
+      if (fm && fm !== '__ignore__'){
         fileMediumMap[fName] = fm;
         allDetectedMedia.add(fm);
       }
@@ -1486,7 +1702,8 @@ function buildUnifiedModel(injections, fileMetaMap){
   // --- LANGKAH B: Kumpulkan Standar & Bracketing dengan Inferred Medium ---
   const rawStdByMed = {};
   for (const inj of injections){
-    const c = classifyName(inj.name, inj.file);
+    const c = classifyName(inj.name, inj.file, inj.role);
+    if (c.type === 'ignored') continue;
     let m = c.medium || fileMediumMap[inj.file] || singleGlobalMedium;
     if (!m && allDetectedMedia.size > 0){
       m = [...allDetectedMedia][0];
@@ -1494,6 +1711,8 @@ function buildUnifiedModel(injections, fileMetaMap){
 
     if (c.type === 'std' || c.type === 'bsMid' || c.type === 'bsEnd'){
       if (!m) m = '1,2'; // fallback absolut agar standar tidak pernah dibuang!
+      m = applyMediaAlias(m) || m;
+      if (m === '__ignore__') continue;
       if (!rawStdByMed[m]) rawStdByMed[m] = [];
       const fMeta = fileMetaMap[inj.file] || {};
       rawStdByMed[m].push({
@@ -1534,17 +1753,14 @@ function buildUnifiedModel(injections, fileMetaMap){
     }
 
     for (const orphan of orphanSets){
-      // Filter anchor kandidat: utamakan role yang sama (test vs ref)
       const sameRoleAnchors = anchorSets.filter(a => a.role === orphan.role);
       const candAnchors = sameRoleAnchors.length > 0 ? sameRoleAnchors : anchorSets;
 
       let bestAnchor = candAnchors[0];
-      // 1. Prioritas utama: kecocokan tanggal runDate dalam kelompok role yang sama
       if (orphan.runDate){
         const match = candAnchors.find(a => a.runDate === orphan.runDate);
         if (match) bestAnchor = match;
       }
-      // 2. Prioritas kedua: cari anchor di kelompoknya yang masih butuh slot BS
       const needy = candAnchors.find(a => (orphan.bsMid.length && a.bsMid.length < 2) || (orphan.bsEnd.length && a.bsEnd.length < 2));
       if (needy && (!orphan.runDate || bestAnchor.bsMid.length >= 2 || bestAnchor.bsEnd.length >= 2)){
         bestAnchor = needy;
@@ -1565,6 +1781,7 @@ function buildUnifiedModel(injections, fileMetaMap){
         medium: m,
         role: a.role || 'test',
         file: fileNames,
+        sourceFiles: a.mergedFiles ? [...a.mergedFiles] : [a.file],
         runDate: a.runDate,
         name: `Standar ${(m.toLowerCase()==='air'||m.toLowerCase()==='release'||m.toLowerCase()==='rilis') ? m : ('pH ' + m)} (${fileNames})`,
         std: a.std,
@@ -1574,10 +1791,14 @@ function buildUnifiedModel(injections, fileMetaMap){
     });
   }
 
-  // --- LANGKAH D: Proses Injeksi Sampel ---
-  for (const inj of injections){
-    const c = classifyName(inj.name, inj.file);
+  // --- LANGKAH D: Kumpulkan Kandidat Sampel & Deteksi Konflik ---
+  for (let idx = 0; idx < injections.length; idx++){
+    const inj = injections[idx];
+    const c = classifyName(inj.name, inj.file, inj.role);
+    if (c.type === 'ignored') continue;
     let m = c.medium || fileMediumMap[inj.file] || singleGlobalMedium;
+    if (m) m = applyMediaAlias(m) || m;
+    if (m === '__ignore__') continue;
     if (c.type === 'sample'){
       if (!m) m = '1,2';
       const M = getMed(m);
@@ -1589,21 +1810,120 @@ function buildUnifiedModel(injections, fileMetaMap){
         productDetected: c.product || '',
         role: inj.role,
         cells: {},
+        cellCandidates: {},
         file: inj.file
       });
       const k = c.vessel + '|' + c.time;
-      if (B.cells[k]){
-        if (B.cells[k].area === inj.area) M.dupes++;
-        else M.conflicts.push({batch: batchName, vessel: c.vessel, time: c.time, a: B.cells[k].area, b: inj.area});
-        continue;
-      }
-      B.cells[k] = {area: inj.area, file: inj.file};
+      const fMeta = fileMetaMap[inj.file] || {};
+      if (!B.cellCandidates[k]) B.cellCandidates[k] = [];
+      B.cellCandidates[k].push({
+        seq: B.cellCandidates[k].length,
+        injIdx: idx,
+        area: inj.area,
+        areaStr: inj.areaStr,
+        rt: inj.rt,
+        name: inj.name,
+        file: inj.file || 'Manual',
+        runDate: fMeta.runDate || ''
+      });
     } else if (c.type === 'other'){
       unassigned.push(inj);
     }
   }
 
-  for (const id of Object.keys(media)) refreshModelDims(media[id]);
+  // Selesaikan sel konflik berdasarkan pilihan user di S.conflictChoices
+  const conflictChoices = (typeof S !== 'undefined' && S && S.conflictChoices) ? S.conflictChoices : {};
+  const resolveCellCandidates = (mId, role, batchName, cellKeyId, cands, groupFilesSig) => {
+    const uniqAreas = [];
+    for (const cd of cands){
+      if (!uniqAreas.some(a => a === cd.area)) uniqAreas.push(cd.area);
+    }
+    if (uniqAreas.length <= 1){
+      return { conflict: false, dupes: Math.max(0, cands.length - 1), chosen: cands[0] };
+    }
+
+    const [vessel, time] = cellKeyId.split('|').map(Number);
+    const groupKey = mId + '|' + role + '|' + batchName;
+    const cellFullKey = groupKey + '|' + cellKeyId;
+    const cellChoice = conflictChoices[cellFullKey];
+    const groupChoice = conflictChoices[groupKey];
+
+    let picked = null;
+    if (cellChoice && cellChoice.candIdx != null && cands[cellChoice.candIdx]){
+      if (!cellChoice.groupFilesSig || cellChoice.groupFilesSig === groupFilesSig){
+        picked = cands[cellChoice.candIdx];
+      }
+    } else if (groupChoice && (!groupChoice.groupFilesSig || groupChoice.groupFilesSig === groupFilesSig)){
+      if (groupChoice.mode === 'file' && groupChoice.file){
+        const matching = cands.filter(x => x.file === groupChoice.file);
+        if (matching.length === 1) picked = matching[0];
+        else if (matching.length > 1){
+          const uniqInFile = new Set(matching.map(x => x.area));
+          if (uniqInFile.size === 1 || groupChoice.tieBreak === 'last') picked = matching[matching.length - 1];
+          else if (groupChoice.tieBreak === 'first') picked = matching[0];
+        }
+      } else if (groupChoice.mode === 'last'){
+        picked = cands[cands.length - 1];
+      } else if (groupChoice.mode === 'first'){
+        picked = cands[0];
+      }
+    }
+
+    if (picked){
+      return { conflict: false, resolved: true, chosen: picked, candidates: cands, vessel, time };
+    }
+    return { conflict: true, chosen: cands[0], candidates: cands, vessel, time, groupKey, cellKey: cellFullKey };
+  };
+
+  for (const mId of Object.keys(media)){
+    const M = media[mId];
+    const settleDict = (dict, role) => {
+      for (const batchName of Object.keys(dict)){
+        const B = dict[batchName];
+        const allConfFiles = new Set();
+        for (const k of Object.keys(B.cellCandidates || {})){
+          const cands = B.cellCandidates[k];
+          if (new Set(cands.map(x => x.area)).size > 1){
+            cands.forEach(x => { if (x.file) allConfFiles.add(x.file); });
+          }
+        }
+        const groupFilesSig = [...allConfFiles].sort().join('|');
+        const filesInBatch = new Set();
+
+        for (const k of Object.keys(B.cellCandidates || {})){
+          const cands = B.cellCandidates[k];
+          const res = resolveCellCandidates(mId, role, batchName, k, cands, groupFilesSig);
+          if (res.dupes) M.dupes += res.dupes;
+          B.cells[k] = {
+            area: res.chosen.area,
+            areaStr: res.chosen.areaStr,
+            file: res.chosen.file,
+            runDate: res.chosen.runDate,
+            resolvedFromConflict: Boolean(res.resolved)
+          };
+          if (res.chosen.file) filesInBatch.add(res.chosen.file);
+          if (res.resolved){
+            M.resolvedConflicts.push({
+              batch: batchName, role, vessel: res.vessel, time: res.time,
+              key: k, chosen: res.chosen, candidates: res.candidates
+            });
+          } else if (res.conflict){
+            M.conflicts.push({
+              batch: batchName, role, vessel: res.vessel, time: res.time,
+              key: k, groupKey: res.groupKey, cellKey: res.cellKey, groupFilesSig,
+              a: res.candidates[0].area, b: res.candidates[1].area,
+              candidates: res.candidates
+            });
+          }
+        }
+        if (filesInBatch.size === 1) B.file = [...filesInBatch][0];
+      }
+    };
+    settleDict(M.testBatches, 'test');
+    settleDict(M.refBatches, 'ref');
+    refreshModelDims(M);
+  }
+
   return {media, standardSets, unassigned};
 }
 
@@ -1675,6 +1995,10 @@ function checkMediumValidation(M, stdSets){
   rBatches.forEach(b => inspectBatch(M.refBatches[b], 'Pembanding'));
 
   if (M.conflicts.length) add('conf','err','Area berbeda untuk sampel yang sama: '+M.conflicts.map(c=>c.batch+' v'+c.vessel+' @'+c.time).join('; '));
+  else if (M.resolvedConflicts && M.resolvedConflicts.length){
+    const chosenFiles = [...new Set(M.resolvedConflicts.map(c => c.chosen && c.chosen.file).filter(Boolean))];
+    add('conf_ok','ok',`Konflik area (${M.resolvedConflicts.length} titik) telah diselesaikan (sumber aktif: ${chosenFiles.join(', ')||'pilihan manual'})`);
+  }
   return out;
 }
 
@@ -1976,8 +2300,21 @@ const S = {
   outputFolderName: localStorage.getItem('udt_output_folder_name')||'',
   calcSheets: JSON.parse(localStorage.getItem('udt_calc_sheets')||'{}'), // mId -> { id, title, url }
   summarySheets: JSON.parse(localStorage.getItem('udt_summary_sheets')||'{}'), // productKey -> { id, title, url }
+  mediaAliases: (()=>{ try{ return JSON.parse(localStorage.getItem('udt_media_aliases')||'{}'); }catch(e){ return {}; } })(),
+  prefixAliases: (()=>{ try{ return JSON.parse(localStorage.getItem('udt_prefix_aliases')||'{}'); }catch(e){ return {}; } })(),
+  sessionMediaMap: {},
+  sessionPrefixMap: {},
+  conflictChoices: {},
+  ignoredFiles: [],
   created:new Set(JSON.parse(localStorage.getItem('udt_created_ids')||'[]')), busy:false, include:{}, badDec:0
 };
+
+function saveAliasesToStorage(){
+  try{
+    localStorage.setItem('udt_media_aliases', JSON.stringify(S.mediaAliases || {}));
+    localStorage.setItem('udt_prefix_aliases', JSON.stringify(S.prefixAliases || {}));
+  }catch(e){}
+}
 
 function getMedConfig(mId){
   if(!mId) return { preset: '__custom__', code: '', tabName: 'Medium', desc: '' };
@@ -2095,7 +2432,27 @@ function buildNav(){
   const nav=$('#steps'); nav.innerHTML='';
   STEPS.forEach((t,i)=>nav.append(h('button',{class:(S.step===i+1?'active ':'')+(S.step>i+1?'done':''),onclick:()=>go(i+1)},h('span',{class:'n'},S.step>i+1?'✓':String(i+1)),t)));
 }
-function go(n){
+function isFileIgnored(role, fileName){
+  return Boolean(S.ignoredFiles && S.ignoredFiles.includes((role || '') + '::' + (fileName || '')));
+}
+function toggleIgnoreFile(role, fileName, ignore){
+  const k = (role || '') + '::' + (fileName || '');
+  if (!Array.isArray(S.ignoredFiles)) S.ignoredFiles = [];
+  const exists = S.ignoredFiles.includes(k);
+  if (ignore && !exists) S.ignoredFiles.push(k);
+  else if (!ignore && exists) S.ignoredFiles = S.ignoredFiles.filter(x => x !== k);
+  S.lastSkippedSig = '';
+  rebuild();
+}
+
+function go(n, opts = {}){
+  if (n === 2 && !opts.skipResolver && !opts.silent && typeof analyzePendingResolutions === 'function'){
+    const pending = analyzePendingResolutions();
+    if (pending.hasIssues && pending.sig !== S.lastSkippedSig){
+      openPreStep2Modal(pending);
+      return;
+    }
+  }
   S.step=n;
   document.querySelectorAll('section.panel').forEach((p,i)=>p.classList.toggle('active',i+1===n));
   buildNav();
@@ -2153,12 +2510,26 @@ async function addFilesForRole(list, role){
     }
   }
   S.manualStdMapping = {};
+  S.lastSkippedSig = '';
   rebuild();
 }
 
 function removeFile(id, role){
+  const targetArr = role === 'ref' ? S.refFiles : S.testFiles;
+  const rem = targetArr.find(f => f.id === id);
   if(role === 'ref') S.refFiles=S.refFiles.filter(f=>f.id!==id);
   else S.testFiles=S.testFiles.filter(f=>f.id!==id);
+  if (rem && S.ignoredFiles){
+    const k = (role || '') + '::' + rem.name;
+    S.ignoredFiles = S.ignoredFiles.filter(x => x !== k);
+  }
+  if (!S.testFiles.length && !S.refFiles.length){
+    S.conflictChoices = {};
+    S.sessionMediaMap = {};
+    S.sessionPrefixMap = {};
+    S.ignoredFiles = [];
+  }
+  S.lastSkippedSig = '';
   S.manualStdMapping = {};
   rebuild();
 }
@@ -2167,6 +2538,7 @@ function renderFileList(boxEl, files, role){
   boxEl.innerHTML='';
   if(!files.length){ boxEl.append(h('span',{class:'muted small'},'Belum ada file.')); return; }
   for(const f of files){
+    const ignored = isFileIgnored(role, f.name);
     const rows=fileRows(f);
     const cells=[h('span',{class:'nm'},f.name)];
     if(f.kind==='error'){
@@ -2175,9 +2547,13 @@ function renderFileList(boxEl, files, role){
       cells.push(h('span',{class:'badge '+(rows.length?'ok':'err')},rows.length+' baris'));
       cells.push(h('span',{class:'badge info'},f.kind==='pdf'?('PDF · '+f.pages+' hal'):('CSV · mulai baris '+(f.parsed?.startRow||11))));
       if(f.meta&&f.meta.runDate) cells.push(h('span',{class:'badge info'},f.meta.runDate));
+      if(ignored) cells.push(h('span',{class:'badge warn'},'Dikecualikan'));
+    }
+    if(ignored){
+      cells.push(h('button',{class:'link',onclick:()=>toggleIgnoreFile(role, f.name, false)},'aktifkan'));
     }
     cells.push(h('button',{class:'link',onclick:()=>removeFile(f.id, role)},'hapus'));
-    const div=h('div',{class:'file'},cells);
+    const div=h('div',{class:'file'+(ignored?' is-ignored':'')},cells);
     if(f.kind==='csv'){
       const sel=(key,opt)=>{
         const s=h('select',{onchange:e=>{f.map[key]=parseInt(e.target.value,10);rebuild();}});
@@ -2210,39 +2586,42 @@ function rebuild(){
   const allInjections = [];
   const fileMetaMap = {};
   S.badDec = 0;
-  
+
+  const activeTestFiles = S.testFiles.filter(f => !isFileIgnored('test', f.name));
+  const activeRefFiles = S.refFiles.filter(f => !isFileIgnored('ref', f.name));
   const collect = (files, role) => {
     for(const f of files){
       fileMetaMap[f.name] = f.meta || {};
       for(const r of fileRows(f)){
         allInjections.push({...r, file:f.name, role});
-        if(classifyName(r.name, f.name).type!=='other' && decimalsOf(r.areaStr)!==4) S.badDec++;
+        const cls = classifyName(r.name, f.name, role);
+        if(cls.type!=='other' && cls.type!=='ignored' && decimalsOf(r.areaStr)!==4) S.badDec++;
       }
     }
   };
-  collect(S.testFiles, 'test');
-  collect(S.refFiles, 'ref');
+  collect(activeTestFiles, 'test');
+  collect(activeRefFiles, 'ref');
 
   const model = buildUnifiedModel(allInjections, fileMetaMap);
   
   if(!S.testParams.runDate){
-    const d = S.testFiles.map(f=>f.meta&&f.meta.runDate).filter(Boolean).sort()[0];
+    const d = activeTestFiles.map(f=>f.meta&&f.meta.runDate).filter(Boolean).sort()[0];
     if(d) S.testParams.runDate = d;
   }
   if(!S.refParams.runDate){
-    const d = S.refFiles.map(f=>f.meta&&f.meta.runDate).filter(Boolean).sort()[0];
+    const d = activeRefFiles.map(f=>f.meta&&f.meta.runDate).filter(Boolean).sort()[0];
     if(d) S.refParams.runDate = d;
   }
   if(!S.testParams.analyst){
-    const op = S.testFiles.map(f=>f.meta&&f.meta.operator).filter(Boolean)[0];
+    const op = activeTestFiles.map(f=>f.meta&&f.meta.operator).filter(Boolean)[0];
     if(op) S.testParams.analyst = op;
   }
   if(!S.refParams.analyst){
-    const op = S.refFiles.map(f=>f.meta&&f.meta.operator).filter(Boolean)[0];
+    const op = activeRefFiles.map(f=>f.meta&&f.meta.operator).filter(Boolean)[0];
     if(op) S.refParams.analyst = op;
   }
   if(!S.condParams.api){
-    const cmp = [...S.testFiles, ...S.refFiles].map(f=>f.meta&&f.meta.compound).filter(Boolean)[0];
+    const cmp = [...activeTestFiles, ...activeRefFiles].map(f=>f.meta&&f.meta.compound).filter(Boolean)[0];
     if(cmp) S.condParams.api = cmp;
   }
   // Deteksi otomatis instrumen dari ada/tidaknya RT pada injeksi
@@ -4148,6 +4527,7 @@ function printReportWindow(){
   <' + 'script>
     window.onload = function(){ window.print(); };
   <' + '/script>
+<div id="resModalRoot"></div>
 </body>
 </html>`);
   win.document.close();
@@ -5971,10 +6351,698 @@ async function executeExportCommand(mode){
   setExportBtnsDisabled(false);
   renderSend();
 }
+// ===================== Pre-Step 2 Resolver Modal & Kamus Media/Awalan =====================
+function analyzePendingResolutions(){
+  const model = S.model;
+  const empty = { hasIssues: false, mediaIssues: [], prefixGroups: [], conflictGroups: [], totalCount: 0, sig: '' };
+  if (!model) return empty;
+
+  const mIds = sortedMediaIds(model);
+  const mediaIssues = [];
+  for (const mId of mIds){
+    const M = model.media[mId];
+    const stdSets = model.standardSets[mId] || [];
+    const checks = checkMediumValidation(M, stdSets);
+    const st = statusOf(checks);
+    const isStdMedia = STANDARD_MEDIA_IDS.includes(mId);
+    const isKept = Boolean(S.sessionMediaMap && S.sessionMediaMap[mId] === '__keep__');
+    if (!isStdMedia && !isKept && (mId !== 'Release' || st === 'err' || (mIds.length > 1 && st !== 'ok'))){
+      let suggestedTarget = '__keep__';
+      if (/^(sgf|fassgf|fessgf|hcl)/i.test(mId)) suggestedTarget = '1,2';
+      else if (/asetat|acetate/i.test(mId)) suggestedTarget = '4,5';
+      else if (/^(sif|fassif|fessif)|fosfat|phosphate/i.test(mId)) suggestedTarget = '6,8';
+      else if (mId === 'Release' && mIds.includes('1,2') && mIds.includes('4,5') && !mIds.includes('6,8')) suggestedTarget = '6,8';
+      mediaIssues.push({
+        mId,
+        st,
+        batchCount: Object.keys(M.testBatches).length + Object.keys(M.refBatches).length,
+        stdCount: stdSets.length,
+        files: [...M.files],
+        issues: checks.filter(c => c.level !== 'ok').map(c => c.msg),
+        suggestedTarget
+      });
+    }
+  }
+
+  // Layer 2: Kelompokkan injeksi unassigned per (role, prefix)
+  const prefixMap = {};
+  for (const inj of (model.unassigned || [])){
+    const gInfo = getUnassignedGroupKey(inj.name, inj.file, inj.role);
+    const gk = (inj.role || 'test') + '::' + gInfo.prefixKey;
+    const g = prefixMap[gk] || (prefixMap[gk] = {
+      groupKey: gk,
+      prefixKey: gInfo.prefixKey,
+      rolePrefixKey: gInfo.rolePrefixKey,
+      role: inj.role || 'test',
+      files: new Set(),
+      items: [],
+      tvCount: 0,
+      guessedBatch: '',
+      guessedMedium: ''
+    });
+    g.items.push(inj);
+    if (inj.file) g.files.add(inj.file);
+    if (extractTimeVesselLoose(inj.name)) g.tvCount++;
+    if (!g.guessedBatch){
+      const bp = extractBatchAndProductFromPrefix(gInfo.prefixKey, inj.file);
+      if (bp.batch) g.guessedBatch = bp.batch;
+      else if (inj.file) g.guessedBatch = extractBatchFromFilename(inj.file) || '';
+    }
+    if (!g.guessedMedium){
+      g.guessedMedium = extractMediumFromString(gInfo.prefixKey, false) || extractMediumFromString(inj.file, false) || '';
+    }
+  }
+  const prefixGroups = Object.values(prefixMap).map(g => {
+    const pk = g.prefixKey;
+    const isCtrl = /^(?:blank|blanks|wash|sst|system\s*suitability|diluent|pengencer|placebo|plasebo|mobile\s*phase)\b/i.test(pk);
+    let suggestedAction = 'ignore';
+    if (isCtrl) suggestedAction = 'ignore';
+    else if (/^(?:standar|standard|std)\b/i.test(pk)) suggestedAction = 'std';
+    else if (/^bs\s*[-_]?\s*mid\b/i.test(pk)) suggestedAction = 'bsMid';
+    else if (/^bs\s*[-_]?\s*end\b/i.test(pk)) suggestedAction = 'bsEnd';
+    else if (g.tvCount > 0) suggestedAction = 'sample';
+    const hasTV = g.tvCount > 0;
+    const guessedMedium = g.guessedMedium || (mIds.find(id => STANDARD_MEDIA_IDS.includes(id)) || mIds[0] || '1,2');
+    return { ...g, files: [...g.files], hasTV, isCtrl, suggestedAction, guessedMedium };
+  });
+
+  // Layer 4: Kelompokkan konflik per (medium, role, batch)
+  const fileMetaByKey = {};
+  for (const f of S.testFiles) fileMetaByKey['test::' + f.name] = f.meta || {};
+  for (const f of S.refFiles) fileMetaByKey['ref::' + f.name] = f.meta || {};
+
+  const confMap = {};
+  for (const mId of mIds){
+    const M = model.media[mId];
+    for (const c of (M.conflicts || [])){
+      const cg = confMap[c.groupKey] || (confMap[c.groupKey] = {
+        groupKey: c.groupKey,
+        groupFilesSig: c.groupFilesSig,
+        mId,
+        role: c.role || 'test',
+        batch: c.batch,
+        items: [],
+        sourcesMap: {}
+      });
+      cg.items.push(c);
+      for (const cd of c.candidates){
+        const sm = cg.sourcesMap[cd.file] || (cg.sourcesMap[cd.file] = {
+          file: cd.file,
+          runDate: cd.runDate || (fileMetaByKey[(c.role||'test') + '::' + cd.file]?.runDate || ''),
+          pointCount: 0,
+          examples: []
+        });
+        sm.pointCount++;
+        if (sm.examples.length < 3){
+          sm.examples.push({ label: `v${c.vessel}@${c.time}'`, area: cd.area });
+        }
+      }
+    }
+  }
+  const conflictGroups = Object.values(confMap).map(cg => {
+    const sources = Object.values(cg.sourcesMap).sort((a,b) => {
+      const da = a.runDate || '';
+      const db = b.runDate || '';
+      if (da !== db) return db.localeCompare(da);
+      return b.pointCount - a.pointCount;
+    });
+    const distinctDates = [...new Set(sources.map(s => s.runDate).filter(Boolean))];
+    const hasDateDiff = distinctDates.length > 1;
+    const recFile = sources.length ? sources[0].file : '';
+    const stdSets = (model.standardSets[cg.mId] || []).filter(s => s.role === cg.role);
+    const stdFileSet = new Set();
+    stdSets.forEach(s => (s.sourceFiles || [s.file]).forEach(fn => stdFileSet.add(fn)));
+    const otherFilesHaveDupStd = sources.slice(1).some(s => stdFileSet.has(s.file)) && stdSets.length > 1;
+    return {
+      ...cg,
+      sources,
+      hasDateDiff,
+      recFile,
+      otherFilesHaveDupStd,
+      recommendedMode: sources.length > 1 ? 'file' : 'last'
+    };
+  });
+
+  const totalCount = mediaIssues.length + prefixGroups.length + conflictGroups.length;
+  const filesSig = [...S.testFiles, ...S.refFiles].map(f => f.role + ':' + f.name + ':' + (isFileIgnored(f.role, f.name)?'0':'1')).join('|');
+  const sig = filesSig + '||' + [
+    ...mediaIssues.map(x => 'M:' + x.mId + ':' + x.issues.length),
+    ...prefixGroups.map(x => 'P:' + x.groupKey + ':' + x.items.length),
+    ...conflictGroups.map(x => 'C:' + x.groupKey + ':' + x.items.length + ':' + x.groupFilesSig)
+  ].join('|');
+
+  return { hasIssues: totalCount > 0, mediaIssues, prefixGroups, conflictGroups, totalCount, sig };
+}
+
+function closeResModal(){
+  const root = $('#resModalRoot');
+  if (root) root.innerHTML = '';
+}
+
+function openPreStep2Modal(pending){
+  const root = $('#resModalRoot');
+  if (!root) return;
+
+  const mIds = S.model ? sortedMediaIds(S.model) : [];
+  const allMedChoices = [...new Set([...STANDARD_MEDIA_IDS, 'Release', ...mIds])];
+
+  // Draft terisolasi - hanya ditulis ke state S & localStorage saat tombol "Terapkan" diklik!
+  const mediaDraft = {};
+  pending.mediaIssues.forEach(mi => {
+    mediaDraft[mi.mId] = {
+      target: mi.suggestedTarget,
+      customTarget: '',
+      savePerm: Boolean(mi.suggestedTarget !== '__keep__' && mi.suggestedTarget !== '__ignore__' && mi.mId !== 'Release')
+    };
+  });
+
+  const prefixDraft = {};
+  pending.prefixGroups.forEach(pg => {
+    prefixDraft[pg.groupKey] = {
+      action: pg.suggestedAction,
+      batch: pg.guessedBatch || '',
+      medium: pg.guessedMedium || '1,2',
+      customMedium: '',
+      product: '',
+      savePerm: false
+    };
+  });
+
+  const conflictDraft = {};
+  pending.conflictGroups.forEach(cg => {
+    const picks = {};
+    cg.items.forEach(it => { picks[it.cellKey] = cg.recommendedMode === 'file' ? Math.max(0, it.candidates.findIndex(c => c.file === cg.recFile)) : (it.candidates.length - 1); });
+    conflictDraft[cg.groupKey] = {
+      mode: cg.recommendedMode,
+      file: cg.recFile,
+      excludeOthers: Boolean(cg.otherFilesHaveDupStd && cg.sources.length > 1),
+      picks,
+      showManual: false
+    };
+  });
+
+  let activeTab = 'resolve';
+
+  const renderModal = () => {
+    root.innerHTML = '';
+    const backdrop = h('div', { class: 'udt-modal-backdrop', onclick: e => { if (e.target === backdrop) closeResModal(); } });
+    const modal = h('div', { class: 'udt-modal', role: 'dialog', 'aria-modal': 'true' });
+
+    const aliasCount = Object.keys(S.mediaAliases || {}).length + Object.keys(S.prefixAliases || {}).length + (S.ignoredFiles || []).length;
+    modal.append(
+      h('div', { class: 'udt-modal-head' },
+        h('div', null,
+          h('h3', null, 'Konfirmasi & Penyesuaian Sebelum Masuk Langkah 2'),
+          h('p', null, `Terdeteksi ${pending.totalCount} kelompok penyesuaian agar semua kartu di Verifikasi Langkah 2 menjadi hijau (Siap).`)
+        ),
+        h('button', { type: 'button', class: 'btn btn-sm', onclick: closeResModal }, 'Tutup')
+      ),
+      h('div', { class: 'res-tabs' },
+        h('button', { type: 'button', class: 'res-tab' + (activeTab === 'resolve' ? ' active' : ''), onclick: () => { activeTab = 'resolve'; renderModal(); } },
+          `Penyesuaian Upload (${pending.totalCount})`),
+        h('button', { type: 'button', class: 'res-tab' + (activeTab === 'kamus' ? ' active' : ''), onclick: () => { activeTab = 'kamus'; renderModal(); } },
+          `Kamus & Riwayat (${aliasCount})`)
+      )
+    );
+
+    const body = h('div', { class: 'udt-modal-body' });
+    if (activeTab === 'resolve'){
+      // Seksi 1: Media non-standar / bermasalah
+      if (pending.mediaIssues.length){
+        const sec = h('div', { class: 'res-sec' },
+          h('div', { class: 'res-sec-head' },
+            h('h4', null, h('span', { class: 'badge warn small' }, 'Media'), 'Media Non-Standar / Perlu Konfirmasi (' + pending.mediaIssues.length + ')'),
+            h('span', { class: 'small muted' }, 'Gabungkan ke media baku atau biarkan terpisah')
+          )
+        );
+        pending.mediaIssues.forEach(mi => {
+          const st = mediaDraft[mi.mId];
+          const card = h('div', { class: 'res-card' });
+          card.append(
+            h('div', { class: 'row', style: 'justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap' },
+              h('div', null, h('b', null, `Media terdeteksi: "${mi.mId}"`), ' ', h('span', { class: 'small muted' }, `(${mi.batchCount} batch · ${mi.stdCount} standar)`)),
+              h('span', { class: 'badge ' + mi.st + ' small' }, mi.files.join(', ') || '-')
+            ),
+            mi.issues.length ? h('div', { class: 'small muted' }, mi.issues.join(' • ')) : null
+          );
+          const selTarget = h('select', {
+            onchange: e => {
+              st.target = e.target.value;
+              renderModal();
+            }
+          },
+            allMedChoices.map(cid => h('option', { value: cid, selected: st.target === cid }, cid === 'Air' || cid === 'Release' ? cid : ('pH ' + cid))),
+            h('option', { value: '__keep__', selected: st.target === '__keep__' }, `Biarkan terpisah sebagai "${mi.mId}"`),
+            h('option', { value: '__ignore__', selected: st.target === '__ignore__' }, `Abaikan seluruh injeksi di media "${mi.mId}"`),
+            h('option', { value: '__custom__', selected: st.target === '__custom__' }, 'Ketik nama/pH media kustom...')
+          );
+          const customInp = st.target === '__custom__' ? h('input', {
+            type: 'text', placeholder: 'Misal: 6,8 atau SGF', value: st.customTarget,
+            oninput: e => { st.customTarget = e.target.value; }
+          }) : null;
+          card.append(h('div', { class: 'res-grid' },
+            h('div', { class: 'res-field' }, h('label', null, 'Arahkan ke Media'), selTarget),
+            customInp ? h('div', { class: 'res-field' }, h('label', null, 'Media Kustom'), customInp) : null
+          ));
+          if (st.target !== '__keep__' && st.target !== '__ignore__'){
+            card.append(h('label', { class: 'small', style: 'display:flex;align-items:center;gap:6px;cursor:pointer' },
+              h('input', { type: 'checkbox', checked: st.savePerm, onchange: e => { st.savePerm = e.target.checked; } }),
+              `Simpan alias permanen ke Kamus ("${mi.mId}" -> media terpilih)`
+            ));
+          }
+          sec.append(card);
+        });
+        body.append(sec);
+      }
+
+      // Seksi 2: Baris Belum Terpetakan dikelompokkan per Awalan
+      if (pending.prefixGroups.length){
+        const sec = h('div', { class: 'res-sec' },
+          h('div', { class: 'res-sec-head' },
+            h('h4', null, h('span', { class: 'badge warn small' }, 'Pola Nama'), 'Injeksi Belum Terpetakan (' + pending.prefixGroups.length + ' kelompok awalan)'),
+            h('span', { class: 'small muted' }, 'Satu pilihan otomatis berlaku ke seluruh baris dengan awalan sama')
+          )
+        );
+        pending.prefixGroups.forEach(pg => {
+          const st = prefixDraft[pg.groupKey];
+          const card = h('div', { class: 'res-card' });
+          card.append(
+            h('div', { class: 'row', style: 'justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap' },
+              h('div', null,
+                h('span', { class: 'badge ' + (pg.role==='ref'?'info':'ok') + ' small' }, pg.role === 'ref' ? 'Pembanding' : 'Uji'), ' ',
+                h('b', null, pg.prefixKey), ' ',
+                h('span', { class: 'badge warn small' }, pg.items.length + ' baris')
+              ),
+              h('span', { class: 'small muted' }, pg.files.join(', '))
+            ),
+            h('div', { class: 'res-preview' },
+              'Contoh: ' + pg.items.slice(0, 3).map(x => `${x.name} (${pad4(x.area)})`).join('  |  ')
+            )
+          );
+          const actOpts = [];
+          if (pg.hasTV) actOpts.push({ v: 'sample', l: 'Sampel Disolusi' });
+          actOpts.push({ v: 'std', l: 'Standar Kalibrasi' }, { v: 'bsMid', l: 'Bracketing Mid (BS Mid)' }, { v: 'bsEnd', l: 'Bracketing End (BS End)' }, { v: 'ignore', l: 'Abaikan (Blank / Kontrol / Tidak dipakai)' });
+          const selAct = h('select', { onchange: e => { st.action = e.target.value; renderModal(); } },
+            actOpts.map(o => h('option', { value: o.v, selected: st.action === o.v }, o.l))
+          );
+
+          const grid = h('div', { class: 'res-grid' },
+            h('div', { class: 'res-field' }, h('label', null, 'Tetapkan Sebagai'), selAct)
+          );
+          if (st.action === 'sample'){
+            grid.append(h('div', { class: 'res-field' }, h('label', null, 'No. Batch'),
+              h('input', { type: 'text', placeholder: 'Misal: F0094J26A', value: st.batch, oninput: e => { st.batch = e.target.value; } })
+            ));
+          }
+          if (st.action !== 'ignore'){
+            const selMed = h('select', { onchange: e => { st.medium = e.target.value; renderModal(); } },
+              allMedChoices.map(cid => h('option', { value: cid, selected: st.medium === cid }, cid === 'Air' || cid === 'Release' ? cid : ('pH ' + cid))),
+              h('option', { value: '__custom__', selected: st.medium === '__custom__' }, 'Media kustom...')
+            );
+            grid.append(h('div', { class: 'res-field' }, h('label', null, 'Media'), selMed));
+            if (st.medium === '__custom__'){
+              grid.append(h('div', { class: 'res-field' }, h('label', null, 'Nama/pH Media'),
+                h('input', { type: 'text', placeholder: 'Misal: 1,2', value: st.customMedium, oninput: e => { st.customMedium = e.target.value; } })
+              ));
+            }
+          }
+          if (st.action === 'sample'){
+            grid.append(h('div', { class: 'res-field' }, h('label', null, 'Nama Produk (opsional)'),
+              h('input', { type: 'text', placeholder: 'Opsional', value: st.product, oninput: e => { st.product = e.target.value; } })
+            ));
+          }
+          card.append(grid);
+          if (!pg.hasTV && st.action === 'ignore'){
+            card.append(h('div', { class: 'small muted' }, 'Catatan: Baris ini tidak memuat format waktu & vessel; cocok untuk Blank/Wash/SST atau baris ringkasan non-sampel.'));
+          }
+          card.append(h('label', { class: 'small', style: 'display:flex;align-items:center;gap:6px;cursor:pointer' },
+            h('input', { type: 'checkbox', checked: st.savePerm, onchange: e => { st.savePerm = e.target.checked; } }),
+            `Simpan aturan awalan "${pg.prefixKey}" ke Kamus (otomatis di upload berikutnya)`
+          ));
+          sec.append(card);
+        });
+        body.append(sec);
+      }
+
+      // Seksi 3: Konflik Area Duplikat
+      if (pending.conflictGroups.length){
+        const sec = h('div', { class: 'res-sec' },
+          h('div', { class: 'res-sec-head' },
+            h('h4', null, h('span', { class: 'badge err small' }, 'Duplikat Area'), 'Konflik Area Sampel Sama (' + pending.conflictGroups.length + ' batch)'),
+            h('span', { class: 'small muted' }, 'Pilih run/file sumber yang benar agar tidak ada area ganda')
+          )
+        );
+        pending.conflictGroups.forEach(cg => {
+          const st = conflictDraft[cg.groupKey];
+          const card = h('div', { class: 'res-card' });
+          const ptSample = cg.items.slice(0, 4).map(c => `v${c.vessel}@${c.time}'`).join(', ') + (cg.items.length > 4 ? ` (+${cg.items.length - 4} titik)` : '');
+          card.append(
+            h('div', { class: 'row', style: 'justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap' },
+              h('div', null,
+                h('b', null, `Batch ${cg.batch}`), ' · ',
+                h('span', { class: 'small' }, `${cg.mId === 'Air' || cg.mId === 'Release' ? cg.mId : ('pH ' + cg.mId)}`), ' · ',
+                h('span', { class: 'badge ' + (cg.role === 'ref' ? 'info' : 'ok') + ' small' }, cg.role === 'ref' ? 'Pembanding' : 'Uji')
+              ),
+              h('span', { class: 'badge err small' }, `${cg.items.length} titik bentrok`)
+            ),
+            h('div', { class: 'small muted' }, 'Titik bentrok: ' + ptSample)
+          );
+
+          const optsWrap = h('div', { style: 'display:flex;flex-direction:column;gap:6px' });
+          if (cg.sources.length > 1){
+            cg.sources.forEach((src, sIdx) => {
+              const isRec = sIdx === 0 && cg.hasDateDiff;
+              const isSel = st.mode === 'file' && st.file === src.file;
+              const exText = src.examples.map(e => `${e.label}=${pad4(e.area)}`).join(', ');
+              optsWrap.append(h('label', { class: 'res-opt' + (isRec ? ' is-rec' : '') },
+                h('input', {
+                  type: 'radio', name: 'conf_' + cg.groupKey, checked: isSel,
+                  onchange: () => { st.mode = 'file'; st.file = src.file; renderModal(); }
+                }),
+                h('div', { style: 'flex:1;min-width:0' },
+                  h('div', null,
+                    h('b', null, src.file), ' ',
+                    src.runDate ? h('span', { class: 'badge info small' }, 'CDS: ' + src.runDate) : h('span', { class: 'small muted' }, '(tanpa tanggal CDS)'), ' ',
+                    isRec ? h('span', { class: 'res-badge-rec' }, 'Saran: Tanggal CDS Terbaru') : null
+                  ),
+                  h('div', { class: 'small muted', style: 'margin-top:2px' }, `${src.pointCount} titik (${exText})`)
+                )
+              ));
+            });
+          } else {
+            [['last', 'Gunakan injeksi terakhir (re-injeksi terbaru)', true], ['first', 'Gunakan injeksi pertama', false]].forEach(([md, lbl, isRec]) => {
+              optsWrap.append(h('label', { class: 'res-opt' + (isRec ? ' is-rec' : '') },
+                h('input', {
+                  type: 'radio', name: 'conf_' + cg.groupKey, checked: st.mode === md,
+                  onchange: () => { st.mode = md; renderModal(); }
+                }),
+                h('div', null, h('b', null, lbl), ' ', isRec ? h('span', { class: 'res-badge-rec' }, 'Saran') : null)
+              ));
+            });
+          }
+
+          optsWrap.append(h('label', { class: 'res-opt' },
+            h('input', {
+              type: 'radio', name: 'conf_' + cg.groupKey, checked: st.mode === 'perCell',
+              onchange: () => { st.mode = 'perCell'; st.showManual = true; renderModal(); }
+            }),
+            h('div', null, h('b', null, 'Pilih manual per titik waktu & vessel'), ' ', h('span', { class: 'small muted' }, `(${cg.items.length} sel)`))
+          ));
+          card.append(optsWrap);
+
+          if (cg.sources.length > 1 && st.mode === 'file'){
+            const others = cg.sources.filter(s => s.file !== st.file).map(s => s.file);
+            if (others.length){
+              card.append(h('label', { class: 'small', style: 'display:flex;align-items:flex-start;gap:6px;cursor:pointer;padding:6px 8px;background:var(--surface);border-radius:6px' },
+                h('input', { type: 'checkbox', checked: st.excludeOthers, onchange: e => { st.excludeOthers = e.target.checked; } }),
+                h('span', null,
+                  `Kecualikan file lain (${others.join(', ')}) dari seluruh analisis`,
+                  cg.otherFilesHaveDupStd ? ' — direkomendasikan agar Standar lama di file tersebut juga ikut terbersihkan' : ''
+                )
+              ));
+            }
+          }
+
+          if (st.mode === 'perCell'){
+            const tbl = h('table', { class: 'res-tbl' },
+              h('thead', null, h('tr', null, h('th', null, 'Titik'), h('th', null, 'Pilih Area & Sumber'))),
+              h('tbody', null,
+                cg.items.map(it => {
+                  const sel = h('select', { onchange: e => { st.picks[it.cellKey] = parseInt(e.target.value, 10); } },
+                    it.candidates.map((cd, cIdx) =>
+                      h('option', { value: cIdx, selected: st.picks[it.cellKey] === cIdx },
+                        `${pad4(cd.area)} — ${cd.file}${cd.runDate ? ' (' + cd.runDate + ')' : ''} [${cd.name}]`
+                      )
+                    )
+                  );
+                  return h('tr', null, h('td', null, h('b', null, `v${it.vessel} @${it.time}'`)), h('td', null, sel));
+                })
+              )
+            );
+            card.append(h('div', { style: 'max-height:210px;overflow-y:auto;border:1px solid var(--line);border-radius:6px' }, tbl));
+          }
+
+          sec.append(card);
+        });
+        body.append(sec);
+      }
+    } else {
+      body.append(buildAliasManagerContent(() => renderModal()));
+    }
+    modal.append(body);
+
+    const foot = h('div', { class: 'udt-modal-foot' },
+      h('button', {
+        type: 'button', class: 'btn',
+        onclick: () => {
+          S.lastSkippedSig = pending.sig;
+          closeResModal();
+          go(2, { skipResolver: true });
+        }
+      }, 'Lewati, Periksa Manual di Langkah 2'),
+      activeTab === 'resolve' ? h('button', {
+        type: 'button', class: 'btn primary',
+        onclick: () => {
+          // 1. Terapkan Media Alias / Sesi
+          pending.mediaIssues.forEach(mi => {
+            const st = mediaDraft[mi.mId];
+            if (!st) return;
+            const resolvedTarget = st.target === '__custom__' ? normMedium(st.customTarget) : st.target;
+            if (!resolvedTarget) return;
+            if (resolvedTarget === '__keep__' || resolvedTarget === '__ignore__'){
+              S.sessionMediaMap[mi.mId] = resolvedTarget;
+            } else {
+              S.sessionMediaMap[mi.mId] = resolvedTarget;
+              if (st.savePerm){
+                S.mediaAliases[normMediaAliasKey(mi.mId)] = resolvedTarget;
+              }
+            }
+          });
+
+          // 2. Terapkan Prefix Alias / Sesi
+          pending.prefixGroups.forEach(pg => {
+            const st = prefixDraft[pg.groupKey];
+            if (!st) return;
+            const medVal = st.medium === '__custom__' ? normMedium(st.customMedium) : st.medium;
+            const rule = {
+              action: st.action,
+              batch: st.batch ? st.batch.trim() : '',
+              medium: st.action === 'ignore' ? '' : (medVal || ''),
+              product: st.product ? st.product.trim() : '',
+              prefix: pg.prefixKey
+            };
+            S.sessionPrefixMap[pg.rolePrefixKey] = rule;
+            if (st.savePerm){
+              S.prefixAliases[pg.prefixKey] = rule;
+            }
+          });
+
+          // 3. Terapkan Resolusi Konflik Area & Kecualikan File Duplikat jika dipilih
+          pending.conflictGroups.forEach(cg => {
+            const st = conflictDraft[cg.groupKey];
+            if (!st) return;
+            if (st.mode === 'perCell'){
+              cg.items.forEach(it => {
+                S.conflictChoices[it.cellKey] = { candIdx: st.picks[it.cellKey] || 0, groupFilesSig: cg.groupFilesSig };
+              });
+            } else if (st.mode === 'file'){
+              S.conflictChoices[cg.groupKey] = { mode: 'file', file: st.file, tieBreak: 'last', groupFilesSig: cg.groupFilesSig };
+              if (st.excludeOthers){
+                cg.sources.filter(s => s.file !== st.file).forEach(s => {
+                  const ik = cg.role + '::' + s.file;
+                  if (!S.ignoredFiles.includes(ik)) S.ignoredFiles.push(ik);
+                });
+              }
+            } else {
+              S.conflictChoices[cg.groupKey] = { mode: st.mode, groupFilesSig: cg.groupFilesSig };
+            }
+          });
+
+          saveAliasesToStorage();
+          S.manualStdMapping = {};
+          rebuild();
+          const nextPending = analyzePendingResolutions();
+          if (nextPending.hasIssues && nextPending.sig !== pending.sig){
+            openPreStep2Modal(nextPending);
+            return;
+          }
+          S.lastSkippedSig = '';
+          closeResModal();
+          go(2, { skipResolver: true });
+        }
+      }, 'Terapkan Semua & Masuk ke Langkah 2') : h('button', { type: 'button', class: 'btn primary', onclick: () => { activeTab = 'resolve'; renderModal(); } }, 'Kembali ke Penyesuaian')
+    );
+    modal.append(foot);
+    backdrop.append(modal);
+    root.append(backdrop);
+  };
+
+  renderModal();
+}
+
+function buildAliasManagerContent(onRefresh){
+  const wrap = h('div', { style: 'display:flex;flex-direction:column;gap:14px' });
+
+  // Bagian A: Kamus Alias Media
+  const medKeys = Object.keys(S.mediaAliases || {}).sort();
+  let newKey = '', newVal = '1,2', newCustom = '';
+  const addRow = h('div', { class: 'res-grid', style: 'margin-bottom:6px' });
+  const inpKey = h('input', { type: 'text', placeholder: 'Kata kunci media (mis: sgf, hcl 0,1n)', oninput: e => { newKey = e.target.value; } });
+  const selVal = h('select', { onchange: e => { newVal = e.target.value; customWrap.style.display = newVal === '__custom__' ? 'flex' : 'none'; } },
+    ['1,2', '4,5', '6,8', 'Air', 'Release', '1,0', '7,2', '7,5'].map(cid => h('option', { value: cid }, cid === 'Air' || cid === 'Release' ? cid : ('pH ' + cid))),
+    h('option', { value: '__custom__' }, 'Kustom...')
+  );
+  const customWrap = h('div', { class: 'res-field', style: 'display:none' },
+    h('label', null, 'Target Kustom'),
+    h('input', { type: 'text', placeholder: 'Target pH/Media', oninput: e => { newCustom = e.target.value; } })
+  );
+  addRow.append(
+    h('div', { class: 'res-field' }, h('label', null, 'Kata Kunci di File / Sampel'), inpKey),
+    h('div', { class: 'res-field' }, h('label', null, 'Dipetakan ke Media'), selVal),
+    customWrap,
+    h('button', {
+      type: 'button', class: 'btn primary btn-sm',
+      onclick: () => {
+        const k = normMediaAliasKey(newKey);
+        const v = newVal === '__custom__' ? normMedium(newCustom) : newVal;
+        if (!k || !v) return;
+        S.mediaAliases[k] = v;
+        saveAliasesToStorage();
+        rebuild();
+        onRefresh();
+      }
+    }, '+ Tambah Alias')
+  );
+
+  const medSec = h('div', { class: 'res-sec' },
+    h('div', { class: 'res-sec-head' },
+      h('h4', null, 'Kamus Alias Media Tersimpan (' + medKeys.length + ')'),
+      h('span', { class: 'small muted' }, 'Otomatis menerjemahkan nama buffer/media ke pH baku')
+    ),
+    addRow
+  );
+  if (medKeys.length){
+    medSec.append(h('table', { class: 'res-tbl' },
+      h('thead', null, h('tr', null, h('th', null, 'Kata Kunci'), h('th', null, 'Target Media'), h('th', null, 'Aksi'))),
+      h('tbody', null,
+        medKeys.map(k => h('tr', null,
+          h('td', null, h('code', null, k)),
+          h('td', null, S.mediaAliases[k]),
+          h('td', null, h('button', { class: 'link', onclick: () => { delete S.mediaAliases[k]; saveAliasesToStorage(); rebuild(); onRefresh(); } }, 'hapus'))
+        ))
+      )
+    ));
+  } else {
+    medSec.append(h('div', { class: 'small muted' }, 'Belum ada alias media tersimpan.'));
+  }
+  wrap.append(medSec);
+
+  // Bagian B: Kamus Awalan Sampel
+  const prefKeys = Object.keys(S.prefixAliases || {}).sort();
+  const prefSec = h('div', { class: 'res-sec' },
+    h('div', { class: 'res-sec-head' },
+      h('h4', null, 'Kamus Awalan Nama Sampel / Kontrol Tersimpan (' + prefKeys.length + ')'),
+      h('span', { class: 'small muted' }, 'Berlaku otomatis saat membaca file')
+    )
+  );
+  if (prefKeys.length){
+    prefSec.append(h('table', { class: 'res-tbl' },
+      h('thead', null, h('tr', null, h('th', null, 'Awalan'), h('th', null, 'Peran'), h('th', null, 'Target'), h('th', null, 'Aksi'))),
+      h('tbody', null,
+        prefKeys.map(k => {
+          const r = S.prefixAliases[k];
+          const desc = r.action === 'ignore' ? 'Abaikan' : (`Batch ${r.batch || '-'} · Media ${r.medium || '-'}`);
+          return h('tr', null,
+            h('td', null, h('code', null, k)),
+            h('td', null, r.action),
+            h('td', null, desc),
+            h('td', null, h('button', { class: 'link', onclick: () => { delete S.prefixAliases[k]; saveAliasesToStorage(); rebuild(); onRefresh(); } }, 'hapus'))
+          );
+        })
+      )
+    ));
+  } else {
+    prefSec.append(h('div', { class: 'small muted' }, 'Belum ada aturan awalan tersimpan.'));
+  }
+  wrap.append(prefSec);
+
+  // Bagian C: File Dikecualikan & Resolusi Sesi
+  const ignoredList = S.ignoredFiles || [];
+  const sesCount = Object.keys(S.sessionMediaMap || {}).length + Object.keys(S.sessionPrefixMap || {}).length + Object.keys(S.conflictChoices || {}).length;
+  const sesSec = h('div', { class: 'res-sec' },
+    h('div', { class: 'res-sec-head' },
+      h('h4', null, 'File Dikecualikan & Resolusi Sesi Aktif'),
+      sesCount > 0 ? h('button', {
+        type: 'button', class: 'btn btn-sm',
+        onclick: () => {
+          S.sessionMediaMap = {};
+          S.sessionPrefixMap = {};
+          S.conflictChoices = {};
+          S.lastSkippedSig = '';
+          rebuild();
+          onRefresh();
+        }
+      }, 'Reset Resolusi Sesi (' + sesCount + ')') : null
+    )
+  );
+  if (ignoredList.length){
+    sesSec.append(h('table', { class: 'res-tbl' },
+      h('thead', null, h('tr', null, h('th', null, 'Role'), h('th', null, 'Nama File'), h('th', null, 'Aksi'))),
+      h('tbody', null,
+        ignoredList.map(k => {
+          const idx = k.indexOf('::');
+          const rl = idx >= 0 ? k.slice(0, idx) : 'test';
+          const fn = idx >= 0 ? k.slice(idx + 2) : k;
+          return h('tr', null,
+            h('td', null, rl === 'ref' ? 'Pembanding' : 'Uji'),
+            h('td', null, fn),
+            h('td', null, h('button', { class: 'link', onclick: () => { toggleIgnoreFile(rl, fn, false); onRefresh(); } }, 'aktifkan kembali'))
+          );
+        })
+      )
+    ));
+  } else {
+    sesSec.append(h('div', { class: 'small muted' }, 'Tidak ada file yang dikecualikan pada sesi ini.'));
+  }
+  wrap.append(sesSec);
+
+  return wrap;
+}
+
+function openAliasManagerModal(){
+  const root = $('#resModalRoot');
+  if (!root) return;
+  const renderMgr = () => {
+    root.innerHTML = '';
+    const backdrop = h('div', { class: 'udt-modal-backdrop', onclick: e => { if (e.target === backdrop) closeResModal(); } });
+    const modal = h('div', { class: 'udt-modal', role: 'dialog', 'aria-modal': 'true' });
+    modal.append(
+      h('div', { class: 'udt-modal-head' },
+        h('div', null,
+          h('h3', null, 'Kamus Media, Awalan Sampel & Resolusi Sesi'),
+          h('p', null, 'Kelola alias permanen yang tersimpan di browser dan aturan resolusi sesi saat ini.')
+        ),
+        h('button', { type: 'button', class: 'btn btn-sm', onclick: closeResModal }, 'Tutup')
+      ),
+      h('div', { class: 'udt-modal-body' }, buildAliasManagerContent(renderMgr)),
+      h('div', { class: 'udt-modal-foot' },
+        h('span', { class: 'small muted' }, 'Perubahan langsung diterapkan ke pratinjau data.'),
+        h('button', { type: 'button', class: 'btn primary', onclick: closeResModal }, 'Selesai')
+      )
+    );
+    backdrop.append(modal);
+    root.append(backdrop);
+  };
+  renderMgr();
+}
+
 // ===================== Inisialisasi =====================
 function init(){
   restore();
   buildNav();
+
+  if($('#openAliasMgrBtn1')) $('#openAliasMgrBtn1').addEventListener('click', openAliasManagerModal);
+  if($('#openAliasMgrBtn2')) $('#openAliasMgrBtn2').addEventListener('click', openAliasManagerModal);
 
   // Dropzone Produk Uji
   const dt = $('#dropTest'), ft = $('#fiTest');
@@ -6023,8 +7091,9 @@ function init(){
   go(1);
   initConn();
 }
-window.__udt = {S, rebuild, go, addFilesForRole, textEntry, fileRows, readPdf, renderCheck, renderParams, renderResults, renderSend, executeExportCommand, formatTabTitle, lineChart, drawChartCanvas, exportPDF, printReportWindow, parseCSV};
+window.__udt = {S, rebuild, go, addFilesForRole, textEntry, fileRows, readPdf, renderCheck, renderParams, renderResults, renderSend, executeExportCommand, formatTabTitle, lineChart, drawChartCanvas, exportPDF, printReportWindow, parseCSV, classifyName, extractMediumFromString, analyzePendingResolutions, openPreStep2Modal, openAliasManagerModal, checkMediumValidation, statusOf};
 init();
 </script>
+<div id="resModalRoot"></div>
 </body>
 </html>
