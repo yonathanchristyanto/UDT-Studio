@@ -401,6 +401,140 @@ input.bad { border-color: var(--err); }
 .tbl tr.stat td { background: var(--surface); font-weight: 600; }
 .tbl td.bad { color: var(--err); font-weight: 600; }
 .tbl td.miss { background: var(--err-soft); color: var(--err); }
+
+/* Step 4 Dissolution Profile Review Table */
+.profile-section {
+  margin-top: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--card);
+  overflow: hidden;
+  box-shadow: var(--shadow-subtle);
+}
+.profile-section.is-ref { border-left: 3px solid var(--ref-tint); }
+.profile-section.is-test { border-left: 3px solid var(--test-tint); }
+.profile-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px 12px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  background: var(--card-subtle);
+  border-bottom: 1px solid var(--line);
+}
+.profile-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.profile-title-wrap h3 {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--fg);
+}
+.profile-role {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 99px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.profile-role.is-ref { background: var(--surface); color: var(--ref-tint); border: 1px solid var(--line); }
+.profile-role.is-test { background: var(--ok-soft); color: var(--test-tint); border: 1px solid var(--line); }
+.tblwrap.tblwrap-review {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+}
+.tbl.tbl-review th, .tbl.tbl-review td {
+  padding: 8px 14px;
+  font-variant-numeric: tabular-nums;
+  min-width: 72px;
+}
+.tbl.tbl-review th:first-child, .tbl.tbl-review td:first-child {
+  min-width: 132px;
+}
+.tbl.tbl-review thead th {
+  background: var(--surface);
+  border-bottom: 1px solid var(--line-strong);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.tbl.tbl-review thead th:first-child {
+  background-color: var(--card);
+  background-image: linear-gradient(var(--surface), var(--surface));
+}
+.tbl.tbl-review tbody tr.vessel-row td {
+  color: var(--fg);
+  font-weight: 400;
+}
+.tbl.tbl-review tbody tr.vessel-row td:first-child {
+  color: var(--muted);
+  font-weight: 500;
+}
+.tbl.tbl-review tbody tr.vessel-row:nth-child(even) td:not(.miss) {
+  background: rgba(118, 118, 128, 0.035);
+}
+.tbl.tbl-review tbody tr.vessel-row:nth-child(even) td:first-child {
+  background-color: var(--card);
+  background-image: linear-gradient(rgba(118, 118, 128, 0.035), rgba(118, 118, 128, 0.035));
+}
+.tbl.tbl-review tbody tr:hover td:not(.miss):not(.bad) {
+  background: var(--accent-soft);
+}
+.tbl.tbl-review tbody tr:hover td:first-child {
+  background-color: var(--card);
+  background-image: linear-gradient(var(--accent-soft), var(--accent-soft));
+}
+.tbl.tbl-review tr.stat-avg td {
+  background: var(--accent-soft);
+  border-top: 2px solid var(--line-strong);
+  border-bottom: 1px solid var(--line-strong);
+  font-weight: 700;
+  color: var(--fg);
+}
+.tbl.tbl-review tr.stat-avg td:first-child {
+  background-color: var(--card);
+  background-image: linear-gradient(var(--accent-soft), var(--accent-soft));
+  color: var(--accent);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+.tbl.tbl-review tr.stat-sub td:not(.bad) {
+  background: var(--card-subtle);
+  font-weight: 500;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+.tbl.tbl-review tr.stat-sub td:first-child {
+  background-color: var(--card-subtle);
+  font-weight: 600;
+  color: var(--muted);
+}
+.tbl.tbl-review tr.stat-sub:hover td:not(.bad) {
+  background: var(--accent-soft);
+  color: var(--fg);
+}
+.tbl.tbl-review tr.stat-sub:hover td:first-child {
+  background-color: var(--card);
+  background-image: linear-gradient(var(--accent-soft), var(--accent-soft));
+  color: var(--fg);
+}
+.tbl.tbl-review tr.stat-rsd td {
+  border-bottom: 0;
+}
+.tbl.tbl-review tbody tr td.bad {
+  color: var(--err);
+  font-weight: 700;
+  background: var(--err-soft);
+}
 td input.num, .cellin { width: 92px; text-align: right; padding: 4px 8px; font-variant-numeric: tabular-nums; font-size: 13px; }
 
 /* Notices */
@@ -3847,8 +3981,7 @@ function renderMediumResultCard(mId){
       const p = {...S.refParams, ws: S.wsWeights[sObj.id] !== undefined ? S.wsWeights[sObj.id] : S.refParams.wsDefault};
       refCalculated = calcBatchProfile(M, rB, p, sObj);
 
-      card.append(h('h3',null,`Profil Produk Pembanding: ${refFullName}`));
-      card.append(renderProfileTable(refCalculated, 'Pembanding'));
+      card.append(renderProfileTable(refCalculated, 'Pembanding', `Profil Produk Pembanding: ${refFullName}`));
     } else {
       card.append(h('div',{class:'banner warn'},'Data Produk Pembanding belum diunggah untuk pH '+mId+'. Unggah di kotak Produk Pembanding (Langkah 1) untuk evaluasi f2.'));
     }
@@ -3873,8 +4006,7 @@ function renderMediumResultCard(mId){
       const tCalc = calcBatchProfile(M, tB, p, sObj);
 
       const testFullName = formatProductBatch(S.testParams.product, tName, tB, 'Produk Uji');
-      card.append(h('h3',{style:'margin-top:18px'},`Profil Produk Uji: ${testFullName}`));
-      card.append(renderProfileTable(tCalc, 'Uji'));
+      card.append(renderProfileTable(tCalc, 'Uji', `Profil Produk Uji: ${testFullName}`));
       
       if(tCalc.stats && tCalc.stats.length){
         seriesForChart.push({name: testFullName, vals: tCalc.stats.map(x=>x.avg), color: COLORS[tIdx % COLORS.length], dash: false, marker: tIdx === 0 ? 'circle' : 'triangle'});
@@ -4045,21 +4177,25 @@ function renderResults(){
   root.append(layout);
 }
 
-function renderProfileTable(calc, roleLab){
-  const tbl = h('table',{class:'tbl'});
+function renderProfileTable(calc, roleLab, headingTitle){
+  const isRef = roleLab === 'Pembanding';
+  const tbl = h('table',{class:'tbl tbl-review'});
   tbl.append(h('thead',null,h('tr',null,h('th',null,'% Terlarut'), calc.times.map(t=>h('th',null,t+"'")))));
   const tb = h('tbody');
-  
+
+  let vesselCount = 0;
   calc.res.forEach((row, i) => {
     if(!row) return;
-    tb.append(h('tr',null,
+    vesselCount++;
+    tb.append(h('tr',{class:'vessel-row'},
       h('td',null,'Vessel ' + (i+1)),
       row.map(v => h('td',{class:isFinite(v)?'':'miss'}, isFinite(v)?fmt(v,0):'–'))));
   });
 
-  [['Min','min'],['Max','max'],['Rata-rata','avg'],['SD','sd'],['RSD (%)','rsd']].forEach(([lab,k])=>{
+  [['Rata-rata','avg'],['Min','min'],['Max','max'],['SD','sd'],['RSD (%)','rsd']].forEach(([lab,k])=>{
     const dec = (k === 'sd' || k === 'rsd') ? 1 : 0;
-    tb.append(h('tr',{class:'stat'},
+    const rowCls = 'stat ' + (k === 'avg' ? 'stat-avg' : ('stat-sub' + (k === 'rsd' ? ' stat-rsd' : '')));
+    tb.append(h('tr',{class:rowCls},
       h('td',null,lab),
       calc.stats.map((x,i)=>{
         const bad = k==='rsd' && (i===0 ? x.rsd>20 : x.rsd>10);
@@ -4067,7 +4203,20 @@ function renderProfileTable(calc, roleLab){
       })));
   });
   tbl.append(tb);
-  return h('div',{class:'tblwrap'},tbl);
+
+  const wrap = h('div',{class:'tblwrap tblwrap-review'},tbl);
+  if(!headingTitle) return wrap;
+
+  return h('div',{class:'profile-section ' + (isRef ? 'is-ref' : 'is-test')},
+    h('div',{class:'profile-head'},
+      h('div',{class:'profile-title-wrap'},
+        h('span',{class:'profile-role ' + (isRef ? 'is-ref' : 'is-test')}, roleLab),
+        h('h3',null,headingTitle)
+      ),
+      h('span',{class:'small muted'}, `${vesselCount} vessel · ${calc.times.length} titik waktu`)
+    ),
+    wrap
+  );
 }
 
 function lineChart(series, times){
