@@ -385,6 +385,42 @@ section.panel.active { display: block; }
 .file:hover { border-color: var(--line-strong); }
 .file .nm { font-weight: 500; word-break: break-all; flex: 1 1 180px; }
 
+/* Upload loading indicator */
+.upload-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--accent-line);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 500;
+}
+.upload-loading-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.upload-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--accent-line);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  flex-shrink: 0;
+  animation: udt-spin 0.75s linear infinite;
+}
+.drop.is-loading {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+@keyframes udt-spin {
+  to { transform: rotate(360deg); }
+}
+
 /* Buttons */
 button.btn {
   font: inherit;
@@ -1459,6 +1495,10 @@ body.has-pdf-preview:has(.udt-modal-backdrop) .pdf-pane { top: 0; z-index: 10010
           <div class="hint">Format didukung: PDF, CSV, TXT</div>
           <input type="file" id="fiTest" accept=".pdf,.csv,.tsv,.txt" multiple hidden>
         </div>
+        <div class="upload-loading" id="uploadLoadingTest" style="display:none" aria-live="polite">
+          <span class="upload-spinner" aria-hidden="true"></span>
+          <span class="upload-loading-text">Memproses dokumen...</span>
+        </div>
         <div class="files" id="fileListTest"></div>
       </div>
 
@@ -1475,6 +1515,10 @@ body.has-pdf-preview:has(.udt-modal-backdrop) .pdf-pane { top: 0; z-index: 10010
           <b>Pilih atau seret file ke sini</b>
           <div class="hint">Format didukung: PDF, CSV, TXT</div>
           <input type="file" id="fiRef" accept=".pdf,.csv,.tsv,.txt" multiple hidden>
+        </div>
+        <div class="upload-loading" id="uploadLoadingRef" style="display:none" aria-live="polite">
+          <span class="upload-spinner" aria-hidden="true"></span>
+          <span class="upload-loading-text">Memproses dokumen...</span>
         </div>
         <div class="files" id="fileListRef"></div>
       </div>
@@ -3557,26 +3601,52 @@ function textEntry(name, text, role, isPaste=false){
 
 const fileRows=f=>f.kind==='csv'?(f.map.area>=0?csvToRows(f.parsed,f.map):[]):f.rows;
 
-async function addFilesForRole(list, role){
-  const arr = role === 'ref' ? S.refFiles : S.testFiles;
-  for(let i=0; i<list.length; i++){
-    const f = list[i];
-    try{
-      let entry; const ext=(f.name.split('.').pop()||'').toLowerCase();
-      if(ext==='pdf') entry=await readPdf(f, role);
-      else entry=textEntry(f.name, await f.text(), role, false);
-      entry.id=Math.random().toString(36).slice(2);
-      arr.push(entry);
-    }catch(err){
-      arr.push({role, id:Math.random().toString(36).slice(2), kind:'error', name:f.name, error:String(err.message||err), rows:[]});
-    }
-    if(list.length > 1){
-      await new Promise(r => setTimeout(r, 0));
+const UPLOAD_PENDING = { test: 0, ref: 0 };
+function setUploadLoading(role, active, text){
+  if (typeof document === 'undefined' || !document.getElementById) return;
+  const rKey = role === 'ref' ? 'ref' : 'test';
+  const box = document.getElementById(rKey === 'ref' ? 'uploadLoadingRef' : 'uploadLoadingTest');
+  const drop = document.getElementById(rKey === 'ref' ? 'dropRef' : 'dropTest');
+  if (drop && drop.classList) drop.classList.toggle('is-loading', !!active);
+  if (box){
+    box.style.display = active ? 'flex' : 'none';
+    if (text){
+      const txtEl = box.querySelector ? box.querySelector('.upload-loading-text') : null;
+      if (txtEl) txtEl.textContent = text;
     }
   }
-  S.manualStdMapping = {};
-  S.lastSkippedSig = '';
-  rebuild();
+}
+
+async function addFilesForRole(list, role){
+  if (!list || !list.length) return;
+  const rKey = role === 'ref' ? 'ref' : 'test';
+  const arr = rKey === 'ref' ? S.refFiles : S.testFiles;
+  UPLOAD_PENDING[rKey]++;
+  setUploadLoading(rKey, true, `Memproses dokumen (1/${list.length})...`);
+  try{
+    for(let i=0; i<list.length; i++){
+      const f = list[i];
+      setUploadLoading(rKey, true, `Memproses dokumen (${i+1}/${list.length}): ${f.name}...`);
+      await new Promise(r => setTimeout(r, 0));
+      try{
+        let entry; const ext=(f.name.split('.').pop()||'').toLowerCase();
+        if(ext==='pdf') entry=await readPdf(f, role);
+        else entry=textEntry(f.name, await f.text(), role, false);
+        entry.id=Math.random().toString(36).slice(2);
+        arr.push(entry);
+      }catch(err){
+        arr.push({role, id:Math.random().toString(36).slice(2), kind:'error', name:f.name, error:String(err.message||err), rows:[]});
+      }
+    }
+    S.manualStdMapping = {};
+    S.lastSkippedSig = '';
+    rebuild();
+  } finally {
+    UPLOAD_PENDING[rKey] = Math.max(0, UPLOAD_PENDING[rKey] - 1);
+    if (UPLOAD_PENDING[rKey] === 0){
+      setUploadLoading(rKey, false);
+    }
+  }
 }
 
 const PDF_PREVIEW = { active: false, fileName: '', role: '', entryId: '', customWidth: 0 };
