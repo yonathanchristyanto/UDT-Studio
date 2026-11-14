@@ -1171,8 +1171,8 @@ details[open] summary { margin-bottom: 8px; }
     </details>
 
     <div class="nav">
-      <button class="btn" id="openAliasMgrBtn1" type="button">Kamus Media &amp; Awalan</button>
-      <button class="btn primary" data-go="2">Lanjut ke Verifikasi</button>
+      <button class="btn" id="openAliasMgrBtn1" type="button" hidden style="display:none" aria-hidden="true">Kamus Media &amp; Awalan</button>
+      <button class="btn primary" data-go="2" style="margin-left:auto">Lanjut ke Verifikasi</button>
     </div>
   </section>
 
@@ -1183,7 +1183,7 @@ details[open] summary { margin-bottom: 8px; }
         <h2>Verifikasi Sampel &amp; Standar</h2>
         <p>Periksa data injeksi yang terbaca dan konfirmasi larutan standar tiap batch.</p>
       </div>
-      <button class="btn btn-sm" id="openAliasMgrBtn2" type="button">Kamus Media &amp; Resolusi</button>
+      <button class="btn btn-sm" id="openAliasMgrBtn2" type="button" hidden style="display:none" aria-hidden="true">Kamus Media &amp; Resolusi</button>
     </div>
     <div id="p2body"></div>
     <div class="nav">
@@ -7245,7 +7245,6 @@ function openPreStep2Modal(pending){
     const backdrop = h('div', { class: 'udt-modal-backdrop', onclick: e => { if (e.target === backdrop) closeResModal(); } });
     const modal = h('div', { class: 'udt-modal', role: 'dialog', 'aria-modal': 'true' });
 
-    const aliasCount = Object.keys(S.mediaAliases || {}).length + Object.keys(S.prefixAliases || {}).length + (S.ignoredFiles || []).length;
     modal.append(
       h('div', { class: 'udt-modal-head' },
         h('div', null,
@@ -7253,12 +7252,6 @@ function openPreStep2Modal(pending){
           h('p', null, `Terdeteksi ${pending.totalCount} kelompok penyesuaian agar semua kartu di Verifikasi Langkah 2 menjadi hijau (Siap).`)
         ),
         h('button', { type: 'button', class: 'btn btn-sm', onclick: closeResModal }, 'Tutup')
-      ),
-      h('div', { class: 'res-tabs' },
-        h('button', { type: 'button', class: 'res-tab' + (activeTab === 'resolve' ? ' active' : ''), onclick: () => { activeTab = 'resolve'; renderModal(); } },
-          `Penyesuaian Upload (${pending.totalCount})`),
-        h('button', { type: 'button', class: 'res-tab' + (activeTab === 'kamus' ? ' active' : ''), onclick: () => { activeTab = 'kamus'; renderModal(); } },
-          `Kamus & Riwayat (${aliasCount})`)
       )
     );
 
@@ -7820,9 +7813,6 @@ function openAliasManagerModal(){
 function init(){
   restore();
   buildNav();
-
-  if($('#openAliasMgrBtn1')) $('#openAliasMgrBtn1').addEventListener('click', openAliasManagerModal);
-  if($('#openAliasMgrBtn2')) $('#openAliasMgrBtn2').addEventListener('click', openAliasManagerModal);
 
   // Dropzone Produk Uji
   const dt = $('#dropTest'), ft = $('#fiTest');
