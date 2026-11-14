@@ -2768,37 +2768,16 @@ function buildUnifiedModel(injections, fileMetaMap){
     }
   }
 
-  // --- LANGKAH C: Gabungkan BS Otomatis jika Terpencar Lintas File + Manual Merge (Opsi 2) ---
+  // --- LANGKAH C: Gabungkan BS Otomatis jika Terpencar Lintas File ---
   for (const m of Object.keys(rawStdByMed)){
     const entries = rawStdByMed[m];
     const fileGroups = {};
     for (const e of entries){
       const fgKey = (e.role || 'test') + '::' + e.file;
-      const fg = fileGroups[fgKey] || (fileGroups[fgKey] = {key: fgKey, file: e.file, role: e.role, runDate: e.runDate, std:[], bsMid:[], bsEnd:[], manualMergedSources:[]});
+      const fg = fileGroups[fgKey] || (fileGroups[fgKey] = {file: e.file, role: e.role, runDate: e.runDate, std:[], bsMid:[], bsEnd:[]});
       const maxCap = e.type === 'std' ? 5 : 2;
       if (fg[e.type].length < maxCap){
         fg[e.type].push(e.area);
-      }
-    }
-
-    // Terapkan aturan penggabungan manual jika dipilih pengguna di Langkah 2 (Opsi 2)
-    const manualMap = (S.manualStdMerges && S.manualStdMerges[m]) || {};
-    for (const srcKey of Object.keys(manualMap)){
-      const rule = manualMap[srcKey];
-      const srcFg = fileGroups[srcKey];
-      const dstFg = rule && fileGroups[rule.targetKey];
-      if (srcFg && dstFg && srcKey !== rule.targetKey){
-        const allVals = [...srcFg.std, ...srcFg.bsMid, ...srcFg.bsEnd];
-        const targetBucket = (rule.asType === 'bsMid' || rule.asType === 'bsEnd' || rule.asType === 'std') ? rule.asType : 'bsMid';
-        const cap = targetBucket === 'std' ? 5 : 2;
-        for (const v of allVals){
-          if (dstFg[targetBucket].length < cap) dstFg[targetBucket].push(v);
-        }
-        dstFg.mergedFiles = dstFg.mergedFiles || [dstFg.file];
-        if (!dstFg.mergedFiles.includes(srcFg.file)) dstFg.mergedFiles.push(srcFg.file);
-        dstFg.manualMergedSources = dstFg.manualMergedSources || [];
-        dstFg.manualMergedSources.push({ srcKey, file: srcFg.file, asType: targetBucket });
-        delete fileGroups[srcKey];
       }
     }
 
@@ -2856,12 +2835,10 @@ function buildUnifiedModel(injections, fileMetaMap){
       const fileNames = a.mergedFiles ? a.mergedFiles.join(' + ') : a.file;
       return {
         id: 'std_' + m.replace(',','_') + '_' + (a.role || 'test') + '_' + (idx+1),
-        fgKey: a.key,
         medium: m,
         role: a.role || 'test',
         file: fileNames,
         sourceFiles: a.mergedFiles ? [...a.mergedFiles] : [a.file],
-        manualMergedSources: a.manualMergedSources || [],
         runDate: a.runDate,
         name: `Standar ${(m.toLowerCase()==='air'||m.toLowerCase()==='release'||m.toLowerCase()==='rilis') ? m : ('pH ' + m)} (${fileNames})`,
         std: a.std,
@@ -4302,55 +4279,6 @@ function renderMediumSection(id){
       secGrid.append(bEnd);
 
       sBox.append(secGrid);
-
-      // Opsi 2: Kontrol Penggabungan / Pemindahan Kartu Standar Manual
-      if (stdSets.length > 1 && s.fgKey){
-        const otherSets = stdSets.filter(x => x.fgKey && x.fgKey !== s.fgKey);
-        if (otherSets.length > 0){
-          const mergeBar = h('div',{class:'std-manual-merge-bar',style:'margin-top:8px;padding-top:8px;border-top:1px dashed var(--border);display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:11px;color:var(--muted);'});
-          mergeBar.append(h('span',{style:'font-weight:600;color:var(--text-secondary);'},'Gabungkan kartu ini ke:'));
-          const selTarget = h('select',{class:'std-merge-target-sel',style:'width:auto;max-width:260px;padding:3px 8px;font-size:11px;border-radius:5px;'});
-          otherSets.forEach(o => {
-            selTarget.append(h('option',{value:o.fgKey}, o.name));
-          });
-          const selRole = h('select',{class:'std-merge-role-sel',style:'width:auto;padding:3px 8px;font-size:11px;border-radius:5px;'});
-          const defaultRole = /end/i.test(s.file || '') ? 'bsEnd' : (/mid/i.test(s.file || '') ? 'bsMid' : 'bsMid');
-          [
-            {val:'bsMid', lbl:'Bracketing Mid (BS Mid)'},
-            {val:'bsEnd', lbl:'Bracketing End (BS End)'},
-            {val:'std',   lbl:'Standar Utama (5 Injeksi)'}
-          ].forEach(opt => {
-            const oEl = h('option',{value:opt.val}, opt.lbl);
-            if (opt.val === defaultRole){
-              oEl.selected = true;
-              selRole.value = opt.val;
-            }
-            selRole.append(oEl);
-          });
-          if (!selTarget.value && otherSets[0]) selTarget.value = otherSets[0].fgKey;
-          const btnMerge = h('button',{type:'button',class:'btn small ghost std-merge-apply-btn',style:'padding:3px 9px;font-size:11px;',onclick:()=>{
-            S.manualStdMerges = S.manualStdMerges || {};
-            S.manualStdMerges[id] = S.manualStdMerges[id] || {};
-            S.manualStdMerges[id][s.fgKey] = { targetKey: selTarget.value, asType: selRole.value };
-            rebuild(); renderCheck(); renderParams(); renderResults();
-          }},'Gabungkan');
-          mergeBar.append(selTarget, h('span',{},'sebagai'), selRole, btnMerge);
-          sBox.append(mergeBar);
-        }
-      }
-      if (s.manualMergedSources && s.manualMergedSources.length > 0){
-        const unmergeBar = h('div',{class:'std-manual-unmerge-bar',style:'margin-top:8px;padding-top:8px;border-top:1px dashed var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:11px;color:var(--muted);'});
-        const srcDesc = s.manualMergedSources.map(m => `${m.file} (${m.asType === 'bsMid' ? 'BS Mid' : (m.asType === 'bsEnd' ? 'BS End' : 'Std')})`).join(', ');
-        unmergeBar.append(h('span',{},`Digabung manual: ${srcDesc}`));
-        const btnUnmerge = h('button',{type:'button',class:'btn small ghost std-unmerge-btn',style:'padding:2px 8px;font-size:11px;',onclick:()=>{
-          if (S.manualStdMerges && S.manualStdMerges[id]){
-            s.manualMergedSources.forEach(m => { delete S.manualStdMerges[id][m.srcKey]; });
-          }
-          rebuild(); renderCheck(); renderParams(); renderResults();
-        }},'Pisahkan Gabungan');
-        unmergeBar.append(btnUnmerge);
-        sBox.append(unmergeBar);
-      }
 
       card.append(sBox);
     });
