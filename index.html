@@ -41,8 +41,14 @@
   --topbar-bg: rgba(255, 255, 255, 0.88);
   --test-tint: #0d9488;
   --test-soft: rgba(13, 148, 136, 0.10);
-  --test-line: rgba(13, 148, 136, 0.28);
-  --ref-tint: #475569;
+  --test-line: rgba(13, 148, 136, 0.30);
+  --test-card-bg: rgba(13, 148, 136, 0.04);
+  --test-head-bg: rgba(13, 148, 136, 0.085);
+  --ref-tint: #4f46e5;
+  --ref-soft: rgba(79, 70, 229, 0.09);
+  --ref-line: rgba(79, 70, 229, 0.26);
+  --ref-card-bg: rgba(79, 70, 229, 0.035);
+  --ref-head-bg: rgba(79, 70, 229, 0.08);
   --ok: #15803d;
   --ok-soft: rgba(21, 128, 61, 0.09);
   --ok-line: rgba(21, 128, 61, 0.28);
@@ -76,9 +82,15 @@
     --accent-line: rgba(96, 165, 250, 0.38);
     --topbar-bg: rgba(17, 24, 39, 0.88);
     --test-tint: #2dd4bf;
-    --test-soft: rgba(45, 212, 191, 0.12);
-    --test-line: rgba(45, 212, 191, 0.30);
-    --ref-tint: #cbd5e1;
+    --test-soft: rgba(45, 212, 191, 0.13);
+    --test-line: rgba(45, 212, 191, 0.32);
+    --test-card-bg: rgba(45, 212, 191, 0.055);
+    --test-head-bg: rgba(45, 212, 191, 0.11);
+    --ref-tint: #818cf8;
+    --ref-soft: rgba(129, 140, 248, 0.14);
+    --ref-line: rgba(129, 140, 248, 0.30);
+    --ref-card-bg: rgba(129, 140, 248, 0.055);
+    --ref-head-bg: rgba(129, 140, 248, 0.11);
     --ok: #4ade80;
     --ok-soft: rgba(74, 222, 128, 0.12);
     --ok-line: rgba(74, 222, 128, 0.30);
@@ -109,9 +121,15 @@
   --accent-line: rgba(96, 165, 250, 0.38);
   --topbar-bg: rgba(17, 24, 39, 0.88);
   --test-tint: #2dd4bf;
-  --test-soft: rgba(45, 212, 191, 0.12);
-  --test-line: rgba(45, 212, 191, 0.30);
-  --ref-tint: #cbd5e1;
+  --test-soft: rgba(45, 212, 191, 0.13);
+  --test-line: rgba(45, 212, 191, 0.32);
+  --test-card-bg: rgba(45, 212, 191, 0.055);
+  --test-head-bg: rgba(45, 212, 191, 0.11);
+  --ref-tint: #818cf8;
+  --ref-soft: rgba(129, 140, 248, 0.14);
+  --ref-line: rgba(129, 140, 248, 0.30);
+  --ref-card-bg: rgba(129, 140, 248, 0.055);
+  --ref-head-bg: rgba(129, 140, 248, 0.11);
   --ok: #4ade80;
   --ok-soft: rgba(74, 222, 128, 0.12);
   --ok-line: rgba(74, 222, 128, 0.30);
@@ -277,7 +295,83 @@ section.panel.active { display: block; }
 .badge.warn { background: var(--warn-soft); color: var(--warn); border-color: var(--warn-line); }
 .badge.err { background: var(--err-soft); color: var(--err); border-color: var(--err-line); }
 .badge.test { background: var(--test-soft); color: var(--test-tint); border-color: var(--test-line); }
+.badge.ref { background: var(--ref-soft); color: var(--ref-tint); border-color: var(--ref-line); }
 .badge.info { background: var(--surface); color: var(--muted); border-color: var(--line); }
+
+/* Role-tinted Cards & Groups (Produk Uji vs Produk Pembanding) */
+.role-card {
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  background: var(--card);
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+.role-card.is-test {
+  border-color: var(--test-line);
+  background: var(--test-card-bg);
+  box-shadow: inset 4px 0 0 var(--test-tint);
+}
+.role-card.is-ref {
+  border-color: var(--ref-line);
+  background: var(--ref-card-bg);
+  box-shadow: inset 4px 0 0 var(--ref-tint);
+}
+.role-card.is-shared {
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+  box-shadow: inset 4px 0 0 var(--accent);
+}
+.role-subbox {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.std-map-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: var(--card);
+}
+.std-map-item.is-test {
+  border-color: var(--test-line);
+  background: var(--test-card-bg);
+  box-shadow: inset 3px 0 0 var(--test-tint);
+}
+.std-map-item.is-ref {
+  border-color: var(--ref-line);
+  background: var(--ref-card-bg);
+  box-shadow: inset 3px 0 0 var(--ref-tint);
+}
+.batch-role-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 10px 14px 12px;
+  margin: 12px 0;
+  background: var(--card);
+  box-shadow: var(--shadow-subtle);
+}
+.batch-role-card.is-test {
+  border-color: var(--test-line);
+  background: var(--test-card-bg);
+  box-shadow: inset 4px 0 0 var(--test-tint), var(--shadow-subtle);
+}
+.batch-role-card.is-ref {
+  border-color: var(--ref-line);
+  background: var(--ref-card-bg);
+  box-shadow: inset 4px 0 0 var(--ref-tint), var(--shadow-subtle);
+}
+.batch-role-card .tblwrap {
+  background: var(--card);
+  margin-bottom: 0;
+}
 
 /* Dual Dropzone */
 .dual-drop {
@@ -301,16 +395,44 @@ section.panel.active { display: block; }
   flex-direction: column;
   box-shadow: var(--shadow-subtle);
 }
+.drop-box.is-test {
+  border-color: var(--test-line);
+  background: var(--test-card-bg);
+}
+.drop-box.is-ref {
+  border-color: var(--ref-line);
+  background: var(--ref-card-bg);
+}
 .dual-drop > .drop-box::before {
   content: "";
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  height: 3px;
+  height: 3.5px;
 }
-.dual-drop > .drop-box:first-child::before { background: var(--test-tint); }
-.dual-drop > .drop-box:last-child::before { background: var(--muted); }
+.dual-drop > .drop-box:first-child::before,
+.drop-box.is-test::before { background: var(--test-tint); }
+.dual-drop > .drop-box:last-child::before,
+.drop-box.is-ref::before { background: var(--ref-tint); }
+.drop-box.is-test .drop { border-color: var(--test-line); }
+.drop-box.is-ref .drop { border-color: var(--ref-line); }
+.drop-box.is-test .drop:hover, .drop-box.is-test .drop.over {
+  border-color: var(--test-tint);
+  background: var(--test-soft);
+}
+.drop-box.is-test .drop:hover .drop-icon, .drop-box.is-test .drop.over .drop-icon {
+  color: var(--test-tint);
+  border-color: var(--test-line);
+}
+.drop-box.is-ref .drop:hover, .drop-box.is-ref .drop.over {
+  border-color: var(--ref-tint);
+  background: var(--ref-soft);
+}
+.drop-box.is-ref .drop:hover .drop-icon, .drop-box.is-ref .drop.over .drop-icon {
+  color: var(--ref-tint);
+  border-color: var(--ref-line);
+}
 .drop-box-header {
   display: flex;
   align-items: center;
@@ -379,10 +501,14 @@ section.panel.active { display: block; }
 .file {
   display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center;
   padding: 8px 12px; border: 1px solid var(--line); border-radius: var(--radius-sm);
-  background: var(--card-subtle); font-size: 12.5px;
+  background: var(--card); font-size: 12.5px;
   transition: border-color 0.14s ease;
 }
+.file.is-test { border-color: var(--test-line); border-left: 3px solid var(--test-tint); }
+.file.is-ref { border-color: var(--ref-line); border-left: 3px solid var(--ref-tint); }
 .file:hover { border-color: var(--line-strong); }
+.file.is-test:hover { border-color: var(--test-tint); }
+.file.is-ref:hover { border-color: var(--ref-tint); }
 .file .nm { font-weight: 500; word-break: break-all; flex: 1 1 180px; }
 
 /* Upload loading indicator */
@@ -416,6 +542,24 @@ section.panel.active { display: block; }
 .drop.is-loading {
   border-color: var(--accent);
   background: var(--accent-soft);
+}
+.drop-box.is-test .upload-loading {
+  border-color: var(--test-line);
+  background: var(--test-soft);
+  color: var(--test-tint);
+}
+.drop-box.is-test .upload-spinner {
+  border-color: var(--test-line);
+  border-top-color: var(--test-tint);
+}
+.drop-box.is-ref .upload-loading {
+  border-color: var(--ref-line);
+  background: var(--ref-soft);
+  color: var(--ref-tint);
+}
+.drop-box.is-ref .upload-spinner {
+  border-color: var(--ref-line);
+  border-top-color: var(--ref-tint);
 }
 @keyframes udt-spin {
   to { transform: rotate(360deg); }
@@ -612,9 +756,11 @@ input.bad { border-color: var(--err); }
   top: 0;
   bottom: 0;
   left: 0;
-  width: 3px;
+  width: 4px;
   z-index: 3;
 }
+.profile-section.is-ref { border-color: var(--ref-line); }
+.profile-section.is-test { border-color: var(--test-line); }
 .profile-section.is-ref::before { background: var(--ref-tint); }
 .profile-section.is-test::before { background: var(--test-tint); }
 .profile-head {
@@ -623,10 +769,12 @@ input.bad { border-color: var(--err); }
   align-items: center;
   gap: 6px 10px;
   flex-wrap: wrap;
-  padding: 7px 10px;
+  padding: 7px 10px 7px 13px;
   background: var(--card-subtle);
   border-bottom: 1px solid var(--line);
 }
+.profile-section.is-ref .profile-head { background: var(--ref-head-bg); border-bottom-color: var(--ref-line); }
+.profile-section.is-test .profile-head { background: var(--test-head-bg); border-bottom-color: var(--test-line); }
 .profile-title-wrap {
   display: flex;
   align-items: center;
@@ -650,7 +798,7 @@ input.bad { border-color: var(--err); }
   letter-spacing: 0.03em;
   text-transform: uppercase;
 }
-.profile-role.is-ref { background: var(--surface); color: var(--ref-tint); border: 1px solid var(--line); }
+.profile-role.is-ref { background: var(--ref-soft); color: var(--ref-tint); border: 1px solid var(--ref-line); }
 .profile-role.is-test { background: var(--test-soft); color: var(--test-tint); border: 1px solid var(--test-line); }
 .tblwrap.tblwrap-review {
   margin: 0;
@@ -1080,12 +1228,40 @@ details[open] summary { margin-bottom: 8px; }
 }
 .res-sec-head { display: flex; justify-content: space-between; align-items: center; gap: 8px 12px; flex-wrap: wrap; }
 .res-sec-head h4 { margin: 0; font-size: 13.5px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.profile-section.is-test .tbl.tbl-review tr.stat-avg td {
+  background: var(--test-soft);
+}
+.profile-section.is-test .tbl.tbl-review tr.stat-avg td:first-child {
+  background-color: var(--card);
+  background-image: linear-gradient(var(--test-soft), var(--test-soft));
+  color: var(--test-tint);
+  box-shadow: inset 3px 0 0 var(--test-tint);
+}
+.profile-section.is-ref .tbl.tbl-review tr.stat-avg td {
+  background: var(--ref-soft);
+}
+.profile-section.is-ref .tbl.tbl-review tr.stat-avg td:first-child {
+  background-color: var(--card);
+  background-image: linear-gradient(var(--ref-soft), var(--ref-soft));
+  color: var(--ref-tint);
+  box-shadow: inset 3px 0 0 var(--ref-tint);
+}
 .res-card {
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   padding: 12px 14px;
   display: flex; flex-direction: column; gap: 10px;
+}
+.res-card.is-test {
+  border-color: var(--test-line);
+  background: var(--test-card-bg);
+  box-shadow: inset 3.5px 0 0 var(--test-tint);
+}
+.res-card.is-ref {
+  border-color: var(--ref-line);
+  background: var(--ref-card-bg);
+  box-shadow: inset 3.5px 0 0 var(--ref-tint);
 }
 .res-card-head {
   display: flex; justify-content: space-between; align-items: flex-start; gap: 8px 12px; flex-wrap: wrap;
@@ -1390,7 +1566,18 @@ body.has-pdf-preview:has(.udt-modal-backdrop) .pdf-pane { top: 0; z-index: 10010
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 6px 12px;
-  margin: 14px 0 6px;
+  margin: 0 0 8px;
+  padding-bottom: 7px;
+  border-bottom: 1px solid var(--line);
+}
+.batch-role-card.is-test .batch-head-bar { border-bottom-color: var(--test-line); }
+.batch-role-card.is-ref .batch-head-bar { border-bottom-color: var(--ref-line); }
+.batch-head-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+  min-width: 0;
 }
 .batch-head-bar h3 { margin: 0; }
 .batch-src-bar {
@@ -1459,7 +1646,7 @@ body.has-pdf-preview:has(.udt-modal-backdrop) .pdf-pane { top: 0; z-index: 10010
     <span class="sub">Analytical Development · Pharos Indonesia</span>
   </div>
   <div class="topbar-actions">
-    <button class="theme-btn" type="button" onclick="document.documentElement.dataset.theme=document.documentElement.dataset.theme==='dark'?'light':'dark'">
+    <button class="theme-btn" id="themeBtn" type="button" onclick="toggleTheme()">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"/></svg>
       <span>Tampilan</span>
     </button>
@@ -1482,7 +1669,7 @@ body.has-pdf-preview:has(.udt-modal-backdrop) .pdf-pane { top: 0; z-index: 10010
 
     <div class="dual-drop">
       <!-- Produk Uji -->
-      <div class="drop-box">
+      <div class="drop-box is-test">
         <div class="drop-box-header">
           <h3>Produk Uji</h3>
           <span class="badge test">Uji</span>
@@ -1503,10 +1690,10 @@ body.has-pdf-preview:has(.udt-modal-backdrop) .pdf-pane { top: 0; z-index: 10010
       </div>
 
       <!-- Produk Pembanding -->
-      <div class="drop-box">
+      <div class="drop-box is-ref">
         <div class="drop-box-header">
           <h3>Produk Pembanding</h3>
-          <span class="badge info">Pembanding</span>
+          <span class="badge ref">Pembanding</span>
         </div>
         <div class="drop" id="dropRef" tabindex="0">
           <div class="drop-icon" aria-hidden="true">
@@ -1594,17 +1781,17 @@ body.has-pdf-preview:has(.udt-modal-backdrop) .pdf-pane { top: 0; z-index: 10010
         <h2>Identitas Pengujian</h2>
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px">
-        <div style="border:1px solid var(--line);border-radius:8px;padding:14px;background:var(--surface)">
+        <div class="role-card is-test" style="padding:14px">
           <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:10px">
             <h3 style="margin:0">Produk Uji</h3>
-            <span class="badge ok">Uji</span>
+            <span class="badge test">Uji</span>
           </div>
           <div class="grid" id="pgenTest" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px 14px"></div>
         </div>
-        <div style="border:1px solid var(--line);border-radius:8px;padding:14px;background:var(--surface)">
+        <div class="role-card is-ref" style="padding:14px">
           <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:10px">
             <h3 style="margin:0">Produk Pembanding</h3>
-            <span class="badge info">Pembanding</span>
+            <span class="badge ref">Pembanding</span>
           </div>
           <div class="grid" id="pgenRef" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px 14px"></div>
         </div>
@@ -3384,7 +3571,7 @@ const DEF_CALC = {
   lc: null, dilStd: null, dilSample: null, volMedia: null, volRep: null,
   pctWS: null, mrCa: 1, mr: 1, wsDefault: null, useMr: false
 };
-const COLORS = ['#0f766e', '#c2410c', '#6d28d9', '#0369a1', '#be123c', '#4d7c0f'];
+const COLORS = ['#0d9488', '#c2410c', '#6d28d9', '#0369a1', '#be123c', '#4d7c0f'];
 
 const S = {
   testFiles:[], refFiles:[],
@@ -3720,8 +3907,8 @@ function renderPdfPreviewPane(){
   }
 
   const roleBadge = activeRole === 'ref'
-    ? h('span', { class: 'badge info small' }, 'Pembanding')
-    : (activeRole === 'test' ? h('span', { class: 'badge ok small' }, 'Uji') : null);
+    ? h('span', { class: 'badge ref small' }, 'Pembanding')
+    : (activeRole === 'test' ? h('span', { class: 'badge test small' }, 'Uji') : null);
 
   let selEl = null;
   if (allPdfs.length > 1){
@@ -3820,9 +4007,11 @@ function makePdfPreviewBtn(fileName, role, opts){
     onclick: e => {
       if (e && e.preventDefault) e.preventDefault();
       if (e && e.stopPropagation) e.stopPropagation();
-      const same = PDF_PREVIEW.active && PDF_PREVIEW.fileName === targetName && (!PDF_PREVIEW.role || !targetRole || PDF_PREVIEW.role === targetRole);
+      const curFile = btn.getAttribute('data-pdf-file') || targetName;
+      const curRole = btn.getAttribute('data-pdf-role') || targetRole;
+      const same = PDF_PREVIEW.active && PDF_PREVIEW.fileName === curFile && (!PDF_PREVIEW.role || !curRole || PDF_PREVIEW.role === curRole);
       if (same) closePdfPreview();
-      else openPdfPreview(targetName, targetRole);
+      else openPdfPreview(curFile, curRole);
     }
   });
   if (typeof document !== 'undefined' && btn){
@@ -3898,7 +4087,7 @@ function renderFileList(boxEl, files, role){
     }
     actWrap.append(h('button',{class:'link',onclick:()=>removeFile(f.id, role)},'hapus'));
     cells.push(actWrap);
-    const div=h('div',{class:'file'+(ignored?' is-ignored':'')},cells);
+    const div=h('div',{class:'file '+(role==='ref'?'is-ref':'is-test')+(ignored?' is-ignored':'')},cells);
     if(f.kind==='csv'){
       const sel=(key,opt)=>{
         const s=h('select',{onchange:e=>{f.map[key]=parseInt(e.target.value,10);rebuild();}});
@@ -4254,15 +4443,16 @@ function renderMediumSection(id){
       const bsEndVals = fin(s.bsEnd).slice(0, 2);
       const bsEndM = mean(bsEndVals);
 
-      const sBox = h('div',{style:'border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:12px;background:var(--card)'});
-      
       // Header Info Standar (mendeteksi apakah digunakan bersama oleh Uji & Pembanding)
       const usage = getStdSetUsage(id, s);
       const isRef = !usage.usedByTest && (usage.usedByRef || s.role === 'ref');
+      const roleCls = usage.isShared ? 'is-shared' : (isRef ? 'is-ref' : 'is-test');
       const roleBadgeText = usage.isShared
         ? 'Standar Bersama (Produk Uji & Pembanding)'
         : (isRef ? 'Komparator / Referensi' : 'Produk Uji');
-      const roleBadge = h('span',{class:'badge ' + (usage.isShared ? 'ok' : (isRef ? 'info' : 'ok')), style:'margin-left:6px;font-size:11px'}, roleBadgeText);
+      const roleBadgeCls = usage.isShared ? 'ok' : (isRef ? 'ref' : 'test');
+      const roleBadge = h('span',{class:'badge ' + roleBadgeCls, style:'margin-left:6px;font-size:11px'}, roleBadgeText);
+      const sBox = h('div',{class:'role-card ' + roleCls, style:'margin-bottom:12px'});
       sBox.append(h('div',{class:'row',style:'justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px'},
         h('div',null,
           h('div',{style:'display:flex;align-items:center;gap:6px;flex-wrap:wrap'},
@@ -4295,7 +4485,7 @@ function renderMediumSection(id){
       const secGrid = h('div',{style:'display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px'});
 
       // Kelompok 1: Standar Utama (5 Injeksi)
-      const bStd = h('div',{style:'background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:6px'});
+      const bStd = h('div',{class:'role-subbox'});
       bStd.append(h('div',{class:'row',style:'justify-content:space-between;align-items:center'},
         h('b',{style:'font-size:12px'},'Standar Utama (5 Injeksi)'),
         h('span',{class:'small muted'},stdM > 0 ? `Rerata: ${fmt(stdM, 2)}` : '')
@@ -4313,7 +4503,7 @@ function renderMediumSection(id){
       secGrid.append(bStd);
 
       // Kelompok 2: Bracketing Mid
-      const bMid = h('div',{style:'background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:6px'});
+      const bMid = h('div',{class:'role-subbox'});
       bMid.append(h('div',{class:'row',style:'justify-content:space-between;align-items:center'},
         h('b',{style:'font-size:12px'},'Bracketing Mid (BS Mid)'),
         h('span',{class:'small muted'},bsMidM > 0 ? `Rerata: ${fmt(bsMidM, 2)}` : '')
@@ -4331,7 +4521,7 @@ function renderMediumSection(id){
       secGrid.append(bMid);
 
       // Kelompok 3: Bracketing End
-      const bEnd = h('div',{style:'background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:6px'});
+      const bEnd = h('div',{class:'role-subbox'});
       bEnd.append(h('div',{class:'row',style:'justify-content:space-between;align-items:center'},
         h('b',{style:'font-size:12px'},'Bracketing End (BS End)'),
         h('span',{class:'small muted'},bsEndM > 0 ? `Rerata: ${fmt(bsEndM, 2)}` : '')
@@ -4379,11 +4569,14 @@ function renderMediumSection(id){
         }
       },
         stdSets.map(s => h('option', {value:s.id, selected:s.id===cur}, s.name)));
-      return h('label',{class:'f'},h('span',null,roleBadge,' ',h('b',null,bName)),sel);
+      return h('label',{class:'f std-map-item ' + (role === 'ref' ? 'is-ref' : 'is-test')},
+        h('span',{style:'display:flex;align-items:center;gap:6px;flex-wrap:wrap'},roleBadge,' ',h('b',null,bName)),
+        sel
+      );
     };
 
-    Object.keys(M.testBatches).forEach(b => mapGrid.append(renderAssign(b, h('span',{class:'badge ok small'},'Uji'), 'test')));
-    Object.keys(M.refBatches).forEach(b => mapGrid.append(renderAssign(b, h('span',{class:'badge info small'},'Ref'), 'ref')));
+    Object.keys(M.testBatches).forEach(b => mapGrid.append(renderAssign(b, h('span',{class:'badge test small'},'Uji'), 'test')));
+    Object.keys(M.refBatches).forEach(b => mapGrid.append(renderAssign(b, h('span',{class:'badge ref small'},'Pembanding'), 'ref')));
     card.append(mapGrid);
 
     if(sharedUsages.length > 0){
@@ -4419,10 +4612,16 @@ function renderMediumSection(id){
 function renderBatchTable(M, B, title, mId){
   const V = Math.max(3, B.vessels.length ? Math.max(...B.vessels) : 0);
   const times = M.times.slice();
-  const wrap = h('div');
+  const isRef = B.role === 'ref' || /^Area Produk Pembanding/i.test(String(title || ''));
+  const wrap = h('div',{class:'batch-role-card ' + (isRef ? 'is-ref' : 'is-test')});
   const allSrcFiles = (B.files && B.files.length) ? B.files : (B.file ? [B.file] : []);
   const pdfSrcFiles = allSrcFiles.filter(fn => !!findPdfEntry(fn, B.role) || /\.pdf$/i.test(String(fn || '')));
-  const headBar = h('div',{class:'batch-head-bar'}, h('h3',null,title));
+  const headBar = h('div',{class:'batch-head-bar'},
+    h('div',{class:'batch-head-title'},
+      h('span',{class:'badge ' + (isRef ? 'ref' : 'test') + ' small'}, isRef ? 'Pembanding' : 'Uji'),
+      h('h3',null,title)
+    )
+  );
   if (pdfSrcFiles.length){
     const srcBar = h('div',{class:'batch-src-bar'});
     if (pdfSrcFiles.length <= 2){
@@ -4436,28 +4635,22 @@ function renderBatchTable(M, B, title, mId){
     } else {
       srcBar.append(h('span',null,`Sumber (${pdfSrcFiles.length} PDF):`));
       let openSelBtn = null;
+      const defaultSrc = (PDF_PREVIEW.active && pdfSrcFiles.includes(PDF_PREVIEW.fileName)) ? PDF_PREVIEW.fileName : pdfSrcFiles[0];
       const selSrc = h('select',{
         class:'batch-src-select',
         'aria-label':`Pilih sumber PDF ${title}`,
         onchange:() => {
           if (openSelBtn){
             openSelBtn.setAttribute('data-pdf-file', selSrc.value);
+            openSelBtn.title = 'Lihat PDF sumber: ' + selSrc.value;
             syncPdfPreviewBtns();
           }
           if (PDF_PREVIEW.active) openPdfPreview(selSrc.value, B.role);
         }
-      }, pdfSrcFiles.map(fn => h('option',{value:fn},fn)));
+      }, pdfSrcFiles.map(fn => h('option',{value:fn, selected:fn === defaultSrc},fn)));
       srcBar.append(selSrc);
-      openSelBtn = makePdfPreviewBtn(pdfSrcFiles[0], B.role, { label:'Preview PDF', isXs:true });
+      openSelBtn = makePdfPreviewBtn(defaultSrc, B.role, { label:'Preview PDF', isXs:true });
       if (openSelBtn){
-        openSelBtn.onclick = e => {
-          if (e && e.preventDefault) e.preventDefault();
-          if (e && e.stopPropagation) e.stopPropagation();
-          const chosen = selSrc.value || pdfSrcFiles[0];
-          const same = PDF_PREVIEW.active && PDF_PREVIEW.fileName === chosen && (!PDF_PREVIEW.role || !B.role || PDF_PREVIEW.role === B.role);
-          if (same) closePdfPreview();
-          else openPdfPreview(chosen, B.role);
-        };
         srcBar.append(openSelBtn);
       }
     }
@@ -4530,7 +4723,7 @@ function renderUnassignedSection(openByDefault = false){
               )
             ),
             h('td',null, h('code',null, x.name)),
-            h('td',null, h('span',{class:`badge ${x.role==='ref'?'info':'ok'} small`}, x.role==='ref'?'Pembanding':'Uji')),
+            h('td',null, h('span',{class:`badge ${x.role==='ref'?'ref':'test'} small`}, x.role==='ref'?'Pembanding':'Uji')),
             h('td',{class:'num'}, isFinite(x.area) ? pad4(x.area) : '-'),
             h('td',{class:'num muted small'}, isFinite(x.rt) ? String(x.rt) : '-')
           ))
@@ -5000,8 +5193,9 @@ function renderWeightsForRole(containerEl, role='all'){
     mSets.forEach(s => {
       const usage = getStdSetUsage(mId, s);
       const isRef = !usage.usedByTest && (usage.usedByRef || s.role === 'ref');
-      const roleBadgeCls = usage.isShared ? 'ok' : (isRef ? 'info' : 'ok');
-      const roleLabel = usage.isShared ? 'Standar Bersama' : (isRef ? 'Komparator' : 'Produk Uji');
+      const roleCls = usage.isShared ? 'is-shared' : (isRef ? 'is-ref' : 'is-test');
+      const roleBadgeCls = usage.isShared ? 'ok' : (isRef ? 'ref' : 'test');
+      const roleLabel = usage.isShared ? 'Standar Bersama' : (isRef ? 'Pembanding' : 'Produk Uji');
       const prodName = usage.isShared
         ? `${S.testParams.product || 'Produk Uji'} & ${S.refParams.product || 'Komparator'}`
         : (isRef ? (S.refParams.product || 'Produk Komparator') : (S.testParams.product || 'Produk Uji'));
@@ -5024,7 +5218,8 @@ function renderWeightsForRole(containerEl, role='all'){
       });
 
       const sRow = h('div',{
-        style:'background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:6px'
+        class:'role-card ' + roleCls,
+        style:'border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:6px'
       },
         h('div',{class:'row',style:'justify-content:space-between;align-items:center'},
           h('div',{style:'display:flex;align-items:center;gap:6px'},
@@ -5197,7 +5392,7 @@ function renderMediumResultCard(mId){
       refCalculated = calcBatchProfile(M, rBObj, p, sObj);
       tableNodes.push(renderProfileTable(refCalculated, 'Pembanding', refFullName));
       if(refCalculated.stats && refCalculated.stats.length){
-        seriesForChart.push({name: refFullName, vals: refCalculated.stats.map(x=>x.avg), color: '#475569', dash: true, marker: 'square'});
+        seriesForChart.push({name: refFullName, vals: refCalculated.stats.map(x=>x.avg), color: '#4f46e5', dash: true, marker: 'square'});
       }
     } else {
       f2Nodes.push(h('div',{class:'banner warn',style:'margin-bottom:0'},'Data Produk Pembanding belum diunggah untuk pH '+mId+'. Unggah di kotak Produk Pembanding (Langkah 1) untuk evaluasi f2.'));
@@ -5498,23 +5693,77 @@ function tableExportText(sep){
 }
 
 async function exportCSV(){
+  const mIds = S.model ? sortedMediaIds(S.model) : [];
+  if(!S.model || !mIds.length){
+    alert('Belum ada data disolusi untuk diekspor ke CSV.');
+    return;
+  }
   const text = tableExportText(';').replace(/(\d)\.(\d)/g,'$1,$2');
-  if(!S.dl){ showTSV(); return; }
-  try{ await S.dl.save({filename:'hasil-disolusi-terbanding.csv', data:'\uFEFF'+text}); }
-  catch(e){ showTSV(); }
+  if(!text.trim()){
+    alert('Belum ada tabel hasil yang siap diekspor ke CSV.');
+    return;
+  }
+  if(S.dl && typeof S.dl.save === 'function'){
+    try{ await S.dl.save({filename:'hasil-disolusi-terbanding.csv', data:'\uFEFF'+text}); return; }
+    catch(e){}
+  }
+  try{
+    const tProd = (S.testParams.product || 'UDT').trim().replace(/[^a-zA-Z0-9_-]+/g, '_').replace(/^_+|_+$/g, '') || 'UDT';
+    const filename = `hasil-disolusi-${tProd}.csv`;
+    const blob = new Blob(['\uFEFF' + text], {type:'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(()=>{ try{ URL.revokeObjectURL(url); }catch(_){} }, 1500);
+  }catch(e){
+    showTSV();
+  }
 }
 
 function showTSV(){
+  const existing = document.getElementById('tsvExportCard');
+  if(existing) existing.remove();
   const t = tableExportText('\t');
-  const box = h('textarea',{style:'min-height:180px'}, t);
-  const dlg = h('div',{class:'card'},
-    h('h2',null,'Tabel Hasil (TSV)'),
-    h('p',{class:'small muted'},'Salin tabel di bawah untuk ditempel ke Google Sheets atau Excel.'),
+  const statusEl = h('span',{class:'small muted',style:'margin-left:auto'},'');
+  const box = h('textarea',{style:'min-height:180px',readonly:true}, t);
+  const copyToClipboard = async () => {
+    let copied = false;
+    try{
+      if(navigator.clipboard && typeof navigator.clipboard.writeText === 'function'){
+        await navigator.clipboard.writeText(t);
+        copied = true;
+      }
+    }catch(e){}
+    if(!copied){
+      try{
+        box.focus();
+        box.select();
+        copied = typeof document.execCommand === 'function' && document.execCommand('copy');
+      }catch(e){}
+    }
+    statusEl.textContent = copied ? 'Tersalin ke Clipboard ✓' : 'Tekan Ctrl+C untuk menyalin teks di atas';
+    statusEl.style.color = copied ? 'var(--ok)' : 'var(--muted)';
+  };
+  const dlg = h('div',{id:'tsvExportCard',class:'card'},
+    h('div',{class:'row',style:'justify-content:space-between;align-items:center;margin-bottom:6px'},
+      h('h2',{style:'margin:0'},'Tabel Hasil (TSV)'),
+      h('button',{type:'button',class:'btn small',onclick:()=>dlg.remove()},'Tutup')
+    ),
+    h('p',{class:'small muted',style:'margin:0 0 8px'},'Salin tabel di bawah untuk ditempel ke Google Sheets atau Excel.'),
     box,
-    h('div',{class:'row',style:'margin-top:8px'}, h('button',{class:'btn',onclick:()=>dlg.remove()},'Tutup')));
+    h('div',{class:'row',style:'margin-top:8px;align-items:center;gap:8px'},
+      h('button',{type:'button',class:'btn primary small',onclick:copyToClipboard},'Salin ke Clipboard'),
+      h('button',{type:'button',class:'btn small',onclick:()=>dlg.remove()},'Tutup'),
+      statusEl
+    )
+  );
   $('#p4body').prepend(dlg);
-  box.select();
-  try{ navigator.clipboard&&navigator.clipboard.writeText(t); }catch(e){}
+  if(typeof box.select === 'function') box.select();
+  copyToClipboard();
 }
 
 // Helper: Render Kurva Disolusi Komparatif ke Canvas untuk disematkan ke PDF & Print Window
@@ -5662,12 +5911,6 @@ function drawChartCanvas(series, times, w = 520, h = 160) {
 }
 
 function printReportWindow(){
-  const win = window.open('', '_blank');
-  if(!win){
-    alert('Pop-up terblokir. Harap izinkan pop-up peramban untuk mencetak/menyimpan PDF.');
-    return;
-  }
-
   const mIds = S.model ? sortedMediaIds(S.model) : [];
   if(!mIds.length){
     alert('Belum ada data untuk dicetak.');
@@ -5952,6 +6195,17 @@ function printReportWindow(){
     });
   });
 
+  if(!pagesHtml){
+    alert('Laporan Cetak membutuhkan minimal 1 medium yang memiliki data Produk Uji, Produk Pembanding, dan Standar lengkap.');
+    return;
+  }
+
+  const win = window.open('', '_blank');
+  if(!win){
+    alert('Pop-up terblokir. Harap izinkan pop-up peramban untuk mencetak/menyimpan PDF.');
+    return;
+  }
+
   win.document.write(`<!DOCTYPE html>
 <html>
 <head>
@@ -6007,8 +6261,19 @@ function printReportWindow(){
 }
 
 async function exportPDF(){
-  if(!S.model || !sortedMediaIds(S.model).length){
+  const mIds = S.model ? sortedMediaIds(S.model) : [];
+  if(!S.model || !mIds.length){
     alert('Belum ada data disolusi untuk diekspor ke PDF. Silakan unggah dan proses data terlebih dahulu.');
+    return;
+  }
+
+  const hasReadyPair = mIds.some(mId => {
+    const M = S.model.media[mId];
+    const stdSets = S.model.standardSets[mId] || [];
+    return stdSets.length && Object.keys(M.refBatches).length && Object.keys(M.testBatches).length;
+  });
+  if(!hasReadyPair){
+    alert('Laporan PDF membutuhkan minimal 1 medium yang memiliki data Produk Uji, Produk Pembanding, dan Standar lengkap.');
     return;
   }
 
@@ -6020,7 +6285,6 @@ async function exportPDF(){
 
   try {
     const doc = new jsPDFClass({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-    const mIds = sortedMediaIds(S.model);
     const tProdName = S.testParams.product || 'Produk Uji';
     const rProdName = S.refParams.product || 'Produk Pembanding';
     const dateStr = new Date().toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' });
@@ -6907,7 +7171,11 @@ async function verifyFolder(){
   const idMatch = rawId.match(/folders\/([a-zA-Z0-9_-]{20,})/);
   const folderId = idMatch ? idMatch[1] : rawId;
 
-  if(!folderId){ out.innerHTML=''; return; }
+  if(!folderId){
+    out.innerHTML='';
+    out.append(h('div',{class:'banner warn'},'Masukkan ID atau tautan folder Google Drive terlebih dahulu sebelum menekan Verifikasi.'));
+    return;
+  }
 
   const hasConn = connAvailable();
   if(!hasConn){
@@ -8158,11 +8426,12 @@ function openPreStep2Modal(pending){
         pending.prefixGroups.forEach(pg => {
           const st = prefixDraft[pg.groupKey];
           const isSampleAct = st.action === 'sample' || st.action === 'sampleFromFile';
-          const card = h('div', { class: 'res-card' });
+          const isRefPg = pg.role === 'ref';
+          const card = h('div', { class: 'res-card ' + (isRefPg ? 'is-ref' : 'is-test') });
           card.append(
             h('div', { class: 'res-card-head' },
               h('div', { class: 'res-card-title' },
-                h('span', { class: 'badge ' + (pg.role==='ref'?'info':'ok') + ' small' }, pg.role === 'ref' ? 'Pembanding' : 'Uji'),
+                h('span', { class: 'badge ' + (isRefPg ? 'ref' : 'test') + ' small' }, isRefPg ? 'Pembanding' : 'Uji'),
                 h('b', null, pg.prefixKey),
                 h('span', { class: 'badge warn small' }, pg.items.length + ' baris'),
                 pg.hasFileTime && !pg.hasTV ? h('span', { class: 'badge info small' }, 'Waktu di nama file') : null
@@ -8286,7 +8555,8 @@ function openPreStep2Modal(pending){
         );
         pending.conflictGroups.forEach(cg => {
           const st = conflictDraft[cg.groupKey];
-          const card = h('div', { class: 'res-card' });
+          const isRefCg = cg.role === 'ref';
+          const card = h('div', { class: 'res-card ' + (isRefCg ? 'is-ref' : 'is-test') });
           const ptSample = cg.items.slice(0, 4).map(c => `v${c.vessel}@${c.time}'`).join(', ') + (cg.items.length > 4 ? ` (+${cg.items.length - 4} titik)` : '');
           card.append(
             h('div', { class: 'res-card-head' },
@@ -8294,7 +8564,7 @@ function openPreStep2Modal(pending){
                 h('b', null, `Batch ${cg.batch}`),
                 h('span', { class: 'muted' }, '·'),
                 h('span', { class: 'small' }, `${cg.mId === 'Air' || cg.mId === 'Release' ? cg.mId : ('pH ' + cg.mId)}`),
-                h('span', { class: 'badge ' + (cg.role === 'ref' ? 'info' : 'ok') + ' small' }, cg.role === 'ref' ? 'Pembanding' : 'Uji')
+                h('span', { class: 'badge ' + (isRefCg ? 'ref' : 'test') + ' small' }, isRefCg ? 'Pembanding' : 'Uji')
               ),
               h('span', { class: 'badge err small' }, `${cg.items.length} titik bentrok`)
             ),
@@ -8655,8 +8925,30 @@ function openAliasManagerModal(){
   renderMgr();
 }
 
+// ===================== Tampilan (Tema) =====================
+function isDarkThemeActive(){
+  const cur = document.documentElement.dataset ? document.documentElement.dataset.theme : '';
+  if(cur === 'dark') return true;
+  if(cur === 'light') return false;
+  return Boolean(typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+}
+function toggleTheme(){
+  const nextTheme = isDarkThemeActive() ? 'light' : 'dark';
+  if(!document.documentElement.dataset) document.documentElement.dataset = {};
+  document.documentElement.dataset.theme = nextTheme;
+  try{ localStorage.setItem('udt_theme', nextTheme); }catch(e){}
+  return nextTheme;
+}
+
 // ===================== Inisialisasi =====================
 function init(){
+  try{
+    const savedTheme = localStorage.getItem('udt_theme');
+    if(savedTheme === 'dark' || savedTheme === 'light'){
+      if(!document.documentElement.dataset) document.documentElement.dataset = {};
+      document.documentElement.dataset.theme = savedTheme;
+    }
+  }catch(e){}
   restore();
   buildNav();
 
@@ -8707,7 +8999,7 @@ function init(){
   go(1);
   initConn();
 }
-window.__udt = {S, rebuild, go, addFilesForRole, textEntry, fileRows, readPdf, itemsToLines, parsePdfText, parseCaryPdfPages, parseHeaderMeta, extractTimeFromFilename, extractBatchFromFilename, extractBatchAndProductFromPrefix, PDF_PREVIEW, openPdfPreview, closePdfPreview, makePdfPreviewBtn, renderCheck, renderParams, renderResults, renderSend, executeExportCommand, formatTabTitle, lineChart, drawChartCanvas, exportPDF, printReportWindow, parseCSV, classifyName, extractMediumFromString, analyzePendingResolutions, openPreStep2Modal, openAliasManagerModal, checkMediumValidation, statusOf};
+window.__udt = {S, rebuild, go, toggleTheme, isDarkThemeActive, exportCSV, showTSV, addFilesForRole, textEntry, fileRows, readPdf, itemsToLines, parsePdfText, parseCaryPdfPages, parseHeaderMeta, extractTimeFromFilename, extractBatchFromFilename, extractBatchAndProductFromPrefix, PDF_PREVIEW, openPdfPreview, closePdfPreview, makePdfPreviewBtn, renderCheck, renderParams, renderResults, renderSend, executeExportCommand, formatTabTitle, lineChart, drawChartCanvas, exportPDF, printReportWindow, parseCSV, classifyName, extractMediumFromString, analyzePendingResolutions, openPreStep2Modal, openAliasManagerModal, checkMediumValidation, statusOf};
 init();
 </script>
 <div id="resModalRoot"></div>
