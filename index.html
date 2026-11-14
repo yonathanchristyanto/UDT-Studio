@@ -2000,15 +2000,21 @@ function classifyName(raw, fileName = '', injRole = ''){
     }
   }
 
-  // 1. Deteksi Standar Kalibrasi & Bracketing (di awal nama, atau di tengah bila tidak ada ekor waktu+vessel)
-  if (/^(?:standar|standard|std)\b/i.test(n) || (!exactTV && /(?:^|[\s_-])(?:standar|standard|std)\b/i.test(n))){
-    return {type:'std', medium: extractMediumFromString(n) || extractMediumFromString(fileName), name:n};
-  }
-  if (/^bs\s*[-_]?\s*mid\b/i.test(n) || (!exactTV && /(?:^|[\s_-])bs\s*[-_]?\s*mid\b/i.test(n))){
+  // 1. Deteksi Standar Kalibrasi & Bracketing (prioritaskan BS Mid / BS End sebelum Standar umum, baik di nama injeksi maupun nama file khusus BS)
+  const fnOnlyBsMid = !exactTV && /(?:^|[\s_(-])(?:bs\s*[-_]?\s*mid|bracketing\s*[-_]?\s*mid)\b/i.test(fileName) && !/(?:^|[\s_(-])(?:standar|standard|std)\b/i.test(fileName);
+  const fnOnlyBsEnd = !exactTV && /(?:^|[\s_(-])(?:bs\s*[-_]?\s*end|bracketing\s*[-_]?\s*end)\b/i.test(fileName) && !/(?:^|[\s_(-])(?:standar|standard|std)\b/i.test(fileName);
+  if (/^bs\s*[-_]?\s*mid\b/i.test(n) || (!exactTV && /(?:^|[\s_-])(?:bs\s*[-_]?\s*mid|bracketing\s*[-_]?\s*mid)\b/i.test(n))){
     return {type:'bsMid', medium: extractMediumFromString(n) || extractMediumFromString(fileName), name:n};
   }
-  if (/^bs\s*[-_]?\s*end\b/i.test(n) || (!exactTV && /(?:^|[\s_-])bs\s*[-_]?\s*end\b/i.test(n))){
+  if (/^bs\s*[-_]?\s*end\b/i.test(n) || (!exactTV && /(?:^|[\s_-])(?:bs\s*[-_]?\s*end|bracketing\s*[-_]?\s*end)\b/i.test(n))){
     return {type:'bsEnd', medium: extractMediumFromString(n) || extractMediumFromString(fileName), name:n};
+  }
+  if (/^(?:standar|standard|std)\b/i.test(n) || (!exactTV && /(?:^|[\s_-])(?:standar|standard|std)\b/i.test(n))){
+    const inferredStdType = fnOnlyBsMid ? 'bsMid' : (fnOnlyBsEnd ? 'bsEnd' : 'std');
+    return {type:inferredStdType, medium: extractMediumFromString(n) || extractMediumFromString(fileName), name:n};
+  }
+  if (fnOnlyBsMid || fnOnlyBsEnd){
+    return {type: fnOnlyBsMid ? 'bsMid' : 'bsEnd', medium: extractMediumFromString(n) || extractMediumFromString(fileName), name:n};
   }
 
   // 2. Layer 1: Tail-First Parser (<Waktu>' <Vessel> dari belakang)
@@ -2084,10 +2090,10 @@ function itemsToLines(items){
 
   // Fase 1: Kelompokkan baseline ketat (~3.5pt) agar teks sel multi-baris (wrap 2-4 baris) tetap terpisah dulu
   const strips = clusterItemsByY(toks, 3.5);
-  const barrierRe = /^(?:Data file|Instrument|Sample Name|Acq\.|Analysis|Injection|Column|Serial|Name\s*:|Page\s+\d+|Sum|Mean|StdDev|Std\.?\s*Dev|RSD)\b/i;
-  const headerColRe = /\bRT\b.*\bArea\b|\bPlates?\s*USP\b|\bTheoretical\s*Plates?\b|\bPeak\s*Tail\b|\bInjection\s+Acquired\s+Date\b/i;
-  const dateTailRe = /^(?:(.*?)\s+)?(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)(?:\s+\d+(?:[.,]\d+)?){0,2}\s+\d{4}[-/]\d{1,2}[-/]\d{1,2}.*$/i;
-  const numTailRe = /^(?:(.*?)\s+)?(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)(?:\s+(\d+(?:[.,]\d+)?))?$/;
+  const barrierRe = /^(?:Data file|Instrument|Sample Name|Injection\s+date|Acq\.|Analysis|Injection|Column|Serial|Name\s*:|Page\s+\d+|Sum|Mean|Average|StdDev|Std\.?\s*Dev|Standard\s+Deviation|Deviation|RSD)\b/i;
+  const headerColRe = /\bRT\b.*\bArea\b|\bPlates?\s*USP\b|\bTheoretical\s*Plates?\b|\bPeak\s*Tail\b|\bTail\s*Factor\b|\bInjection\s+Acquired\s+Date\b/i;
+  const dateTailRe = /^(?:(.*?)\s+)?(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)(?:\s+\d+(?:[.,]\d+)?){0,4}\s+\d{4}[-/]\d{1,2}[-/]\d{1,2}.*$/i;
+  const numTailRe = /^(?:(.*?)\s+)?(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)(?:\s+(\d+(?:[.,]\d+)?)){0,3}$/;
 
   let tableHdrStrip = null;
   let hdrRtX = null;
@@ -2098,8 +2104,17 @@ function itemsToLines(items){
     st.isBarrier = st.isTableHdr || barrierRe.test(st.text) || headerColRe.test(st.text);
     if (st.isTableHdr && !tableHdrStrip){
       tableHdrStrip = st;
-      const rtTok = st.items.find(it => /^RT$/i.test(it.s.trim()));
+      const rtTok = st.items.find(it => /^RT\b/i.test(it.s.trim()));
       if (rtTok) hdrRtX = rtTok.x;
+    }
+  });
+  strips.forEach((st, idx) => {
+    if (/^Standard$/i.test(st.text) && strips[idx + 1] && /^Deviation\b/i.test(strips[idx + 1].text)){
+      st.isBarrier = true;
+      strips[idx + 1].isBarrier = true;
+    }
+    if (st.isTableHdr && strips[idx + 1] && /^(?:Plates|USP|Plates\s+USP|Factor)$/i.test(strips[idx + 1].text)){
+      strips[idx + 1].isBarrier = true;
     }
   });
 
@@ -2115,13 +2130,13 @@ function itemsToLines(items){
     if (dateIdx < 0) return null;
     const minX = hdrRtX !== null ? hdrRtX - 30 : -Infinity;
     let numCount = 0, firstNumX = null;
-    for (let j = dateIdx - 1; j >= 0 && numCount < 4; j--){
+    for (let j = dateIdx - 1; j >= 0 && numCount < 7; j--){
       const tok = sorted[j];
       if (tok.x < minX) break;
       const st = tok.s.trim();
       if (!pureNumItemRe.test(st)) break;
       const parts = st.split(/\s+/);
-      if (numCount + parts.length > 4) break;
+      if (numCount + parts.length > 7) break;
       numCount += parts.length;
       firstNumX = tok.x;
     }
@@ -2142,13 +2157,13 @@ function itemsToLines(items){
       if (st.isBarrier || st.y >= tableHdrStrip.y) return;
       const sorted = st.items.slice().sort((a,b)=>a.x - b.x);
       let numCount = 0, firstNumX = null, firstVal = NaN;
-      for (let j = sorted.length - 1; j >= 0 && numCount < 4; j--){
+      for (let j = sorted.length - 1; j >= 0 && numCount < 7; j--){
         const tok = sorted[j];
         if (tok.x < hdrRtX - 30) break;
         const t = tok.s.trim();
         if (!pureNumItemRe.test(t)) break;
         const parts = t.split(/\s+/);
-        if (numCount + parts.length > 4) break;
+        if (numCount + parts.length > 7) break;
         numCount += parts.length;
         firstNumX = tok.x;
         firstVal = parseFloat(parts[0].replace(',', '.'));
@@ -2170,7 +2185,7 @@ function itemsToLines(items){
   const leftBarriers = strips.filter(st =>
     st.isBarrier && (st.isTableHdr || barrierRe.test(st.text) || st.items.some(it => it.x < nameMaxX))
   );
-  const leftIgnoreRe = /^(?:Page\s+\d+|PT\.\s*Pharos|Name\s*:|Mean|StdDev|Std\.?\s*Dev|RSD|Sum|Data file|Instrument|Sample Name|Acq\.|Analysis|Injection|Column|Serial)\b/i;
+  const leftIgnoreRe = /^(?:Page\s+\d+|PT\.\s*Pharos|Name\s*:|Mean|Average|StdDev|Std\.?\s*Dev|Standard\s+Deviation|Standard$|Deviation\b|RSD|Sum|Data file|Instrument|Sample Name|Injection\s+date|Acq\.|Analysis|Injection|Column|Serial)\b/i;
 
   const consumedLeft = new Set();
   const mergedByIdx = {};
@@ -2218,6 +2233,12 @@ function itemsToLines(items){
   return out;
 }
 const ROW_PATTERNS = [
+  // 0a. Format CDS 6 kolom angka dengan Date: Name RT Area Ws Ds Tail Plates Date
+  /^(.*?)\s+(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)\s+\d+(?:[.,]\d+)?\s+\d+(?:[.,]\d+)?\s+(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)\s+\d{4}[-/]\d{1,2}[-/]\d{1,2}.*$/i,
+
+  // 0b. Format CDS 5 kolom angka dengan Date: Name RT Area Col3 Tail Plates Date
+  /^(.*?)\s+(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)\s+\d+(?:[.,]\d+)?\s+(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)\s+\d{4}[-/]\d{1,2}[-/]\d{1,2}.*$/i,
+
   // 1. Agilent OpenLab CDS Sequence Summary Report: Name RT Area Plates Tail Date
   // Misal: "Vonoprazan 20mg F00371026A MD pH 1,2 15' 1 2.2 379.6109 4962 1.4 2026-11-06 09:45:57+07:00"
   /^(.*?)\s+(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)\s+\d{4}[-/]\d{1,2}[-/]\d{1,2}.*$/i,
@@ -2227,6 +2248,9 @@ const ROW_PATTERNS = [
 
   // 3. Format CDS dengan Date langsung setelah Area: Name RT Area Date
   /^(.*?)\s+(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)\s+\d{4}[-/]\d{1,2}[-/]\d{1,2}.*$/i,
+
+  // 4a. Cross Sequence Summary Report 6 kolom angka tanpa Date: Name RT Area Ws Ds Tail Plates
+  /^(.*?)\s+(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)\s+\d+(?:[.,]\d+)?\s+\d+(?:[.,]\d+)?\s+(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)$/,
 
   // 4. Format 4 kolom tanpa Date di akhir: Name RT Area Tail Plates (atau Plates Tail)
   /^(.*?)\s+(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)$/,
@@ -2239,10 +2263,10 @@ const ROW_PATTERNS = [
 ];
 
 function parseRowsFromLines(lines){
-  const datePatterns = ROW_PATTERNS.slice(0, 3);
-  const nonDatePatterns = ROW_PATTERNS.slice(3);
-  const tabDateRe = /^(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)(?:\s+(\d+(?:[.,]\d+)?))?(?:\s+(\d+(?:[.,]\d+)?))?\s+\d{4}[-/]\d{1,2}[-/]\d{1,2}.*$/i;
-  const tabNumRe = /^(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)(?:\s+(\d+(?:[.,]\d+)?))?(?:\s+(\d+(?:[.,]\d+)?))?$/;
+  const datePatterns = ROW_PATTERNS.slice(0, 5);
+  const nonDatePatterns = ROW_PATTERNS.slice(5);
+  const tabDateRe = /^((?:\d+(?:[.,]\d+)?\s+){1,6}\d+(?:[.,]\d+)?)\s+\d{4}[-/]\d{1,2}[-/]\d{1,2}.*$/i;
+  const tabNumRe = /^((?:\d+(?:[.,]\d+)?\s+){1,6}\d+(?:[.,]\d+)?)$/;
 
   const resolveMetrics = (sA, sB) => {
     let tail = NaN, plates = NaN;
@@ -2264,23 +2288,27 @@ function parseRowsFromLines(lines){
     for (const ln of lines){
       const s = String(ln||'').trim();
       if (!s) continue;
-      if (/^(sum|mean|stddev|rsd)\b/i.test(s)) continue;
+      if (/^(sum|mean|average|stddev|std\.?\s*dev|standard\s+deviation|deviation|rsd)\b/i.test(s)) continue;
       if (/time\s*\[min\]|vwd\d|\bmAU\b|Theoretical Plates|Peak Tail|Acquired Date/i.test(s)) continue;
-      if (/^(?:Data file|Instrument|Sample Name|Acq\.|Analysis|Injection|Column|Serial)\b/i.test(s)) continue;
+      if (/^(?:Data file|Instrument|Sample Name|Injection\s+date|Acq\.|Analysis|Injection|Column|Serial)\b/i.test(s)) continue;
 
       const tabIdx = s.indexOf('\t');
       if (tabIdx > 0){
         const tName = s.slice(0, tabIdx).trim();
         const tRight = s.slice(tabIdx + 1).replace(/\t+/g, ' ').trim();
-        if (!tName || /^[\d\s.,]+$/.test(tName) || (/\b(Name|RT|Area|Plates|Tail)\b/i.test(tName) && tName.split(/\s+/).length <= 2)) continue;
+        if (!tName || /^[\d\s.,]+$/.test(tName) || /^(sum|mean|average|stddev|std\.?\s*dev|standard\s+deviation|deviation|rsd)\b/i.test(tName)) continue;
+        if (/\b(Name|RT|Area|Plates|Tail)\b/i.test(tName) && tName.split(/\s+/).length <= 2) continue;
         const tm = tRight.match(isDatePass ? tabDateRe : tabNumRe);
         if (tm){
-          const { tail, plates } = resolveMetrics(tm[3], tm[4]);
+          const nums = tm[1].trim().split(/\s+/);
+          const { tail, plates } = nums.length >= 4
+            ? resolveMetrics(nums[nums.length - 2], nums[nums.length - 1])
+            : resolveMetrics(nums[2], undefined);
           matched.push({
             name: tName,
-            rt: parseFloat(tm[1].replace(',','.')),
-            area: parseFloat(tm[2].replace(',','.')),
-            areaStr: pad4(tm[2]),
+            rt: parseFloat(nums[0].replace(',','.')),
+            area: parseFloat(nums[1].replace(',','.')),
+            areaStr: pad4(nums[1]),
             tail,
             plates
           });
@@ -2292,7 +2320,7 @@ function parseRowsFromLines(lines){
         const m = s.match(p);
         if (m){
           const name = m[1].trim();
-          if (!name || /^[\d\s.,]+$/.test(name)) continue;
+          if (!name || /^[\d\s.,]+$/.test(name) || /^(sum|mean|average|stddev|std\.?\s*dev|standard\s+deviation|deviation|rsd)\b/i.test(name)) continue;
           if (/\b(Name|RT|Area|Plates|Tail)\b/i.test(name) && name.split(/\s+/).length <= 2) continue;
           const { tail, plates } = resolveMetrics(m[4], m[5]);
           matched.push({
@@ -2740,16 +2768,52 @@ function buildUnifiedModel(injections, fileMetaMap){
     }
   }
 
-  // --- LANGKAH C: Gabungkan BS Otomatis jika Terpencar Lintas File ---
+  // --- LANGKAH C: Gabungkan BS Otomatis jika Terpencar Lintas File + Manual Merge (Opsi 2) ---
   for (const m of Object.keys(rawStdByMed)){
     const entries = rawStdByMed[m];
     const fileGroups = {};
     for (const e of entries){
       const fgKey = (e.role || 'test') + '::' + e.file;
-      const fg = fileGroups[fgKey] || (fileGroups[fgKey] = {file: e.file, role: e.role, runDate: e.runDate, std:[], bsMid:[], bsEnd:[]});
+      const fg = fileGroups[fgKey] || (fileGroups[fgKey] = {key: fgKey, file: e.file, role: e.role, runDate: e.runDate, std:[], bsMid:[], bsEnd:[], manualMergedSources:[]});
       const maxCap = e.type === 'std' ? 5 : 2;
       if (fg[e.type].length < maxCap){
         fg[e.type].push(e.area);
+      }
+    }
+
+    // Terapkan aturan penggabungan manual jika dipilih pengguna di Langkah 2 (Opsi 2)
+    const manualMap = (S.manualStdMerges && S.manualStdMerges[m]) || {};
+    for (const srcKey of Object.keys(manualMap)){
+      const rule = manualMap[srcKey];
+      const srcFg = fileGroups[srcKey];
+      const dstFg = rule && fileGroups[rule.targetKey];
+      if (srcFg && dstFg && srcKey !== rule.targetKey){
+        const allVals = [...srcFg.std, ...srcFg.bsMid, ...srcFg.bsEnd];
+        const targetBucket = (rule.asType === 'bsMid' || rule.asType === 'bsEnd' || rule.asType === 'std') ? rule.asType : 'bsMid';
+        const cap = targetBucket === 'std' ? 5 : 2;
+        for (const v of allVals){
+          if (dstFg[targetBucket].length < cap) dstFg[targetBucket].push(v);
+        }
+        dstFg.mergedFiles = dstFg.mergedFiles || [dstFg.file];
+        if (!dstFg.mergedFiles.includes(srcFg.file)) dstFg.mergedFiles.push(srcFg.file);
+        dstFg.manualMergedSources = dstFg.manualMergedSources || [];
+        dstFg.manualMergedSources.push({ srcKey, file: srcFg.file, asType: targetBucket });
+        delete fileGroups[srcKey];
+      }
+    }
+
+    // Jika ada kartu utama yang sudah punya >=3 injeksi Standar, pulihkan file bracketing kecil (1-2 injeksi) yang tercampur std+bsMid/bsEnd
+    const hasFullStdAnchor = Object.values(fileGroups).some(x => x.std.length >= 3);
+    if (hasFullStdAnchor){
+      for (const f of Object.keys(fileGroups)){
+        const g = fileGroups[f];
+        if (g.std.length > 0 && g.std.length <= 2 && (g.bsMid.length > 0 || g.bsEnd.length > 0) && (g.std.length + g.bsMid.length + g.bsEnd.length <= 2)){
+          if (g.bsMid.length > 0){
+            while (g.std.length && g.bsMid.length < 2) g.bsMid.push(g.std.shift());
+          } else if (g.bsEnd.length > 0){
+            while (g.std.length && g.bsEnd.length < 2) g.bsEnd.push(g.std.shift());
+          }
+        }
       }
     }
 
@@ -2787,14 +2851,17 @@ function buildUnifiedModel(injections, fileMetaMap){
       }
     }
 
+    if (anchorSets.length) getMed(m);
     standardSets[m] = anchorSets.map((a, idx) => {
       const fileNames = a.mergedFiles ? a.mergedFiles.join(' + ') : a.file;
       return {
         id: 'std_' + m.replace(',','_') + '_' + (a.role || 'test') + '_' + (idx+1),
+        fgKey: a.key,
         medium: m,
         role: a.role || 'test',
         file: fileNames,
         sourceFiles: a.mergedFiles ? [...a.mergedFiles] : [a.file],
+        manualMergedSources: a.manualMergedSources || [],
         runDate: a.runDate,
         name: `Standar ${(m.toLowerCase()==='air'||m.toLowerCase()==='release'||m.toLowerCase()==='rilis') ? m : ('pH ' + m)} (${fileNames})`,
         std: a.std,
@@ -4235,6 +4302,56 @@ function renderMediumSection(id){
       secGrid.append(bEnd);
 
       sBox.append(secGrid);
+
+      // Opsi 2: Kontrol Penggabungan / Pemindahan Kartu Standar Manual
+      if (stdSets.length > 1 && s.fgKey){
+        const otherSets = stdSets.filter(x => x.fgKey && x.fgKey !== s.fgKey);
+        if (otherSets.length > 0){
+          const mergeBar = h('div',{class:'std-manual-merge-bar',style:'margin-top:8px;padding-top:8px;border-top:1px dashed var(--border);display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:11px;color:var(--muted);'});
+          mergeBar.append(h('span',{style:'font-weight:600;color:var(--text-secondary);'},'Gabungkan kartu ini ke:'));
+          const selTarget = h('select',{class:'std-merge-target-sel',style:'width:auto;max-width:260px;padding:3px 8px;font-size:11px;border-radius:5px;'});
+          otherSets.forEach(o => {
+            selTarget.append(h('option',{value:o.fgKey}, o.name));
+          });
+          const selRole = h('select',{class:'std-merge-role-sel',style:'width:auto;padding:3px 8px;font-size:11px;border-radius:5px;'});
+          const defaultRole = /end/i.test(s.file || '') ? 'bsEnd' : (/mid/i.test(s.file || '') ? 'bsMid' : 'bsMid');
+          [
+            {val:'bsMid', lbl:'Bracketing Mid (BS Mid)'},
+            {val:'bsEnd', lbl:'Bracketing End (BS End)'},
+            {val:'std',   lbl:'Standar Utama (5 Injeksi)'}
+          ].forEach(opt => {
+            const oEl = h('option',{value:opt.val}, opt.lbl);
+            if (opt.val === defaultRole){
+              oEl.selected = true;
+              selRole.value = opt.val;
+            }
+            selRole.append(oEl);
+          });
+          if (!selTarget.value && otherSets[0]) selTarget.value = otherSets[0].fgKey;
+          const btnMerge = h('button',{type:'button',class:'btn small ghost std-merge-apply-btn',style:'padding:3px 9px;font-size:11px;',onclick:()=>{
+            S.manualStdMerges = S.manualStdMerges || {};
+            S.manualStdMerges[id] = S.manualStdMerges[id] || {};
+            S.manualStdMerges[id][s.fgKey] = { targetKey: selTarget.value, asType: selRole.value };
+            rebuild(); renderCheck(); renderParams(); renderResults();
+          }},'Gabungkan');
+          mergeBar.append(selTarget, h('span',{},'sebagai'), selRole, btnMerge);
+          sBox.append(mergeBar);
+        }
+      }
+      if (s.manualMergedSources && s.manualMergedSources.length > 0){
+        const unmergeBar = h('div',{class:'std-manual-unmerge-bar',style:'margin-top:8px;padding-top:8px;border-top:1px dashed var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:11px;color:var(--muted);'});
+        const srcDesc = s.manualMergedSources.map(m => `${m.file} (${m.asType === 'bsMid' ? 'BS Mid' : (m.asType === 'bsEnd' ? 'BS End' : 'Std')})`).join(', ');
+        unmergeBar.append(h('span',{},`Digabung manual: ${srcDesc}`));
+        const btnUnmerge = h('button',{type:'button',class:'btn small ghost std-unmerge-btn',style:'padding:2px 8px;font-size:11px;',onclick:()=>{
+          if (S.manualStdMerges && S.manualStdMerges[id]){
+            s.manualMergedSources.forEach(m => { delete S.manualStdMerges[id][m.srcKey]; });
+          }
+          rebuild(); renderCheck(); renderParams(); renderResults();
+        }},'Pisahkan Gabungan');
+        unmergeBar.append(btnUnmerge);
+        sBox.append(unmergeBar);
+      }
+
       card.append(sBox);
     });
   }
