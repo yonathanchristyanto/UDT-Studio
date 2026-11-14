@@ -2321,7 +2321,7 @@ function itemsToLines(items){
 
   // Fase 1: Kelompokkan baseline ketat (~3.5pt) agar teks sel multi-baris (wrap 2-4 baris) tetap terpisah dulu
   const strips = clusterItemsByY(toks, 3.5);
-  const barrierRe = /^(?:Data file|Instrument|Sample Name|Injection\s+date|Acq\.|Analysis|Injection|Column|Serial|Name\s*:|Page\s+\d+|Sum|Mean|Average|StdDev|Std\.?\s*Dev|Standard\s+Deviation|Deviation|RSD)\b/i;
+  const barrierRe = /^(?:(?:Data file|Instrument|Sample Name|Injection\s+date|Acq\.|Analysis|Injection|Column|Serial|Page\s+\d+|Sum|Mean|Average|StdDev|Std\.?\s*Dev|Standard\s+Deviation|Deviation|RSD|Compound\s+Name)\b|(?:Name|Signal)\s*:)/i;
   const headerColRe = /\bRT\b.*\bArea\b|\bPlates?\s*USP\b|\bTheoretical\s*Plates?\b|\bPeak\s*Tail\b|\bTail\s*Factor\b|\bInjection\s+Acquired\s+Date\b/i;
   const dateTailRe = /^(?:(.*?)\s+)?(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)(?:\s+\d+(?:[.,]\d+)?){0,4}\s+\d{4}[-/]\d{1,2}[-/]\d{1,2}.*$/i;
   const numTailRe = /^(?:(.*?)\s+)?(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)(?:\s+(\d+(?:[.,]\d+)?)){0,3}$/;
@@ -2344,7 +2344,7 @@ function itemsToLines(items){
       st.isBarrier = true;
       strips[idx + 1].isBarrier = true;
     }
-    if (st.isTableHdr && strips[idx + 1] && /^(?:Plates|USP|Plates\s+USP|Factor)$/i.test(strips[idx + 1].text)){
+    if (st.isTableHdr && strips[idx + 1] && /^(?:(?:Peak|Theoretical|Tail|Plates?|USP|Factor|\[min\])\s*)+$/i.test(strips[idx + 1].text)){
       strips[idx + 1].isBarrier = true;
     }
   });
@@ -2405,9 +2405,12 @@ function itemsToLines(items){
     });
   }
 
-  // Jika bukan tabel CDS terstruktur (mis. PDF Cary 60), pertahankan pengelompokan standar 9.0pt
+  // Jika bukan tabel CDS terstruktur (mis. PDF Cary 60), pertahankan pengelompokan standar 9.0pt;
+  // abaikan halaman kromatogram murni (tanpa header tabel tetapi memuat penanda sumbu mAU / Time [min])
   if (!anchors.length){
-    return clusterItemsByY(toks, 9.0).map(r => joinStripItems(r.items));
+    const grouped = clusterItemsByY(toks, 9.0).map(r => joinStripItems(r.items));
+    const isChromPage = !tableHdrStrip && grouped.some(l => /\bmAU\b|Time\s*\[min\]/i.test(l));
+    return isChromPage ? grouped.filter(l => barrierRe.test(l)) : grouped;
   }
 
   const rtXs = anchors.map(a => a.rtX).sort((a,b)=>a-b);
@@ -2416,7 +2419,7 @@ function itemsToLines(items){
   const leftBarriers = strips.filter(st =>
     st.isBarrier && (st.isTableHdr || barrierRe.test(st.text) || st.items.some(it => it.x < nameMaxX))
   );
-  const leftIgnoreRe = /^(?:Page\s+\d+|PT\.\s*Pharos|Name\s*:|Mean|Average|StdDev|Std\.?\s*Dev|Standard\s+Deviation|Standard$|Deviation\b|RSD|Sum|Data file|Instrument|Sample Name|Injection\s+date|Acq\.|Analysis|Injection|Column|Serial)\b/i;
+  const leftIgnoreRe = /^(?:(?:Page\s+\d+|PT\.\s*Pharos|Mean|Average|StdDev|Std\.?\s*Dev|Standard\s+Deviation|Standard$|Deviation\b|RSD|Sum|Data file|Instrument|Sample Name|Injection\s+date|Acq\.|Analysis|Injection|Column|Serial|Compound\s+Name)\b|(?:Name|Signal)\s*:)/i;
 
   const consumedLeft = new Set();
   const mergedByIdx = {};
@@ -2447,6 +2450,8 @@ function itemsToLines(items){
     mergedByIdx[anc.strip.idx] = leftStr && rightStr ? (leftStr + '\t' + rightStr) : (leftStr || rightStr);
   });
 
+  const minAnchorY = Math.min(...anchors.map(a => a.strip.y));
+  const hasHdrBelow = strips.some(s => s.isTableHdr && s.y < minAnchorY);
   const out = [];
   for (const st of strips){
     if (mergedByIdx[st.idx] !== undefined){
@@ -2458,6 +2463,7 @@ function itemsToLines(items){
         if (s) out.push(s);
       }
     } else if (st.text){
+      if (!hasHdrBelow && st.y < minAnchorY) continue;
       out.push(st.text);
     }
   }
@@ -2495,8 +2501,10 @@ const ROW_PATTERNS = [
 
 function parseRowsFromLines(lines){
   const datePatterns = ROW_PATTERNS.slice(0, 5);
-  const nonDatePatterns = ROW_PATTERNS.slice(5);
+  const fullNonDatePatterns = ROW_PATTERNS.slice(5, 7);
+  const fallbackNonDatePatterns = ROW_PATTERNS.slice(7);
   const tabDateRe = /^((?:\d+(?:[.,]\d+)?\s+){1,6}\d+(?:[.,]\d+)?)\s+\d{4}[-/]\d{1,2}[-/]\d{1,2}.*$/i;
+  const tabFullNumRe = /^((?:\d+(?:[.,]\d+)?\s+){3,5}\d+(?:[.,]\d+)?)$/;
   const tabNumRe = /^((?:\d+(?:[.,]\d+)?\s+){1,6}\d+(?:[.,]\d+)?)$/;
 
   const resolveMetrics = (sA, sB) => {
@@ -2514,7 +2522,7 @@ function parseRowsFromLines(lines){
     return { tail, plates };
   };
 
-  const extractWithPatterns = (targetPatterns, isDatePass) => {
+  const extractWithPatterns = (targetPatterns, tabRe) => {
     const matched = [];
     for (const ln of lines){
       const s = String(ln||'').trim();
@@ -2529,7 +2537,7 @@ function parseRowsFromLines(lines){
         const tRight = s.slice(tabIdx + 1).replace(/\t+/g, ' ').trim();
         if (!tName || /^[\d\s.,]+$/.test(tName) || /^(sum|mean|average|stddev|std\.?\s*dev|standard\s+deviation|deviation|rsd)\b/i.test(tName)) continue;
         if (/\b(Name|RT|Area|Plates|Tail)\b/i.test(tName) && tName.split(/\s+/).length <= 2) continue;
-        const tm = tRight.match(isDatePass ? tabDateRe : tabNumRe);
+        const tm = tRight.match(tabRe);
         if (tm){
           const nums = tm[1].trim().split(/\s+/);
           const { tail, plates } = nums.length >= 4
@@ -2571,11 +2579,17 @@ function parseRowsFromLines(lines){
 
   // Jika file memiliki baris lengkap CDS dengan tanggal, gunakan hanya baris bertanggal
   // untuk mencegah baris ringkasan RT / peak table sekunder tanpa tanggal terserap sebagai injeksi duplikat
-  const dateRows = extractWithPatterns(datePatterns, true);
+  const dateRows = extractWithPatterns(datePatterns, tabDateRe);
   if (dateRows.length > 0){
     return dateRows;
   }
-  return extractWithPatterns(nonDatePatterns, false);
+  // Tahap 2a: Prioritaskan baris tabel CDS lengkap (>= 4 kolom angka) agar judul grafik kromatogram + skala Y (2 angka) tidak ikut terserap
+  const fullRows = extractWithPatterns(fullNonDatePatterns, tabFullNumRe);
+  if (fullRows.length > 0){
+    return fullRows;
+  }
+  // Tahap 2b: Fallback 2-3 kolom angka hanya jika file memang tidak memiliki baris tabel CDS lengkap
+  return extractWithPatterns(fallbackNonDatePatterns, tabNumRe);
 }
 function parseRowsFromStream(text){
   const idx = text.search(/(?:Theoritical|Theoretical|Plates)\s*(?:Plates|USP)?/i);
