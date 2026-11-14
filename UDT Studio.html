@@ -875,7 +875,17 @@ details[open] summary { margin-bottom: 8px; }
   border: 1px solid var(--line);
   border-radius: 6px;
 }
+.res-file-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; flex-wrap: wrap;
+}
 .res-file-lbl { font-size: 11px; font-weight: 600; color: var(--muted); }
+.res-link-btn {
+  background: none; border: 0; padding: 0; margin: 0;
+  font-size: 11px; font-weight: 600; color: var(--accent);
+  cursor: pointer; text-decoration: none;
+}
+.res-link-btn:hover { text-decoration: underline; }
 .res-file-chips {
   display: flex; flex-wrap: wrap; gap: 4px;
   max-height: 76px; overflow-y: auto;
@@ -900,12 +910,19 @@ details[open] summary { margin-bottom: 8px; }
 }
 .res-note > div + div { margin-top: 3px; }
 .res-note.is-info { border-left-color: var(--accent); color: var(--muted); }
+.res-note.is-warn { border-left-color: var(--warn); background: rgba(245, 158, 11, 0.08); }
 .res-note.is-err { border-left-color: var(--err); }
 .res-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
   gap: 10px;
   align-items: end;
+}
+.res-grid.is-sample-row {
+  grid-template-columns: minmax(250px, 1.6fr) minmax(125px, 0.8fr) minmax(115px, 0.65fr) minmax(150px, 0.95fr);
+}
+@media (max-width: 760px) {
+  .res-grid.is-sample-row { grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)); }
 }
 .res-grid > .btn { justify-self: start; align-self: end; white-space: nowrap; height: 32px; }
 .res-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
@@ -920,6 +937,32 @@ details[open] summary { margin-bottom: 8px; }
   background: var(--surface); border: 1px solid var(--line);
   padding: 7px 10px; border-radius: 6px;
   overflow-x: auto; white-space: nowrap;
+}
+.res-mini-wrap {
+  border: 1px solid var(--line); border-radius: 6px;
+  background: var(--surface); overflow: hidden;
+}
+.res-mini-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; padding: 5px 10px;
+  border-bottom: 1px solid var(--line);
+  font-size: 11px; color: var(--muted); font-weight: 600;
+}
+.res-mini-scroll { max-height: 185px; overflow: auto; background: var(--card); }
+.res-mini-tbl { width: 100%; border-collapse: collapse; font-size: 11.5px; font-variant-numeric: tabular-nums; }
+.res-mini-tbl th, .res-mini-tbl td {
+  padding: 5px 8px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: middle;
+}
+.res-mini-tbl th {
+  font-size: 10.5px; font-weight: 700; color: var(--muted); background: var(--card-subtle);
+  position: sticky; top: 0; z-index: 1; white-space: nowrap;
+}
+.res-mini-tbl td.num, .res-mini-tbl th.num { text-align: right; white-space: nowrap; }
+.res-mini-tbl tbody tr:last-child td { border-bottom: 0; }
+.res-badge-map {
+  display: inline-flex; align-items: center; padding: 1px 6px; border-radius: 4px;
+  font-size: 10.5px; font-weight: 600; background: var(--accent-soft); color: var(--accent);
+  white-space: nowrap;
 }
 .res-check {
   display: flex; align-items: flex-start; gap: 8px;
@@ -1352,6 +1395,15 @@ function extractBatchFromFilename(fn){
   return '';
 }
 
+function extractTimeFromFilename(fn){
+  if (!fn) return null;
+  const clean = String(fn).replace(/\.[^/.]+$/, '');
+  const matches = [...clean.matchAll(/(?:^|[\s_-])(?:T\s*=?\s*)?(\d{1,3})\s*(?:['\u2019\u2032`\u00B4]|min|menit|mnt)(?=$|[\s_.-])/ig)];
+  if (!matches.length) return null;
+  const t = parseInt(matches[matches.length - 1][1], 10);
+  return isFinite(t) && t >= 0 ? t : null;
+}
+
 function extractTimeVesselTail(str){
   const n = String(str || '').replace(/\s+/g, ' ').trim();
   if (!n) return null;
@@ -1506,6 +1558,37 @@ function classifyName(raw, fileName = '', injRole = ''){
         fromAlias: true
       };
     }
+    if (matchedAlias.action === 'sampleFromFile'){
+      if (looseTV){
+        const med = matchedAlias.medium ? applyMediaAlias(matchedAlias.medium) : (extractMediumFromString(looseTV.prefix || n) || extractMediumFromString(fileName));
+        return {
+          type: 'sample',
+          product: matchedAlias.product || '',
+          batch: matchedAlias.batch || extractBatchFromFilename(fileName) || '',
+          medium: med,
+          time: looseTV.time,
+          vessel: looseTV.vessel,
+          name: n,
+          fromAlias: true
+        };
+      }
+      const fTime = extractTimeFromFilename(fileName);
+      if (fTime !== null){
+        const med = matchedAlias.medium ? applyMediaAlias(matchedAlias.medium) : (extractMediumFromString(rawPref || n) || extractMediumFromString(fileName));
+        return {
+          type: 'sample',
+          product: matchedAlias.product || '',
+          batch: matchedAlias.batch || extractBatchFromFilename(fileName) || '',
+          medium: med,
+          time: fTime,
+          vessel: 1,
+          prefixKey: rawPref,
+          fromFileTime: true,
+          name: n,
+          fromAlias: true
+        };
+      }
+    }
   }
 
   // 1. Deteksi Standar Kalibrasi & Bracketing (di awal nama, atau di tengah bila tidak ada ekor waktu+vessel)
@@ -1545,47 +1628,185 @@ function classifyName(raw, fileName = '', injRole = ''){
 }
 
 // --- PDF parser ---
-function itemsToLines(items){
+function joinStripItems(stripItems){
+  const cols = [];
+  for (const it of stripItems.slice().sort((a,b)=>a.x - b.x)){
+    let placed = false;
+    for (const col of cols){
+      if (Math.abs(col[0].x - it.x) <= 25){
+        col.push(it);
+        placed = true;
+        break;
+      }
+    }
+    if (!placed) cols.push([it]);
+  }
+  const parts = [];
+  for (const col of cols.sort((a,b)=>a[0].x - b[0].x)){
+    col.sort((a,b)=>b.y - a.y);
+    parts.push(col.map(i=>i.s.trim()).join(' '));
+  }
+  return parts.join(' ').replace(/\s+/g,' ').trim();
+}
+function clusterItemsByY(toks, tol){
   const rows = [];
-  for (const it of items){
-    const s = (it.str||'').replace(/\u00A0/g,' ');
-    if (!s.trim()) continue;
-    const x = it.transform[4], y = it.transform[5];
-    // Gunakan toleransi vertikal 9.0pt agar sel multi-baris (misal nama produk di baris atas & bets/vessel di baris bawah)
-    // terkelompokkan dalam baris tabel yang sama dengan kolom angka (RT, Area, Plates, Tail, Date) di y-tengah
-    let row = rows.find(r => Math.abs(r.y - y) <= 9.0);
+  for (const it of toks){
+    let row = rows.find(r => Math.abs(r.y - it.y) <= tol);
     if (!row){
-      row = {y, items:[{x, y, s}]};
+      row = { y: it.y, items: [it] };
       rows.push(row);
     } else {
       const n = row.items.length;
-      row.y = (row.y * n + y) / (n + 1);
-      row.items.push({x, y, s});
+      row.y = (row.y * n + it.y) / (n + 1);
+      row.items.push(it);
     }
   }
-  rows.sort((a,b)=> b.y - a.y);
-  return rows.map(r => {
-    // Kelompokkan teks ke kolom berdasarkan kedekatan koordinat X (toleransi ~25pt)
-    const cols = [];
-    for (const it of r.items.slice().sort((a,b)=>a.x - b.x)){
-      let placed = false;
-      for (const col of cols){
-        if (Math.abs(col[0].x - it.x) <= 25){
-          col.push(it);
-          placed = true;
-          break;
-        }
-      }
-      if (!placed) cols.push([it]);
+  rows.sort((a,b)=>b.y - a.y);
+  return rows;
+}
+function itemsToLines(items){
+  const toks = [];
+  for (const it of items){
+    const s = (it.str||'').replace(/\u00A0/g,' ');
+    if (!s.trim()) continue;
+    toks.push({ x: it.transform[4], y: it.transform[5], s });
+  }
+  if (!toks.length) return [];
+
+  // Fase 1: Kelompokkan baseline ketat (~3.5pt) agar teks sel multi-baris (wrap 2-4 baris) tetap terpisah dulu
+  const strips = clusterItemsByY(toks, 3.5);
+  const barrierRe = /^(?:Data file|Instrument|Sample Name|Acq\.|Analysis|Injection|Column|Serial|Name\s*:|Page\s+\d+|Sum|Mean|StdDev|Std\.?\s*Dev|RSD)\b/i;
+  const headerColRe = /\bRT\b.*\bArea\b|\bPlates?\s*USP\b|\bTheoretical\s*Plates?\b|\bPeak\s*Tail\b|\bInjection\s+Acquired\s+Date\b/i;
+  const dateTailRe = /^(?:(.*?)\s+)?(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)(?:\s+\d+(?:[.,]\d+)?){0,2}\s+\d{4}[-/]\d{1,2}[-/]\d{1,2}.*$/i;
+  const numTailRe = /^(?:(.*?)\s+)?(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)(?:\s+(\d+(?:[.,]\d+)?))?$/;
+
+  let tableHdrStrip = null;
+  let hdrRtX = null;
+  strips.forEach((st, idx) => {
+    st.idx = idx;
+    st.text = joinStripItems(st.items);
+    st.isTableHdr = /\bRT\b.*\bArea\b/i.test(st.text);
+    st.isBarrier = st.isTableHdr || barrierRe.test(st.text) || headerColRe.test(st.text);
+    if (st.isTableHdr && !tableHdrStrip){
+      tableHdrStrip = st;
+      const rtTok = st.items.find(it => /^RT$/i.test(it.s.trim()));
+      if (rtTok) hdrRtX = rtTok.x;
     }
-    // Untuk tiap kolom, urutkan dari atas ke bawah (Y menurun: baris atas sel dulu, baru baris bawah sel)
-    const parts = [];
-    for (const col of cols.sort((a,b)=>a[0].x - b[0].x)){
-      col.sort((a,b)=>b.y - a.y);
-      parts.push(col.map(i=>i.s.trim()).join(' '));
-    }
-    return parts.join(' ').replace(/\s+/g,' ').trim();
   });
+
+  const pureNumItemRe = /^\d+(?:[.,]\d+)?(?:\s+\d+(?:[.,]\d+)?)*$/;
+  const dateItemRe = /\d{4}[-/]\d{1,2}[-/]\d{1,2}/;
+
+  const findDatedAnchorRtX = (strip) => {
+    const sorted = strip.items.slice().sort((a,b)=>a.x - b.x);
+    let dateIdx = -1;
+    for (let j = sorted.length - 1; j >= 0; j--){
+      if (dateItemRe.test(sorted[j].s)){ dateIdx = j; break; }
+    }
+    if (dateIdx < 0) return null;
+    const minX = hdrRtX !== null ? hdrRtX - 30 : -Infinity;
+    let numCount = 0, firstNumX = null;
+    for (let j = dateIdx - 1; j >= 0 && numCount < 4; j--){
+      const tok = sorted[j];
+      if (tok.x < minX) break;
+      const st = tok.s.trim();
+      if (!pureNumItemRe.test(st)) break;
+      const parts = st.split(/\s+/);
+      if (numCount + parts.length > 4) break;
+      numCount += parts.length;
+      firstNumX = tok.x;
+    }
+    return numCount >= 2 ? firstNumX : null;
+  };
+
+  let anchors = [];
+  strips.forEach(st => {
+    if (st.isBarrier) return;
+    const rtX = findDatedAnchorRtX(st);
+    if (rtX !== null){
+      anchors.push({ strip: st, rtX });
+    }
+  });
+
+  if (!anchors.length && tableHdrStrip && hdrRtX !== null){
+    strips.forEach(st => {
+      if (st.isBarrier || st.y >= tableHdrStrip.y) return;
+      const sorted = st.items.slice().sort((a,b)=>a.x - b.x);
+      let numCount = 0, firstNumX = null, firstVal = NaN;
+      for (let j = sorted.length - 1; j >= 0 && numCount < 4; j--){
+        const tok = sorted[j];
+        if (tok.x < hdrRtX - 30) break;
+        const t = tok.s.trim();
+        if (!pureNumItemRe.test(t)) break;
+        const parts = t.split(/\s+/);
+        if (numCount + parts.length > 4) break;
+        numCount += parts.length;
+        firstNumX = tok.x;
+        firstVal = parseFloat(parts[0].replace(',', '.'));
+      }
+      if (numCount >= 3 && isFinite(firstVal) && firstVal < 60){
+        anchors.push({ strip: st, rtX: firstNumX });
+      }
+    });
+  }
+
+  // Jika bukan tabel CDS terstruktur (mis. PDF Cary 60), pertahankan pengelompokan standar 9.0pt
+  if (!anchors.length){
+    return clusterItemsByY(toks, 9.0).map(r => joinStripItems(r.items));
+  }
+
+  const rtXs = anchors.map(a => a.rtX).sort((a,b)=>a-b);
+  const nameMaxX = Math.max(40, rtXs[Math.floor(rtXs.length / 2)] - 6);
+  const anchorSet = new Set(anchors.map(a => a.strip.idx));
+  const leftBarriers = strips.filter(st =>
+    st.isBarrier && (st.isTableHdr || barrierRe.test(st.text) || st.items.some(it => it.x < nameMaxX))
+  );
+  const leftIgnoreRe = /^(?:Page\s+\d+|PT\.\s*Pharos|Name\s*:|Mean|StdDev|Std\.?\s*Dev|RSD|Sum|Data file|Instrument|Sample Name|Acq\.|Analysis|Injection|Column|Serial)\b/i;
+
+  const consumedLeft = new Set();
+  const mergedByIdx = {};
+
+  anchors.forEach((anc, i) => {
+    const ay = anc.strip.y;
+    let yTop = i === 0 ? ay + 42 : Math.min(ay + 42, (anchors[i-1].strip.y + ay) / 2);
+    let yBot = i === anchors.length - 1 ? ay - 42 : Math.max(ay - 42, (ay + anchors[i+1].strip.y) / 2);
+    for (const b of leftBarriers){
+      if (b.y > ay) yTop = Math.min(yTop, b.y - 3);
+      else if (b.y < ay) yBot = Math.max(yBot, b.y + 3);
+    }
+
+    const leftParts = [];
+    for (const st of strips){
+      if (st.y > yTop || st.y <= yBot) continue;
+      if (st.idx !== anc.strip.idx && (anchorSet.has(st.idx) || st.isBarrier)) continue;
+      const leftToks = st.items.filter(it => it.x < nameMaxX).sort((a,b)=>a.x - b.x);
+      if (!leftToks.length) continue;
+      const piece = leftToks.map(it => it.s.trim()).join(' ').replace(/\s+/g, ' ').trim();
+      if (!piece || leftIgnoreRe.test(piece)) continue;
+      leftParts.push(piece);
+      consumedLeft.add(st.idx);
+    }
+    const rightToks = anc.strip.items.filter(it => it.x >= nameMaxX).sort((a,b)=>a.x - b.x);
+    const rightStr = rightToks.map(it => it.s.trim()).join(' ').replace(/\s+/g, ' ').trim();
+    const leftStr = leftParts.join(' ').replace(/\s+/g, ' ').trim();
+    mergedByIdx[anc.strip.idx] = leftStr && rightStr ? (leftStr + '\t' + rightStr) : (leftStr || rightStr);
+  });
+
+  const out = [];
+  for (const st of strips){
+    if (mergedByIdx[st.idx] !== undefined){
+      if (mergedByIdx[st.idx]) out.push(mergedByIdx[st.idx]);
+    } else if (consumedLeft.has(st.idx)){
+      const rem = st.items.filter(it => it.x >= nameMaxX);
+      if (rem.length){
+        const s = joinStripItems(rem);
+        if (s) out.push(s);
+      }
+    } else if (st.text){
+      out.push(st.text);
+    }
+  }
+  return out;
 }
 const ROW_PATTERNS = [
   // 1. Agilent OpenLab CDS Sequence Summary Report: Name RT Area Plates Tail Date
@@ -1611,8 +1832,25 @@ const ROW_PATTERNS = [
 function parseRowsFromLines(lines){
   const datePatterns = ROW_PATTERNS.slice(0, 3);
   const nonDatePatterns = ROW_PATTERNS.slice(3);
+  const tabDateRe = /^(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)(?:\s+(\d+(?:[.,]\d+)?))?(?:\s+(\d+(?:[.,]\d+)?))?\s+\d{4}[-/]\d{1,2}[-/]\d{1,2}.*$/i;
+  const tabNumRe = /^(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)(?:\s+(\d+(?:[.,]\d+)?))?(?:\s+(\d+(?:[.,]\d+)?))?$/;
 
-  const extractWithPatterns = (targetPatterns) => {
+  const resolveMetrics = (sA, sB) => {
+    let tail = NaN, plates = NaN;
+    if (sA && sB){
+      const vA = parseFloat(sA.replace(',', '.'));
+      const vB = parseFloat(sB.replace(',', '.'));
+      if (vA > 50 && vB < 50){ plates = vA; tail = vB; }
+      else if (vB > 50 && vA < 50){ plates = vB; tail = vA; }
+      else { tail = vA; plates = vB; }
+    } else if (sA){
+      const vA = parseFloat(sA.replace(',', '.'));
+      if (vA > 50) plates = vA; else tail = vA;
+    }
+    return { tail, plates };
+  };
+
+  const extractWithPatterns = (targetPatterns, isDatePass) => {
     const matched = [];
     for (const ln of lines){
       const s = String(ln||'').trim();
@@ -1621,23 +1859,33 @@ function parseRowsFromLines(lines){
       if (/time\s*\[min\]|vwd\d|\bmAU\b|Theoretical Plates|Peak Tail|Acquired Date/i.test(s)) continue;
       if (/^(?:Data file|Instrument|Sample Name|Acq\.|Analysis|Injection|Column|Serial)\b/i.test(s)) continue;
 
+      const tabIdx = s.indexOf('\t');
+      if (tabIdx > 0){
+        const tName = s.slice(0, tabIdx).trim();
+        const tRight = s.slice(tabIdx + 1).replace(/\t+/g, ' ').trim();
+        if (!tName || /^[\d\s.,]+$/.test(tName) || (/\b(Name|RT|Area|Plates|Tail)\b/i.test(tName) && tName.split(/\s+/).length <= 2)) continue;
+        const tm = tRight.match(isDatePass ? tabDateRe : tabNumRe);
+        if (tm){
+          const { tail, plates } = resolveMetrics(tm[3], tm[4]);
+          matched.push({
+            name: tName,
+            rt: parseFloat(tm[1].replace(',','.')),
+            area: parseFloat(tm[2].replace(',','.')),
+            areaStr: pad4(tm[2]),
+            tail,
+            plates
+          });
+        }
+        continue;
+      }
+
       for (const p of targetPatterns){
         const m = s.match(p);
         if (m){
           const name = m[1].trim();
           if (!name || /^[\d\s.,]+$/.test(name)) continue;
           if (/\b(Name|RT|Area|Plates|Tail)\b/i.test(name) && name.split(/\s+/).length <= 2) continue;
-          let tail = NaN, plates = NaN;
-          if (m[4] && m[5]){
-            const v4 = parseFloat(m[4].replace(',','.'));
-            const v5 = parseFloat(m[5].replace(',','.'));
-            if (v4 > 50 && v5 < 50){ plates = v4; tail = v5; }
-            else if (v5 > 50 && v4 < 50){ plates = v5; tail = v4; }
-            else { tail = v4; plates = v5; }
-          } else if (m[4]){
-            const v4 = parseFloat(m[4].replace(',','.'));
-            if (v4 > 50) plates = v4; else tail = v4;
-          }
+          const { tail, plates } = resolveMetrics(m[4], m[5]);
           matched.push({
             name,
             rt: parseFloat(m[2].replace(',','.')),
@@ -1655,11 +1903,11 @@ function parseRowsFromLines(lines){
 
   // Jika file memiliki baris lengkap CDS dengan tanggal, gunakan hanya baris bertanggal
   // untuk mencegah baris ringkasan RT / peak table sekunder tanpa tanggal terserap sebagai injeksi duplikat
-  const dateRows = extractWithPatterns(datePatterns);
+  const dateRows = extractWithPatterns(datePatterns, true);
   if (dateRows.length > 0){
     return dateRows;
   }
-  return extractWithPatterns(nonDatePatterns);
+  return extractWithPatterns(nonDatePatterns, false);
 }
 function parseRowsFromStream(text){
   const idx = text.search(/(?:Theoritical|Theoretical|Plates)\s*(?:Plates|USP)?/i);
@@ -1784,10 +2032,18 @@ function parseHeaderMeta(text){
   const op = g(/Acq\.\s*operator:[, \t]*([^\r\n]+?)(?:\s+Column name|\r|\n|$)/i) || g(/Operator\s*[:\t]?\s*([^\r\n"]+?)(?:\s*\(|\s+Instrument|\r|\n|$)/i);
   const col = g(/Column name:[, \t]*([^\r\n]+?)(?:\s+Serial|\r|\n|$)/i);
   const ser = g(/Serial\s*(?:Number|\\?#)?\s*[:=, \t]*([^\s,\r\n;]+)/i);
-  let cmp = g(/(?:Compound|Compound Name)[:\s]+([A-Za-z0-9 _+-]+?)(?:\s+(?:Sample Name|Name)|\r|\n|$)/i);
+  let cmp = g(/(?:Compound|Compound Name)[:\s]+([A-Za-z0-9 _+-]+?)(?:\s+(?:Sample Name|Name\b)|\r|\n|$)/i);
+  if (!cmp){
+    for (const mName of text.matchAll(/\bName:\s*([A-Za-z0-9][A-Za-z0-9 _+-]{1,50}?)(?=\s+(?:Name\b|RT\b|Area\b|Sample\s+Name\b|Peak\b|Injection\b|Acq\.)|\r|\n|$)/ig)){
+      const before = text.slice(Math.max(0, mName.index - 18), mName.index).toLowerCase();
+      if (/(?:column|sample|file|method|batch)\s+$/.test(before)) continue;
+      cmp = mName[1].trim();
+      break;
+    }
+  }
   if (!cmp && df){
     const mCmp = df.match(/\\([^\\]+?\s+\d+\s*(?:mg|g|mcg|ml))\b/i) || df.match(/Sampel UDT\s+([^\\\/]+?)\s+MD/i);
-    if (mCmp) cmp = mCmp[1].trim();
+    if (mCmp) cmp = mCmp[1].replace(/^\d{6}[\s_-]+/, '').trim();
   }
   const mDate = (df || text).match(/(\d{4}-\d{2}-\d{2})/) || text.match(/(\d{1,2}\/\d{1,2}\/\d{4})/);
   let runDate = null;
@@ -2045,10 +2301,16 @@ function buildUnifiedModel(injections, fileMetaMap){
   }
 
   // --- LANGKAH D: Kumpulkan Kandidat Sampel & Deteksi Konflik ---
+  const seqFilePrefCount = {};
   for (let idx = 0; idx < injections.length; idx++){
     const inj = injections[idx];
     const c = classifyName(inj.name, inj.file, inj.role);
     if (c.type === 'ignored') continue;
+    if (c.type === 'sample' && c.fromFileTime){
+      const sk = (inj.role || 'test') + '::' + (inj.file || '') + '::' + (c.prefixKey || '');
+      seqFilePrefCount[sk] = (seqFilePrefCount[sk] || 0) + 1;
+      c.vessel = seqFilePrefCount[sk];
+    }
     let m = c.medium || fileMediumMap[inj.file] || singleGlobalMedium;
     if (m) m = applyMediaAlias(m) || m;
     if (m === '__ignore__') continue;
@@ -6664,17 +6926,27 @@ function analyzePendingResolutions(){
       role: inj.role || 'test',
       files: new Set(),
       items: [],
+      fileSeqMap: {},
       tvCount: 0,
+      fileTimeCount: 0,
       guessedBatch: '',
+      guessedProduct: '',
       guessedMedium: ''
     });
-    g.items.push(inj);
+    const fKey = inj.file || 'Manual';
+    const fTime = extractTimeFromFilename(fKey);
+    const seqIdx = (g.fileSeqMap[fKey] = (g.fileSeqMap[fKey] || 0) + 1);
+    g.items.push({ ...inj, _mappedTime: fTime, _mappedVessel: fTime !== null ? seqIdx : null });
     if (inj.file) g.files.add(inj.file);
     if (extractTimeVesselLoose(inj.name)) g.tvCount++;
-    if (!g.guessedBatch){
+    if (fTime !== null) g.fileTimeCount++;
+    if (!g.guessedBatch || !g.guessedProduct){
       const bp = extractBatchAndProductFromPrefix(gInfo.prefixKey, inj.file);
-      if (bp.batch) g.guessedBatch = bp.batch;
-      else if (inj.file) g.guessedBatch = extractBatchFromFilename(inj.file) || '';
+      if (!g.guessedBatch){
+        if (bp.batch) g.guessedBatch = bp.batch;
+        else if (inj.file) g.guessedBatch = extractBatchFromFilename(inj.file) || '';
+      }
+      if (!g.guessedProduct && bp.product) g.guessedProduct = bp.product;
     }
     if (!g.guessedMedium){
       g.guessedMedium = extractMediumFromString(gInfo.prefixKey, false) || extractMediumFromString(inj.file, false) || '';
@@ -6683,15 +6955,35 @@ function analyzePendingResolutions(){
   const prefixGroups = Object.values(prefixMap).map(g => {
     const pk = g.prefixKey;
     const isCtrl = /^(?:blank|blanks|wash|sst|system\s*suitability|diluent|pengencer|placebo|plasebo|mobile\s*phase)\b/i.test(pk);
+    const isStdLike = /^(?:standar|standard|std)\b/i.test(pk) || /^bs\s*[-_]?\s*(?:mid|end)\b/i.test(pk);
+    const hasTV = g.tvCount > 0;
+    const hasFileTime = g.fileTimeCount > 0;
+    const counts = Object.values(g.fileSeqMap);
+    const minPF = counts.length ? Math.min(...counts) : g.items.length;
+    const maxPF = counts.length ? Math.max(...counts) : g.items.length;
+    const rowsPerFileLabel = minPF === maxPF ? String(minPF) : `${minPF}-${maxPF}`;
+    const looksLikeSample = !isCtrl && !isStdLike && (Boolean(g.guessedBatch) || g.items.length >= 6 || g.files.size >= 2);
+
     let suggestedAction = 'ignore';
     if (isCtrl) suggestedAction = 'ignore';
     else if (/^(?:standar|standard|std)\b/i.test(pk)) suggestedAction = 'std';
     else if (/^bs\s*[-_]?\s*mid\b/i.test(pk)) suggestedAction = 'bsMid';
     else if (/^bs\s*[-_]?\s*end\b/i.test(pk)) suggestedAction = 'bsEnd';
-    else if (g.tvCount > 0) suggestedAction = 'sample';
-    const hasTV = g.tvCount > 0;
+    else if (hasTV) suggestedAction = 'sample';
+    else if (hasFileTime && looksLikeSample) suggestedAction = 'sampleFromFile';
+
     const guessedMedium = g.guessedMedium || (mIds.find(id => STANDARD_MEDIA_IDS.includes(id)) || mIds[0] || '1,2');
-    return { ...g, files: [...g.files], hasTV, isCtrl, suggestedAction, guessedMedium };
+    return {
+      ...g,
+      files: [...g.files],
+      hasTV,
+      hasFileTime,
+      rowsPerFileLabel,
+      looksLikeSample,
+      isCtrl,
+      suggestedAction,
+      guessedMedium
+    };
   });
 
   // Layer 4: Kelompokkan konflik per (medium, role, batch)
@@ -6791,7 +7083,7 @@ function openPreStep2Modal(pending){
       batch: pg.guessedBatch || '',
       medium: pg.guessedMedium || '1,2',
       customMedium: '',
-      product: '',
+      product: pg.guessedProduct || '',
       savePerm: false
     };
   });
@@ -6810,14 +7102,27 @@ function openPreStep2Modal(pending){
   });
 
   let activeTab = 'resolve';
+  const expandedFiles = {};
+  const expandedRows = {};
 
-  const renderResFileList = (files, labelPrefix) => {
+  const renderResFileList = (files, labelPrefix, expandKey) => {
     if (!files || !files.length) return null;
+    const isExp = !expandKey || files.length <= 3 || Boolean(expandedFiles[expandKey]);
+    const head = h('div', { class: 'res-file-head' },
+      h('span', { class: 'res-file-lbl' }, `${labelPrefix || 'File sumber'} (${files.length}):`),
+      expandKey && files.length > 3 ? h('button', {
+        type: 'button', class: 'res-link-btn',
+        onclick: () => { expandedFiles[expandKey] = !expandedFiles[expandKey]; renderModal(); }
+      }, isExp ? 'Ringkas' : `Lihat semua (${files.length})`) : null
+    );
+    const shown = isExp ? files : files.slice(0, 2);
+    const chips = shown.map(fn => h('span', { class: 'res-file-chip', title: fn }, fn));
+    if (!isExp && files.length > 2){
+      chips.push(h('span', { class: 'res-file-chip muted', title: files.slice(2).join('\n') }, `+${files.length - 2} file lainnya (s/d ${files[files.length - 1]})`));
+    }
     return h('div', { class: 'res-file-list' },
-      h('div', { class: 'res-file-lbl' }, `${labelPrefix || 'File sumber'} (${files.length}):`),
-      h('div', { class: 'res-file-chips' },
-        files.map(fn => h('span', { class: 'res-file-chip', title: fn }, fn))
-      )
+      head,
+      h('div', { class: 'res-file-chips' }, chips)
     );
   };
 
@@ -6867,7 +7172,7 @@ function openPreStep2Modal(pending){
               ),
               h('span', { class: 'badge ' + mi.st + ' small' }, stText)
             ),
-            renderResFileList(mi.files, 'File sumber'),
+            renderResFileList(mi.files, 'File sumber', 'med_' + mi.mId),
             mi.issues.length ? h('div', { class: 'res-note' }, mi.issues.map(msg => h('div', null, '• ' + msg))) : null
           );
           const selTarget = h('select', {
@@ -6910,32 +7215,85 @@ function openPreStep2Modal(pending){
         );
         pending.prefixGroups.forEach(pg => {
           const st = prefixDraft[pg.groupKey];
+          const isSampleAct = st.action === 'sample' || st.action === 'sampleFromFile';
           const card = h('div', { class: 'res-card' });
           card.append(
             h('div', { class: 'res-card-head' },
               h('div', { class: 'res-card-title' },
                 h('span', { class: 'badge ' + (pg.role==='ref'?'info':'ok') + ' small' }, pg.role === 'ref' ? 'Pembanding' : 'Uji'),
                 h('b', null, pg.prefixKey),
-                h('span', { class: 'badge warn small' }, pg.items.length + ' baris')
+                h('span', { class: 'badge warn small' }, pg.items.length + ' baris'),
+                pg.hasFileTime && !pg.hasTV ? h('span', { class: 'badge info small' }, 'Waktu di nama file') : null
               ),
-              h('span', { class: 'small muted' }, `${pg.files.length} file sumber`)
+              h('span', { class: 'small muted' }, pg.files.length > 1 ? `${pg.files.length} file · ~${pg.rowsPerFileLabel} baris/file` : `${pg.files.length} file sumber`)
             ),
-            renderResFileList(pg.files, 'File sumber'),
-            h('div', { class: 'res-preview' },
-              'Contoh: ' + pg.items.slice(0, 3).map(x => `${x.name} (${pad4(x.area)})`).join('  |  ')
-            )
+            renderResFileList(pg.files, 'File sumber', 'pref_' + pg.groupKey)
           );
+
+          // Pratinjau mini-tabel informatif (File Sumber | Sample Name | RT | Area | [Pemetaan])
+          const isRowExp = Boolean(expandedRows[pg.groupKey]);
+          let previewRows = pg.items;
+          if (!isRowExp && pg.items.length > 4){
+            if (pg.files.length > 1){
+              const byFile = {};
+              pg.items.forEach(it => {
+                const fn = it.file || 'Manual';
+                (byFile[fn] || (byFile[fn] = [])).push(it);
+              });
+              const picks = [];
+              const f0 = pg.files[0];
+              if (byFile[f0]) picks.push(...byFile[f0].slice(0, 2));
+              if (pg.files[1] && byFile[pg.files[1]]) picks.push(byFile[pg.files[1]][0]);
+              const fLast = pg.files[pg.files.length - 1];
+              if (fLast !== f0 && fLast !== pg.files[1] && byFile[fLast]) picks.push(byFile[fLast][0]);
+              previewRows = picks.slice(0, 4);
+            } else {
+              previewRows = pg.items.slice(0, 4);
+            }
+          }
+          const showMapCol = st.action === 'sampleFromFile';
+          card.append(h('div', { class: 'res-mini-wrap' },
+            h('div', { class: 'res-mini-head' },
+              h('span', null, `Pratinjau Data (${isRowExp ? pg.items.length : previewRows.length} dari ${pg.items.length} baris)`),
+              pg.items.length > 4 ? h('button', {
+                type: 'button', class: 'res-link-btn',
+                onclick: () => { expandedRows[pg.groupKey] = !expandedRows[pg.groupKey]; renderModal(); }
+              }, isRowExp ? 'Ringkas pratinjau' : `Lihat semua (${pg.items.length} baris)`) : null
+            ),
+            h('div', { class: 'res-mini-scroll' },
+              h('table', { class: 'res-mini-tbl' },
+                h('thead', null, h('tr', null,
+                  h('th', null, 'File Sumber'),
+                  h('th', null, 'Sample Name'),
+                  h('th', { class: 'num' }, 'RT'),
+                  h('th', { class: 'num' }, 'Area'),
+                  showMapCol ? h('th', null, 'Pemetaan') : null
+                )),
+                h('tbody', null,
+                  previewRows.map(x => h('tr', null,
+                    h('td', { title: x.file || 'Manual' }, x.file || 'Manual'),
+                    h('td', null, x.name || ''),
+                    h('td', { class: 'num' }, isFinite(x.rt) ? String(x.rt) : '–'),
+                    h('td', { class: 'num' }, pad4(x.area)),
+                    showMapCol ? h('td', null, x._mappedTime !== null ? h('span', { class: 'res-badge-map' }, `v${x._mappedVessel} @ ${x._mappedTime}'`) : '–') : null
+                  ))
+                )
+              )
+            )
+          ));
+
           const actOpts = [];
           if (pg.hasTV) actOpts.push({ v: 'sample', l: 'Sampel Disolusi' });
+          if (pg.hasFileTime) actOpts.push({ v: 'sampleFromFile', l: 'Sampel (Waktu di Nama File)' + (pg.suggestedAction === 'sampleFromFile' ? ' — Saran' : '') });
           actOpts.push({ v: 'std', l: 'Standar Kalibrasi' }, { v: 'bsMid', l: 'Bracketing Mid (BS Mid)' }, { v: 'bsEnd', l: 'Bracketing End (BS End)' }, { v: 'ignore', l: 'Abaikan (Blank / Kontrol / Tidak dipakai)' });
           const selAct = h('select', { onchange: e => { st.action = e.target.value; renderModal(); } },
             actOpts.map(o => h('option', { value: o.v, selected: st.action === o.v }, o.l))
           );
 
-          const grid = h('div', { class: 'res-grid' },
+          const grid = h('div', { class: 'res-grid' + (isSampleAct && st.medium !== '__custom__' ? ' is-sample-row' : '') },
             h('div', { class: 'res-field' }, h('label', null, 'Tetapkan Sebagai'), selAct)
           );
-          if (st.action === 'sample'){
+          if (isSampleAct){
             grid.append(h('div', { class: 'res-field' }, h('label', null, 'No. Batch'),
               h('input', { type: 'text', placeholder: 'Misal: F0094J26A', value: st.batch, oninput: e => { st.batch = e.target.value; } })
             ));
@@ -6952,14 +7310,20 @@ function openPreStep2Modal(pending){
               ));
             }
           }
-          if (st.action === 'sample'){
+          if (isSampleAct){
             grid.append(h('div', { class: 'res-field' }, h('label', null, 'Nama Produk (opsional)'),
               h('input', { type: 'text', placeholder: 'Opsional', value: st.product, oninput: e => { st.product = e.target.value; } })
             ));
           }
           card.append(grid);
-          if (!pg.hasTV && st.action === 'ignore'){
-            card.append(h('div', { class: 'res-note is-info' }, 'Catatan: Baris ini tidak memuat format waktu & vessel; cocok untuk Blank/Wash/SST atau baris ringkasan non-sampel.'));
+          if (st.action === 'sampleFromFile'){
+            card.append(h('div', { class: 'res-note is-info' }, 'Mode nama file: Titik waktu diambil dari nama file masing-masing dan tiap baris dalam file diurutkan menjadi Vessel 1..N sesuai urutan injeksi.'));
+          } else if (st.action === 'ignore'){
+            if (pg.looksLikeSample){
+              card.append(h('div', { class: 'res-note is-warn' }, `Perhatian: Kelompok ini memuat nama produk/batch atau banyak baris (${pg.items.length} baris dari ${pg.files.length} file), bukan pola Blank/Wash. Jika "Abaikan" dipilih, seluruh baris ini akan dikeluarkan dari perhitungan.`));
+            } else if (!pg.hasTV){
+              card.append(h('div', { class: 'res-note is-info' }, 'Catatan: Baris ini tidak memuat format waktu & vessel; cocok untuk Blank/Wash/SST atau baris ringkasan non-sampel.'));
+            }
           }
           card.append(h('label', { class: 'res-check' },
             h('input', { type: 'checkbox', checked: st.savePerm, onchange: e => { st.savePerm = e.target.checked; } }),
@@ -7249,10 +7613,12 @@ function buildAliasManagerContent(onRefresh){
       h('tbody', null,
         prefKeys.map(k => {
           const r = S.prefixAliases[k];
-          const desc = r.action === 'ignore' ? 'Abaikan' : (`Batch ${r.batch || '-'} · Media ${r.medium || '-'}`);
+          const desc = r.action === 'ignore'
+            ? 'Abaikan'
+            : (`Batch ${r.batch || '-'} · Media ${r.medium || '-'}` + (r.action === 'sampleFromFile' ? ' (waktu via nama file)' : ''));
           return h('tr', null,
             h('td', null, h('code', null, k)),
-            h('td', null, r.action),
+            h('td', null, r.action === 'sampleFromFile' ? 'Sampel (File)' : r.action),
             h('td', null, desc),
             h('td', null, h('button', { class: 'link', onclick: () => { delete S.prefixAliases[k]; saveAliasesToStorage(); rebuild(); onRefresh(); } }, 'hapus'))
           );
@@ -7393,7 +7759,7 @@ function init(){
   go(1);
   initConn();
 }
-window.__udt = {S, rebuild, go, addFilesForRole, textEntry, fileRows, readPdf, renderCheck, renderParams, renderResults, renderSend, executeExportCommand, formatTabTitle, lineChart, drawChartCanvas, exportPDF, printReportWindow, parseCSV, classifyName, extractMediumFromString, analyzePendingResolutions, openPreStep2Modal, openAliasManagerModal, checkMediumValidation, statusOf};
+window.__udt = {S, rebuild, go, addFilesForRole, textEntry, fileRows, readPdf, itemsToLines, parsePdfText, parseHeaderMeta, extractTimeFromFilename, renderCheck, renderParams, renderResults, renderSend, executeExportCommand, formatTabTitle, lineChart, drawChartCanvas, exportPDF, printReportWindow, parseCSV, classifyName, extractMediumFromString, analyzePendingResolutions, openPreStep2Modal, openAliasManagerModal, checkMediumValidation, statusOf};
 init();
 </script>
 <div id="resModalRoot"></div>
