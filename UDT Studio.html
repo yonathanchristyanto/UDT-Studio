@@ -402,14 +402,87 @@ input.bad { border-color: var(--err); }
 .tbl td.bad { color: var(--err); font-weight: 600; }
 .tbl td.miss { background: var(--err-soft); color: var(--err); }
 
-/* Step 4 Dissolution Profile Review Table */
+/* Step 4 Compact Results Layout & Review Table */
+#p4 .section-header {
+  margin: 0 0 6px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 12px;
+}
+#p4 .section-header h2 { margin: 0; font-size: 16px; }
+#p4 .section-header p { margin: 0; font-size: 12px; }
+.p4-actions { margin-bottom: 8px; gap: 6px !important; }
+.p4-actions .btn { padding: 5px 11px; font-size: 12px; }
+.card.p4-card { padding: 12px 15px; margin-bottom: 10px; }
+.card.p4-card .mhead { margin-bottom: 10px !important; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+.card.p4-card .mhead h2 { font-size: 14px; }
+.p4-hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.38fr) minmax(300px, 1fr);
+  gap: 12px;
+  align-items: stretch;
+  margin-bottom: 12px;
+}
+.p4-chart-panel {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  background: var(--card-subtle);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.p4-f2-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.p4-f2-panel.is-single .f2-box {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.p4-subhead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.p4-subhead h3 { margin: 0; font-size: 12.5px; font-weight: 700; color: var(--fg); }
+.p4-tables-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 6px;
+}
+.p4-tables-head h3 { margin: 0; font-size: 12.5px; font-weight: 700; color: var(--fg); }
+.p4-tables-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(435px, 1fr));
+  gap: 10px;
+  align-items: start;
+}
+.p4-tables-grid.is-stats-only tbody tr.vessel-row { display: none; }
+@media (max-width: 900px) {
+  .p4-hero-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 1120px) {
+  .media-layout .p4-hero-grid { grid-template-columns: 1fr; }
+}
+
 .profile-section {
-  margin-top: 14px;
+  margin-top: 0;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--card);
   overflow: hidden;
   box-shadow: var(--shadow-subtle);
+  min-width: 0;
 }
 .profile-section.is-ref { border-left: 3px solid var(--ref-tint); }
 .profile-section.is-test { border-left: 3px solid var(--test-tint); }
@@ -417,31 +490,31 @@ input.bad { border-color: var(--err); }
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 8px 12px;
+  gap: 6px 10px;
   flex-wrap: wrap;
-  padding: 10px 14px;
+  padding: 7px 10px;
   background: var(--card-subtle);
   border-bottom: 1px solid var(--line);
 }
 .profile-title-wrap {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
   flex-wrap: wrap;
   min-width: 0;
 }
 .profile-title-wrap h3 {
   margin: 0;
-  font-size: 13.5px;
+  font-size: 12.5px;
   font-weight: 600;
   color: var(--fg);
 }
 .profile-role {
   display: inline-flex;
   align-items: center;
-  padding: 2px 8px;
+  padding: 1.5px 7px;
   border-radius: 99px;
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.02em;
   text-transform: uppercase;
@@ -454,12 +527,14 @@ input.bad { border-color: var(--err); }
   border-radius: 0;
 }
 .tbl.tbl-review th, .tbl.tbl-review td {
-  padding: 8px 14px;
+  padding: 4px 8px;
+  font-size: 12px;
+  line-height: 1.3;
   font-variant-numeric: tabular-nums;
-  min-width: 72px;
+  min-width: 44px;
 }
 .tbl.tbl-review th:first-child, .tbl.tbl-review td:first-child {
-  min-width: 132px;
+  min-width: 88px;
 }
 .tbl.tbl-review thead th {
   background: var(--surface);
@@ -546,39 +621,39 @@ td input.num, .cellin { width: 92px; text-align: right; padding: 4px 8px; font-v
 
 /* F2 Box - Main Highlight */
 .f2-box {
-  border: 2px solid var(--accent);
-  border-radius: var(--radius-lg);
-  padding: 18px 22px;
+  border: 1.5px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 12px 15px;
   background: var(--card);
-  margin-top: 16px;
-  box-shadow: 0 4px 14px rgba(0, 113, 227, 0.08);
+  margin-top: 0;
+  box-shadow: 0 3px 10px rgba(0, 113, 227, 0.07);
 }
 .f2-box.ok {
   border-color: var(--ok);
-  background: linear-gradient(135deg, var(--ok-soft) 0%, var(--card) 70%);
-  box-shadow: 0 4px 14px rgba(40, 167, 69, 0.10);
+  background: linear-gradient(135deg, var(--ok-soft) 0%, var(--card) 75%);
+  box-shadow: 0 3px 10px rgba(40, 167, 69, 0.08);
 }
 .f2-box.warn {
   border-color: var(--warn);
-  background: linear-gradient(135deg, var(--warn-soft) 0%, var(--card) 70%);
-  box-shadow: 0 4px 14px rgba(194, 105, 0, 0.10);
+  background: linear-gradient(135deg, var(--warn-soft) 0%, var(--card) 75%);
+  box-shadow: 0 3px 10px rgba(194, 105, 0, 0.08);
 }
-.f2-box h4 { margin: 0 0 10px; font-size: 12.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+.f2-box h4 { margin: 0 0 6px; font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted); line-height: 1.35; }
 .f2-hero {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 14px 20px;
-  padding: 6px 0;
+  gap: 8px 12px;
+  padding: 2px 0;
 }
 .f2-score-main {
   display: flex;
   align-items: baseline;
-  gap: 10px;
+  gap: 8px;
 }
 .f2-score-val {
-  font-size: 36px;
+  font-size: 28px;
   font-weight: 800;
   line-height: 1;
   letter-spacing: -0.02em;
@@ -590,10 +665,11 @@ td input.num, .cellin { width: 92px; text-align: right; padding: 4px 8px; font-v
 .f2-status-pill {
   display: inline-flex;
   align-items: center;
-  padding: 6px 14px;
+  padding: 4px 11px;
   border-radius: 99px;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
+  line-height: 1.25;
 }
 .f2-status-pill.ok { background: var(--ok); color: #fff; }
 .f2-status-pill.warn { background: var(--warn); color: #fff; }
@@ -602,23 +678,23 @@ td input.num, .cellin { width: 92px; text-align: right; padding: 4px 8px; font-v
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px 16px;
-  margin-top: 8px;
-  padding-top: 8px;
+  gap: 6px 12px;
+  margin-top: 6px;
+  padding-top: 6px;
   border-top: 1px solid var(--line);
-  font-size: 13px;
+  font-size: 12px;
 }
 .f2-n-badge {
   display: inline-flex;
   align-items: center;
-  padding: 3px 10px;
-  border-radius: 6px;
+  padding: 2px 8px;
+  border-radius: 5px;
   background: var(--surface);
   font-weight: 700;
-  font-size: 13px;
+  font-size: 12px;
   color: var(--fg);
 }
-.f2-calc-steps { font-size: 12.5px; color: var(--muted); margin-top: 4px; line-height: 1.5; }
+.f2-calc-steps { font-size: 12px; color: var(--muted); margin-top: 4px; line-height: 1.45; }
 
 /* SOP Table */
 .sop-box { background: var(--card-subtle); border-radius: var(--radius-sm); padding: 12px; margin-top: 8px; font-size: 12.5px; }
@@ -647,13 +723,13 @@ td input.num, .cellin { width: 92px; text-align: right; padding: 4px 8px; font-v
 .log .w { color: var(--warn); }
 
 /* Chart */
-svg.chart { width: 100%; height: auto; max-width: 960px; display: block; }
-svg.chart text { fill: var(--muted); font-size: 11px; }
+svg.chart { width: 100%; height: auto; max-width: 100%; display: block; }
+svg.chart text { fill: var(--muted); font-size: 10.5px; }
 svg.chart .ax { stroke: var(--line-strong); }
 svg.chart .gl { stroke: var(--line); stroke-dasharray: 2 4; }
-.legend { display: flex; flex-wrap: wrap; gap: 12px 20px; font-size: 12.5px; font-weight: 500; margin-top: 10px; align-items: center; }
-.legend span { display: inline-flex; align-items: center; gap: 7px; }
-.legend svg.leg-icon { width: 34px; height: 14px; flex-shrink: 0; overflow: visible; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 11.5px; font-weight: 500; margin-top: 6px; align-items: center; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend svg.leg-icon { width: 28px; height: 12px; flex-shrink: 0; overflow: visible; }
 
 /* Misc */
 .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
@@ -663,20 +739,20 @@ svg.chart .gl { stroke: var(--line); stroke-dasharray: 2 4; }
 /* Media Sidebar Layout (Multi-Media & Multi-Vessel UDT) */
 .media-layout {
   display: flex;
-  gap: 20px;
+  gap: 14px;
   align-items: flex-start;
-  margin-top: 10px;
+  margin-top: 6px;
 }
 .media-sidebar {
-  width: 250px;
-  min-width: 230px;
+  width: 220px;
+  min-width: 205px;
   flex-shrink: 0;
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: 12px;
+  padding: 10px;
   position: sticky;
-  top: 64px;
+  top: 60px;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -4210,53 +4286,95 @@ function getMediumF2Summary(mId){
   return {text:'Siap dihitung', cls:'info'};
 }
 
+function buildF2ConclusionBox(f2Res, testFullName, refFullName){
+  const badgeClass = f2Res.isSimilar ? 'ok' : (isFinite(f2Res.f2) ? 'warn' : 'info');
+  const f2Box = h('div',{class:'f2-box ' + badgeClass});
+  f2Box.append(h('h4',null,`Kesimpulan Faktor Kemiripan f2 (${testFullName} vs ${refFullName})`));
+
+  const f2ValText = isFinite(f2Res.f2) ? `f2 = ${fmtF2(f2Res.f2)}` : 'f2 = N/A';
+  const statusText = f2Res.both85at15
+    ? "Similar (Very Rapid ≥ 85% @ 15')"
+    : (isFinite(f2Res.f2)
+        ? (f2Res.isSimilar ? '50 – 100: Similar' : '< 50: Not Similar')
+        : 'Belum dapat dihitung');
+
+  f2Box.append(h('div',{class:'f2-hero'},
+    h('div',{class:'f2-score-main'},
+      h('div',{class:'f2-score-val'}, f2ValText)
+    ),
+    h('span',{class:'f2-status-pill ' + badgeClass}, statusText)
+  ));
+
+  if(f2Res.both85at15){
+    f2Box.append(h('div',{class:'banner ok',style:'margin:6px 0 2px;padding:7px 10px;font-size:11.5px'},
+      h('b',null,'Very Rapid Dissolution / Similar: '),
+      'Kedua produk terdisolusi ≥ 85% dalam 15 menit (FDA, EMA, BPOM), kurva disolusi dianggap similar tanpa evaluasi statistik f2.'));
+  }
+
+  f2Box.append(h('div',{class:'f2-meta-row'},
+    h('span',{class:'f2-n-badge'}, `n = ${f2Res.n}`),
+    f2Res.usedTimes && f2Res.usedTimes.length
+      ? h('span',{class:'small muted'}, `Titik waktu: ${f2Res.usedTimes.map(t=>t+"'").join(', ')}`)
+      : null,
+    (f2Res.n > 0 && !f2Res.minPointsValid)
+      ? h('span',{class:'small',style:'color:var(--warn);font-weight:600'}, 'Peringatan: Regulasi mensyaratkan minimal 3 titik waktu.')
+      : null
+  ));
+
+  if(f2Res.rsdExceeded){
+    f2Box.append(h('div',{class:'banner warn',style:'margin-top:6px;margin-bottom:0;padding:7px 10px;font-size:11.5px'},
+      h('b',null,'Batas Variabilitas (% RSD): '),
+      'Melebihi batas PerBPOM No. 11/2022 (maks. 20% titik pertama, 10% berikutnya): ' + f2Res.rsdDetails.join('; ')));
+  }
+  return f2Box;
+}
+
 function renderMediumResultCard(mId){
   try {
     const M = S.model.media[mId];
     const stdSets = S.model.standardSets[mId] || [];
     const cfg = getMedConfig(mId);
-    const card = h('div',{class:'card'});
-    card.append(h('div',{class:'mhead',style:'margin-bottom:12px'},
+    const card = h('div',{class:'card p4-card'});
+    card.append(h('div',{class:'mhead'},
       h('div',null,
-        h('h2',{style:'margin:0'},cfg.tabName || ('Medium pH ' + mId)),
+        h('h2',null,cfg.tabName || ('Medium pH ' + mId)),
         h('div',{class:'small muted'},cfg.desc)
       )
     ));
 
     if(!stdSets.length){
-      card.append(h('div',{class:'banner err'},'Tidak ada larutan standar terdeteksi untuk pH '+mId+'. Periksa Langkah 2.'));
+      card.append(h('div',{class:'banner err',style:'margin-bottom:0'},'Tidak ada larutan standar terdeteksi untuk pH '+mId+'. Periksa Langkah 2.'));
       return card;
     }
 
-    // 1. Kalkulasi Produk Pembanding
+    // Hitung profil Produk Pembanding & Produk Uji terlebih dahulu
     const refBatches = Object.keys(M.refBatches);
     let refCalculated = null;
-    let refBatchName = refBatches[0] || '';
+    const refBatchName = refBatches[0] || '';
     const rBObj = refBatches.length ? M.refBatches[refBatchName] : null;
     const refFullName = formatProductBatch(S.refParams.product, refBatchName, rBObj, 'Produk Pembanding');
 
+    const seriesForChart = [];
+    const tableNodes = [];
+    const f2Nodes = [];
+
     if(refBatches.length){
-      const rB = rBObj;
       let sId = S.stdMapping[mId+'|'+refBatchName];
       let sObj = stdSets.find(s=>s.id===sId);
       if(!sObj){ sObj = stdSets[0]; S.stdMapping[mId+'|'+refBatchName] = sObj.id; }
       const p = {...S.refParams, ws: S.wsWeights[sObj.id] !== undefined ? S.wsWeights[sObj.id] : S.refParams.wsDefault};
-      refCalculated = calcBatchProfile(M, rB, p, sObj);
-
-      card.append(renderProfileTable(refCalculated, 'Pembanding', `Profil Produk Pembanding: ${refFullName}`));
+      refCalculated = calcBatchProfile(M, rBObj, p, sObj);
+      tableNodes.push(renderProfileTable(refCalculated, 'Pembanding', refFullName));
+      if(refCalculated.stats && refCalculated.stats.length){
+        seriesForChart.push({name: refFullName, vals: refCalculated.stats.map(x=>x.avg), color: '#475569', dash: true, marker: 'square'});
+      }
     } else {
-      card.append(h('div',{class:'banner warn'},'Data Produk Pembanding belum diunggah untuk pH '+mId+'. Unggah di kotak Produk Pembanding (Langkah 1) untuk evaluasi f2.'));
+      f2Nodes.push(h('div',{class:'banner warn',style:'margin-bottom:0'},'Data Produk Pembanding belum diunggah untuk pH '+mId+'. Unggah di kotak Produk Pembanding (Langkah 1) untuk evaluasi f2.'));
     }
 
-    // 2. Kalkulasi Tiap Batch Produk Uji
     const testBatches = Object.keys(M.testBatches);
-    const seriesForChart = [];
-    if(refCalculated && refCalculated.stats && refCalculated.stats.length){
-      seriesForChart.push({name: refFullName, vals: refCalculated.stats.map(x=>x.avg), color: '#475569', dash: true, marker: 'square'});
-    }
-
     if(!testBatches.length){
-      card.append(h('div',{class:'banner warn'},'Belum ada batch Produk Uji yang terdeteksi untuk pH '+mId+'.'));
+      f2Nodes.push(h('div',{class:'banner warn',style:'margin-bottom:0'},'Belum ada batch Produk Uji yang terdeteksi untuk pH '+mId+'.'));
     }
 
     testBatches.forEach((tName, tIdx) => {
@@ -4268,13 +4386,12 @@ function renderMediumResultCard(mId){
       const tCalc = calcBatchProfile(M, tB, p, sObj);
 
       const testFullName = formatProductBatch(S.testParams.product, tName, tB, 'Produk Uji');
-      card.append(renderProfileTable(tCalc, 'Uji', `Profil Produk Uji: ${testFullName}`));
-      
+      tableNodes.push(renderProfileTable(tCalc, 'Uji', testFullName));
+
       if(tCalc.stats && tCalc.stats.length){
         seriesForChart.push({name: testFullName, vals: tCalc.stats.map(x=>x.avg), color: COLORS[tIdx % COLORS.length], dash: false, marker: tIdx === 0 ? 'circle' : 'triangle'});
       }
 
-      // 3. Evaluasi f2 (Highlight Utama)
       if(refCalculated && refCalculated.stats && refCalculated.stats.length && tCalc.stats && tCalc.stats.length){
         const f2Res = evalSimilarityF2(
           M.times,
@@ -4283,75 +4400,70 @@ function renderMediumResultCard(mId){
           refCalculated.stats,
           tCalc.stats
         );
-
-        const badgeClass = f2Res.isSimilar ? 'ok' : (isFinite(f2Res.f2) ? 'warn' : 'info');
-        const f2Box = h('div',{class:'f2-box ' + badgeClass});
-        f2Box.append(h('h4',null,`Hasil Evaluasi Faktor Kemiripan f2 (${testFullName} vs ${refFullName})`));
-
-        const f2ValText = isFinite(f2Res.f2) ? `f2 = ${fmtF2(f2Res.f2)}` : 'f2 = N/A';
-        const statusText = f2Res.both85at15
-          ? "Similar (Very Rapid ≥ 85% @ 15')"
-          : (isFinite(f2Res.f2)
-              ? (f2Res.isSimilar ? '50 – 100: Similar' : '< 50: Not Similar')
-              : 'Belum dapat dihitung');
-
-        f2Box.append(h('div',{class:'f2-hero'},
-          h('div',{class:'f2-score-main'},
-            h('div',{class:'f2-score-val'}, f2ValText)
-          ),
-          h('span',{class:'f2-status-pill ' + badgeClass}, statusText)
-        ));
-
-        if(f2Res.both85at15){
-          f2Box.append(h('div',{class:'banner ok',style:'margin:8px 0 4px'},
-            h('b',null,'Very Rapid Dissolution / Similar'),
-            h('div',{class:'small'},'Kedua produk terdisolusi ≥ 85% dalam 15 menit. Berdasarkan pedoman FDA, EMA, dan BPOM, kurva disolusi dianggap similar tanpa perlu evaluasi statistik f2.')));
-        }
-
-        f2Box.append(h('div',{class:'f2-meta-row'},
-          h('span',{class:'f2-n-badge'}, `n = ${f2Res.n}`),
-          f2Res.usedTimes && f2Res.usedTimes.length
-            ? h('span',{class:'small muted'}, `Titik waktu diikutsertakan: ${f2Res.usedTimes.map(t=>t+"'").join(', ')}`)
-            : null,
-          (f2Res.n > 0 && !f2Res.minPointsValid)
-            ? h('span',{class:'small',style:'color:var(--warn);font-weight:600'}, 'Peringatan: Regulasi mensyaratkan minimal 3 titik waktu.')
-            : null
-        ));
-
-        if(f2Res.rsdExceeded){
-          f2Box.append(h('div',{class:'banner warn',style:'margin-top:8px'},
-            h('b',null,'Perhatian Batas Variabilitas (% RSD):'),
-            h('div',{class:'small'},'RSD melebihi batas regulasi PerBPOM No. 11 Tahun 2022 (maks. 20% pada titik waktu pertama dan maks. 10% pada titik-titik waktu berikutnya): ' + f2Res.rsdDetails.join('; '))));
-        }
-
-        card.append(f2Box);
+        f2Nodes.push(buildF2ConclusionBox(f2Res, testFullName, refFullName));
       }
     });
 
-    // 4. Grafik Kurva Disolusi
-    if(seriesForChart.length && M.times && M.times.length){
-      card.append(h('h3',{style:'margin-top:20px'},'Kurva Profil Disolusi'));
-      card.append(h('div',{html:lineChart(seriesForChart, M.times)}));
-      card.append(h('div',{class:'legend'},
-        seriesForChart.map(s => {
-          const isSq = s.marker === 'square' || s.dash;
-          const isTri = s.marker === 'triangle';
-          const dashAttr = s.dash ? 'stroke-dasharray="4 3"' : '';
-          let markerSvg = `<circle cx="17" cy="7" r="4" fill="${s.color}"/>`;
-          if(isSq){
-            markerSvg = `<rect x="13" y="3" width="8" height="8" fill="${s.color}"/>`;
-          } else if(isTri){
-            markerSvg = `<polygon points="17,2.5 12.5,11 21.5,11" fill="${s.color}"/>`;
-          }
-          const iconHtml = `<svg class="leg-icon" viewBox="0 0 34 14"><line x1="1" y1="7" x2="33" y2="7" stroke="${s.color}" stroke-width="2.2" ${dashAttr}/>${markerSvg}</svg>`;
-          return h('span', null, h('span', {html: iconHtml}), s.name);
-        })));
+    // URUTAN 1 & 2: Kurva Profil Disolusi lalu Kesimpulan f2
+    if((seriesForChart.length && M.times && M.times.length) || f2Nodes.length){
+      const heroGrid = h('div',{class:'p4-hero-grid'});
+
+      if(seriesForChart.length && M.times && M.times.length){
+        const legend = h('div',{class:'legend'},
+          seriesForChart.map(s => {
+            const isSq = s.marker === 'square' || s.dash;
+            const isTri = s.marker === 'triangle';
+            const dashAttr = s.dash ? 'stroke-dasharray="4 3"' : '';
+            let markerSvg = `<circle cx="14" cy="6" r="3.6" fill="${s.color}"/>`;
+            if(isSq){
+              markerSvg = `<rect x="10.5" y="2.5" width="7" height="7" fill="${s.color}"/>`;
+            } else if(isTri){
+              markerSvg = `<polygon points="14,2 10,10 18,10" fill="${s.color}"/>`;
+            }
+            const iconHtml = `<svg class="leg-icon" viewBox="0 0 28 12"><line x1="1" y1="6" x2="27" y2="6" stroke="${s.color}" stroke-width="2" ${dashAttr}/>${markerSvg}</svg>`;
+            return h('span', null, h('span', {html: iconHtml}), s.name);
+          }));
+        heroGrid.append(h('div',{class:'p4-chart-panel'},
+          h('div',{class:'p4-subhead'}, h('h3',null,'Kurva Profil Disolusi')),
+          h('div',{html:lineChart(seriesForChart, M.times)}),
+          legend
+        ));
+      }
+
+      if(f2Nodes.length){
+        const isSingleF2 = f2Nodes.length === 1 && f2Nodes[0].classList && f2Nodes[0].classList.contains('f2-box');
+        heroGrid.append(h('div',{class:'p4-f2-panel' + (isSingleF2 ? ' is-single' : '')}, f2Nodes));
+      }
+
+      card.append(heroGrid);
+    }
+
+    // URUTAN 3: Hasil Tiap Vessel & Statistik (berdampingan di layar lebar)
+    if(tableNodes.length){
+      const tblGrid = h('div',{class:'p4-tables-grid' + (S.p4StatsOnly ? ' is-stats-only' : '')}, tableNodes);
+      const toggleBtn = h('button',{
+        type:'button',
+        class:'res-link-btn',
+        onclick: () => {
+          S.p4StatsOnly = !S.p4StatsOnly;
+          tblGrid.classList.toggle('is-stats-only', !!S.p4StatsOnly);
+          toggleBtn.textContent = S.p4StatsOnly ? 'Tampilkan Tiap Vessel' : 'Ringkas (Statistik saja)';
+        }
+      }, S.p4StatsOnly ? 'Tampilkan Tiap Vessel' : 'Ringkas (Statistik saja)');
+
+      card.append(
+        h('div',{class:'p4-tables-head'},
+          h('h3',null,'Hasil Tiap Vessel & Statistik'),
+          toggleBtn
+        ),
+        tblGrid
+      );
     }
 
     return card;
   } catch(err) {
     console.error('Error rendering medium pH ' + mId, err);
-    return h('div',{class:'card'},
+    return h('div',{class:'card p4-card'},
       h('h2',null,'Medium pH ' + mId),
       h('div',{class:'banner err'},'Terjadi kesalahan saat kalkulasi: ' + (err.message||err)));
   }
@@ -4365,7 +4477,7 @@ function renderResults(){
     return;
   }
 
-  root.append(h('div',{class:'row',style:'margin-bottom:14px;gap:8px'},
+  root.append(h('div',{class:'row p4-actions'},
     h('button',{class:'btn primary',onclick:()=>exportPDF()},'Unduh Laporan (PDF)'),
     h('button',{class:'btn',onclick:()=>printReportWindow()},'Pratinjau Cetak (Print Preview)'),
     h('button',{class:'btn',onclick:()=>exportCSV()},'Unduh CSV Hasil'),
@@ -4483,7 +4595,7 @@ function renderProfileTable(calc, roleLab, headingTitle){
 
 function lineChart(series, times){
   if (!times || !times.length) return '<div class="muted small">Tidak ada titik waktu.</div>';
-  const W=640, Hh=260, L=46, R=16, T=14, B=36;
+  const W=580, Hh=205, L=40, R=12, T=10, B=28;
   const xs = times;
   const xmax = Math.max(...xs, 60);
   const validVals = series.flatMap(s=>s.vals.filter(isFinite));
@@ -4493,12 +4605,12 @@ function lineChart(series, times){
 
   let svg = `<svg class="chart" viewBox="0 0 ${W} ${Hh}" role="img" aria-label="Profil Disolusi">`;
   for(let v=0; v<=ymax; v+=20){
-    svg += `<line class="gl" x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}"/><text x="${L-6}" y="${Y(v)+4}" text-anchor="end">${v}</text>`;
+    svg += `<line class="gl" x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}"/><text x="${L-5}" y="${Y(v)+3.5}" text-anchor="end">${v}</text>`;
   }
   // Titik 0 pada sumbu X
-  svg += `<text x="${X(0)}" y="${Hh-B+16}" text-anchor="middle">0</text>`;
-  xs.forEach(t => svg += `<text x="${X(t)}" y="${Hh-B+16}" text-anchor="middle">${t}</text>`);
-  svg += `<line class="ax" x1="${L}" x2="${W-R}" y1="${Hh-B}" y2="${Hh-B}"/><line class="ax" x1="${L}" x2="${L}" y1="${T}" y2="${Hh-B}"/><text x="${(L+W-R)/2}" y="${Hh-4}" text-anchor="middle">Waktu (menit)</text><text x="12" y="${(T+Hh-B)/2}" transform="rotate(-90 12 ${(T+Hh-B)/2})" text-anchor="middle">% Terlarut</text>`;
+  svg += `<text x="${X(0)}" y="${Hh-B+13}" text-anchor="middle">0</text>`;
+  xs.forEach(t => svg += `<text x="${X(t)}" y="${Hh-B+13}" text-anchor="middle">${t}</text>`);
+  svg += `<line class="ax" x1="${L}" x2="${W-R}" y1="${Hh-B}" y2="${Hh-B}"/><line class="ax" x1="${L}" x2="${L}" y1="${T}" y2="${Hh-B}"/><text x="${(L+W-R)/2}" y="${Hh-3}" text-anchor="middle">Waktu (menit)</text><text x="11" y="${(T+Hh-B)/2}" transform="rotate(-90 11 ${(T+Hh-B)/2})" text-anchor="middle">% Terlarut</text>`;
 
   series.forEach(s => {
     // Kurva selalu mulai dari titik nol (0,0) di pojok kiri bawah
@@ -4507,18 +4619,18 @@ function lineChart(series, times){
       if(isFinite(v)) pts.push(`${X(xs[i])},${Y(v)}`);
     });
     if(pts.length <= 1) return;
-    svg += `<polyline fill="none" stroke="${s.color}" stroke-width="2.2" ${s.dash?'stroke-dasharray="6 4"':''} points="${pts.join(' ')}"/>`;
+    svg += `<polyline fill="none" stroke="${s.color}" stroke-width="2" ${s.dash?'stroke-dasharray="6 4"':''} points="${pts.join(' ')}"/>`;
     const isSq = s.marker === 'square' || s.dash;
     const isTri = s.marker === 'triangle';
     const drawMarker = (cx, cy, r) => {
       if(isSq) return `<rect x="${cx - r}" y="${cy - r}" width="${r * 2}" height="${r * 2}" fill="${s.color}"/>`;
-      if(isTri) return `<polygon points="${cx},${cy - r - 1} ${cx - r - 0.8},${cy + r} ${cx + r + 0.8},${cy + r}" fill="${s.color}"/>`;
+      if(isTri) return `<polygon points="${cx},${cy - r - 0.8} ${cx - r - 0.6},${cy + r} ${cx + r + 0.6},${cy + r}" fill="${s.color}"/>`;
       return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${s.color}"/>`;
     };
     // Titik marker di (0,0)
-    svg += drawMarker(X(0), Y(0), 3.2);
+    svg += drawMarker(X(0), Y(0), 2.8);
     s.vals.forEach((v,i) => {
-      if(isFinite(v)) svg += drawMarker(X(xs[i]), Y(v), 3.8);
+      if(isFinite(v)) svg += drawMarker(X(xs[i]), Y(v), 3.4);
     });
   });
   return svg + '</svg>';
