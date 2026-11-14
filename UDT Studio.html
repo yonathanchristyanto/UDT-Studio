@@ -1203,6 +1203,214 @@ details[open] summary { margin-bottom: 8px; }
   .res-tabs { padding: 0 14px; }
   .res-sec { padding: 10px 12px; }
 }
+
+/* Split-View PDF Preview Pane & Source Preview Buttons */
+:root { --pdf-pane-w: clamp(420px, 45vw, 700px); }
+body.has-pdf-preview .wrap,
+body.has-pdf-preview .stepper-wrap {
+  width: auto;
+  max-width: none;
+  margin-left: 0;
+  margin-right: var(--pdf-pane-w);
+  transition: margin-right 0.16s ease;
+}
+body.has-pdf-preview nav#steps button {
+  padding: 6px 8px;
+  gap: 5px;
+  font-size: 11.5px;
+}
+body.has-pdf-preview .res-grid.is-sample-row {
+  grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+}
+body.has-pdf-preview .udt-modal-backdrop {
+  right: var(--pdf-pane-w);
+}
+.pdf-pane {
+  display: none;
+  position: fixed;
+  top: 54px;
+  right: 0;
+  bottom: 0;
+  width: var(--pdf-pane-w);
+  z-index: 95;
+  background: var(--card);
+  border-left: 1px solid var(--line-strong);
+  box-shadow: -10px 0 32px rgba(15, 23, 42, 0.14);
+  flex-direction: column;
+}
+body.has-pdf-preview .pdf-pane { display: flex; }
+body.has-pdf-preview:has(.udt-modal-backdrop) .pdf-pane { top: 0; z-index: 10010; }
+.pdf-pane-resizer {
+  position: absolute;
+  left: -3px;
+  top: 0;
+  bottom: 0;
+  width: 7px;
+  cursor: ew-resize;
+  z-index: 6;
+}
+.pdf-pane-resizer:hover,
+.pdf-pane-resizer.is-dragging {
+  background: var(--accent-soft);
+  border-left: 2px solid var(--accent);
+}
+.pdf-pane-head {
+  flex-shrink: 0;
+  padding: 9px 14px;
+  background: var(--card-subtle);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 10px;
+  flex-wrap: wrap;
+}
+.pdf-pane-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  flex: 1 1 200px;
+}
+.pdf-pane-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--fg);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pdf-pane-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.pdf-pane-sel {
+  width: auto;
+  max-width: 210px;
+  padding: 3px 8px;
+  font-size: 11.5px;
+  border-radius: 6px;
+}
+.pdf-pane-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+}
+.pdf-pane-frame {
+  width: 100%;
+  height: 100%;
+  flex: 1;
+  border: 0;
+  background: #525659;
+}
+.pdf-pane-empty {
+  padding: 28px 20px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+  margin: auto;
+  max-width: 380px;
+}
+.pdf-preview-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 5px;
+  border: 1px solid var(--accent-line);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.35;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background-color 0.14s ease, color 0.14s ease, border-color 0.14s ease;
+}
+.pdf-preview-btn:hover {
+  background: var(--accent);
+  color: var(--accent-fg);
+  border-color: var(--accent);
+}
+.pdf-preview-btn.is-xs {
+  padding: 1px 6px;
+  font-size: 10.5px;
+}
+.pdf-preview-btn.is-active {
+  background: var(--accent);
+  color: var(--accent-fg);
+  border-color: var(--accent);
+}
+.batch-head-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin: 14px 0 6px;
+}
+.batch-head-bar h3 { margin: 0; }
+.batch-src-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--muted);
+  min-width: 0;
+}
+.batch-src-select {
+  width: auto;
+  max-width: 240px;
+  padding: 2px 7px;
+  font-size: 11.5px;
+  border-radius: 5px;
+}
+.res-file-chip.has-btn {
+  gap: 5px;
+  padding-right: 4px;
+}
+.pdf-pane-actions .btn,
+.pdf-pane-actions a.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 5px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line-strong);
+  background: var(--card);
+  color: var(--fg);
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.14s ease, border-color 0.14s ease;
+}
+.pdf-pane-actions .btn:hover,
+.pdf-pane-actions a.btn:hover {
+  background: var(--surface);
+  border-color: var(--accent-line);
+}
+@media (max-width: 1700px) {
+  body.has-pdf-preview .media-layout { flex-direction: column; }
+  body.has-pdf-preview .media-sidebar { width: 100%; position: static; flex-direction: row; overflow-x: auto; padding: 8px; }
+  body.has-pdf-preview .media-nav-btn { min-width: 170px; flex-shrink: 0; }
+}
+@media (max-width: 1024px) {
+  body.has-pdf-preview .wrap,
+  body.has-pdf-preview .stepper-wrap { margin-right: 0; }
+  body.has-pdf-preview .udt-modal-backdrop { right: 0; }
+  .pdf-pane { width: min(94vw, 640px); top: 0; z-index: 10010; }
+}
 </style>
 </head>
 <body>
@@ -1581,12 +1789,13 @@ function extractBatchFromFilename(fn){
   if (!fn) return '';
   const clean = String(fn).replace(/\.[^/.]+$/, '');
   const tokens = clean.split(/[\s_+,-]+/);
+  const skipFnRe = /^(standar|standard|std|sampel|sample|disolusi|dissolution|udt|md|medium|ph|buffer|dapar|air|water|release|rilis|sgf|sif|blangko|blanko|blank)$/i;
   for (const t of tokens){
-    if (/^(standar|standard|std|sampel|sample|disolusi|dissolution|udt|md|ph|buffer|dapar|air|water|release|rilis|sgf|sif)$/i.test(t)) continue;
+    if (skipFnRe.test(t)) continue;
     if (/^[A-Za-z]\d{4,}[A-Za-z0-9_-]*$/i.test(t)) return t;
   }
   for (const t of tokens){
-    if (/^(standar|standard|std|sampel|sample|disolusi|dissolution|udt|md|ph|buffer|dapar|air|water|release|rilis|sgf|sif)$/i.test(t)) continue;
+    if (skipFnRe.test(t)) continue;
     if (/^[A-Za-z0-9_-]{5,}$/.test(t) && !/^\d+$/.test(t)) return t;
   }
   for (const t of tokens){
@@ -1666,7 +1875,7 @@ function extractBatchAndProductFromPrefix(prefix, fileName = ''){
   if (!cleaned) return { batch: extractBatchFromFilename(fileName) || '', product: '' };
 
   const tokens = cleaned.split(/\s+/).filter(Boolean);
-  const noiseRe = /^(sampel|sample|disolusi|dissolution|udt|test|uji|ref|pembanding|komparator|tablet|kaplet|kapsul|tab|cap|mg|mcg|ug|g|ml|l|-|\/)$/i;
+  const noiseRe = /^(sampel|sample|disolusi|dissolution|udt|medium|blangko|blanko|blank|test|uji|ref|pembanding|komparator|tablet|kaplet|kapsul|tab|cap|mg|mcg|ug|g|ml|l|-|\/)$/i;
   const doseRe = /^\d+(?:[.,]\d+)?(?:mg|mcg|ug|µg|g|ml|%|iu)$/i;
   const additiveRe = /^(?:tween\d*|sls|sds|span\d*|peg\d*)$/i;
 
@@ -2156,17 +2365,28 @@ function parseCaryPdfPages(pagesLines){
 
   for (const page of pagesLines){
     for (const line of page){
-      const l = String(line || '').trim();
-      if (/^(?:Page \d+ of \d+|\d+[\/-]\d+[\/-]\d+|\bPT\.\s*Pharos|\bDepartemen Analytical|User\s*:|Sign\s*:|Results Flags Legend|\bR\s*=\s*Repeat)/i.test(l)){
+      const l = String(line || '').replace(/\s+/g, ' ').trim();
+      if (!l) continue;
+      if (/^(?:Page\s+\d+(?:\s+of\s+\d+)?|\d+\s+of\s+\d+|\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4}\b.*|\bPT\.?\s*Pharos\b.*|Results\s+Flags\s+Legend\b.*|\bR\s*=\s*Repeat\b.*)/i.test(l)){
+        continue;
+      }
+      // Header/footer batas halaman & kolom tanda tangan (mis. "User :", "Sign :", "Departemen Analytical Development [5]")
+      if (/^(?:Departemen\s+Analytical(?:\s+Development)?\b|(?:User|Sign)\s*:|[A-Za-z][A-Za-z ._-]{1,28}\s*:\s*$)/i.test(l)){
+        const tailNum = l.match(/^(?:Departemen\s+Analytical(?:\s+Development)?\b|(?:User|Sign)\s*:)\s*(\d{1,2})$/i);
+        if (tailNum && inAnalysis) cleaned.push(tailNum[1]);
         continue;
       }
       if (/^Analysis\b/i.test(l)){
         inAnalysis = true;
         continue;
       }
+      if (!inAnalysis && /^Sample\s+(?:F\s+)?Readings\b/i.test(l)){
+        inAnalysis = true;
+        continue;
+      }
       if (inAnalysis){
-        if (/^Collection time\b|^Sample\s+F\s+Readings\b/i.test(l)) continue;
-        if (l) cleaned.push(l);
+        if (/^Collection\s+time\b|^Sample\s+(?:F\s+)?Readings\b/i.test(l)) continue;
+        cleaned.push(l);
       }
     }
   }
@@ -2175,47 +2395,131 @@ function parseCaryPdfPages(pagesLines){
   let i = 0;
   let curPrefix = '';
   let pendingVal = null;
+  let pendingTimeSample = null; // "<prefix> <waktu>' <Reading>" menunggu nomor vessel ter-wrap (bisa lintas halaman)
+  let pendingNeedVal = null;    // "<prefix> <waktu>' <vessel>" menunggu angka Reading di baris berikutnya
+
+  const pushRow = (name, valRaw) => {
+    const norm = String(valRaw).replace(',', '.');
+    const val = parseFloat(norm);
+    if (!isFinite(val)) return;
+    rows.push({ name: name.replace(/\s+/g, ' ').trim(), area: val, areaStr: pad4(norm), rt: NaN });
+  };
 
   while (i < cleaned.length){
     const line = cleaned[i];
-    const valMatch = line.match(/([0-9]+\.[0-9]+)\s*$/);
-    const timeVesselMatch = line.match(/(\d+)'\s*(\d+)/);
+    let valMatch = line.match(/(?:^|\s)(-?[0-9]+[.,][0-9]+)\s*$/);
+    if (valMatch){
+      const beforeStart = valMatch.index + (/^\s/.test(valMatch[0]) ? 1 : 0);
+      if (/(?:^|\s)(?:MD|pH|ph)\s*$/i.test(line.slice(0, beforeStart))){
+        valMatch = null;
+      }
+    }
+    const bodyNoVal = valMatch ? line.slice(0, valMatch.index).trim() : line;
+    const timeVesselMatch = bodyNoVal.match(/(?:^|\s)(\d+)\s*['\u2019\u2032`\u00B4]\s*(\d+)\b/);
 
-    // Kasus 1: Standar Kalibrasi atau Bracketing Standard (Standar MD ..., BS MID ..., BS END ...)
+    // Kasus 0: Menunggu angka Reading untuk baris sampel lengkap di atasnya
+    if (pendingNeedVal && /^-?[0-9]+[.,][0-9]+$/.test(line)){
+      pushRow(pendingNeedVal, line);
+      pendingNeedVal = null;
+      i++;
+      continue;
+    }
+
+    // Kasus 1: Standar Kalibrasi atau Bracketing Standard
     if (/^(?:standar|standard|std|bs\s*[-_]?\s*mid|bs\s*[-_]?\s*end)\b/i.test(line)){
+      pendingTimeSample = null;
+      pendingNeedVal = null;
+      pendingVal = null;
       if (valMatch){
-        const val = parseFloat(valMatch[1]);
-        const name = line.slice(0, valMatch.index).trim();
-        rows.push({name, area: val, areaStr: pad4(valMatch[1]), rt: NaN});
+        pushRow(bodyNoVal, valMatch[1]);
       }
       i++;
       continue;
     }
 
-    // Kasus 2: Baris dengan prefix batch & media (mis. "F0058K25A MD6,8 0.1099" atau "F0058K25A MD6,8")
-    const prefixMatch = line.match(/([A-Za-z0-9_-]+\s+(?:MD|pH|ph)\s*[0-9.,-]+)/i);
+    // Kasus 1b: Blangko / Blank / Control non-sampel
+    if (/^(?:blangko|blanko|blank|wash|sst|diluent|placebo|plasebo)\b/i.test(line)){
+      pendingTimeSample = null;
+      pendingNeedVal = null;
+      pendingVal = null;
+      i++;
+      continue;
+    }
+
+    // Kasus A (Wrap Lintas Halaman / Baris): Baris sebelumnya berakhir di "<waktu>' <Reading>" tanpa vessel,
+    // lalu baris berikutnya membawa nomor vessel tunggal "1..24" (atau "<vessel> <Reading>").
+    if (pendingTimeSample){
+      const orphanV = line.match(/^(?:(?:V|vessel|v)\s*)?(\d{1,2})$/i);
+      if (orphanV){
+        const vNum = parseInt(orphanV[1], 10);
+        if (vNum >= 1 && vNum <= 24){
+          const fullName = `${pendingTimeSample.prefix} ${pendingTimeSample.time}' ${vNum}`.trim();
+          if (pendingTimeSample.valStr !== null){
+            pushRow(fullName, pendingTimeSample.valStr);
+            pendingTimeSample = null;
+          } else {
+            pendingNeedVal = fullName;
+            pendingTimeSample = null;
+          }
+          i++;
+          continue;
+        }
+      }
+      const vWithVal = valMatch && bodyNoVal.match(/^(?:(?:V|vessel|v)\s*)?(\d{1,2})$/i);
+      if (vWithVal){
+        const vNum = parseInt(vWithVal[1], 10);
+        if (vNum >= 1 && vNum <= 24){
+          const fullName = `${pendingTimeSample.prefix} ${pendingTimeSample.time}' ${vNum}`.trim();
+          pushRow(fullName, valMatch[1]);
+          pendingTimeSample = null;
+          i++;
+          continue;
+        }
+      }
+      pendingTimeSample = null;
+    }
+
+    // Kasus 2: Baris dengan prefix batch & media tanpa <waktu>' (mis. "F0058K25A MD6,8 0.1099")
+    const timeOnlyEnd = bodyNoVal.match(/(?:^|\s)(\d+)\s*['\u2019\u2032`\u00B4]\s*$/);
+    const prefixMatch = !timeVesselMatch && !timeOnlyEnd && bodyNoVal.match(/([A-Za-z0-9_-]+\s+(?:MD|pH|ph)\s*[0-9.,-]+)/i);
     if (prefixMatch){
       curPrefix = prefixMatch[1].trim();
-      if (valMatch && !timeVesselMatch){
+      pendingNeedVal = null;
+      if (valMatch){
         pendingVal = valMatch[1];
-      } else if (valMatch && timeVesselMatch){
-        const tv = timeVesselMatch[0];
-        const name = `${curPrefix} ${tv}`;
-        rows.push({name, area: parseFloat(valMatch[1]), areaStr: pad4(valMatch[1]), rt: NaN});
       }
       i++;
       continue;
     }
 
-    // Kasus 3: Baris memuat titik waktu & nomor vessel (mis. "5'1" atau "15'3 0.4935")
+    // Kasus 3: Baris memuat titik waktu & nomor vessel (mis. "DRV F0014B25A 5' 1 0.4725" atau "5'1")
     if (timeVesselMatch){
-      const tv = timeVesselMatch[0];
-      const name = `${curPrefix} ${tv}`.trim();
+      const inlinePrefix = bodyNoVal.slice(0, timeVesselMatch.index).trim();
+      if (inlinePrefix) curPrefix = inlinePrefix;
+      const tv = timeVesselMatch[0].trim();
+      const name = `${inlinePrefix || curPrefix} ${tv}`.trim();
       const valStr = valMatch ? valMatch[1] : pendingVal;
+      pendingVal = null;
       if (valStr){
-        rows.push({name, area: parseFloat(valStr), areaStr: pad4(valStr), rt: NaN});
-        pendingVal = null;
+        pushRow(name, valStr);
+      } else {
+        pendingNeedVal = name;
       }
+      i++;
+      continue;
+    }
+
+    // Kasus 4: Baris berhenti di "<nama> <waktu>'" tanpa nomor vessel (nomor vessel ter-wrap ke baris/halaman berikutnya)
+    if (timeOnlyEnd){
+      const inlinePrefix = bodyNoVal.slice(0, timeOnlyEnd.index).trim();
+      if (inlinePrefix) curPrefix = inlinePrefix;
+      pendingTimeSample = {
+        prefix: inlinePrefix || curPrefix,
+        time: timeOnlyEnd[1],
+        valStr: valMatch ? valMatch[1] : pendingVal
+      };
+      pendingVal = null;
+      pendingNeedVal = null;
       i++;
       continue;
     }
@@ -2631,7 +2935,8 @@ function buildUnifiedModel(injections, fileMetaMap){
             });
           }
         }
-        if (filesInBatch.size === 1) B.file = [...filesInBatch][0];
+        B.files = [...filesInBatch];
+        if (filesInBatch.size === 1) B.file = B.files[0];
       }
     };
     settleDict(M.testBatches, 'test');
@@ -3193,7 +3498,8 @@ async function readPdf(file, role){
     pages.push(itemsToLines(tc.items));
   }
   const r=parsePdfText(pages);
-  return {role, kind:'pdf', name:file.name, rows:r.rows, meta:r.meta, mode:r.mode, pages:doc.numPages};
+  const blobUrl=(typeof URL!=='undefined' && typeof URL.createObjectURL==='function') ? URL.createObjectURL(file) : '';
+  return {role, kind:'pdf', name:file.name, blobUrl, rows:r.rows, meta:r.meta, mode:r.mode, pages:doc.numPages};
 }
 
 function textEntry(name, text, role, isPaste=false){
@@ -3229,11 +3535,215 @@ async function addFilesForRole(list, role){
   rebuild();
 }
 
+const PDF_PREVIEW = { active: false, fileName: '', role: '', entryId: '', customWidth: 0 };
+
+function getAllPdfEntries(){
+  return [...(S.testFiles || []), ...(S.refFiles || [])].filter(f => f && f.kind === 'pdf');
+}
+
+function findPdfEntry(fileName, role){
+  const nm = String(fileName || '').trim();
+  if (!nm) return null;
+  if (role === 'ref' || role === 'test'){
+    const arr = role === 'ref' ? (S.refFiles || []) : (S.testFiles || []);
+    const exact = arr.find(f => f && f.kind === 'pdf' && f.name === nm);
+    if (exact) return exact;
+  }
+  return getAllPdfEntries().find(f => f.name === nm) || null;
+}
+
+function syncPdfPreviewBtns(){
+  if (typeof document === 'undefined' || !document.querySelectorAll) return;
+  document.querySelectorAll('.pdf-preview-btn[data-pdf-file]').forEach(btn => {
+    const fn = btn.getAttribute('data-pdf-file') || '';
+    const rl = btn.getAttribute('data-pdf-role') || '';
+    const isMatch = PDF_PREVIEW.active && fn === PDF_PREVIEW.fileName && (!PDF_PREVIEW.role || !rl || rl === PDF_PREVIEW.role);
+    btn.classList.toggle('is-active', isMatch);
+  });
+}
+
+function renderPdfPreviewPane(){
+  if (typeof document === 'undefined') return;
+  const pane = document.getElementById ? document.getElementById('pdfPreviewPane') : null;
+  if (!pane) return;
+  pane.innerHTML = '';
+  if (!PDF_PREVIEW.active) return;
+
+  const entry = findPdfEntry(PDF_PREVIEW.fileName, PDF_PREVIEW.role);
+  if (entry){
+    PDF_PREVIEW.entryId = entry.id || '';
+    PDF_PREVIEW.fileName = entry.name || PDF_PREVIEW.fileName;
+    if (!PDF_PREVIEW.role && entry.role) PDF_PREVIEW.role = entry.role;
+  }
+  const activeName = entry ? entry.name : (PDF_PREVIEW.fileName || 'Pratinjau PDF');
+  const activeRole = (entry && entry.role) || PDF_PREVIEW.role || '';
+  const allPdfs = getAllPdfEntries();
+
+  let frameEl = null;
+  const resizer = h('div', { class: 'pdf-pane-resizer', title: 'Geser untuk atur lebar panel PDF' });
+  resizer.addEventListener('mousedown', e => {
+    e.preventDefault();
+    resizer.classList.add('is-dragging');
+    if (frameEl) frameEl.style.pointerEvents = 'none';
+    const onMove = ev => {
+      const maxW = Math.max(420, Math.round(window.innerWidth * 0.78));
+      const w = Math.max(360, Math.min(maxW, Math.round(window.innerWidth - ev.clientX)));
+      PDF_PREVIEW.customWidth = w;
+      document.documentElement.style.setProperty('--pdf-pane-w', w + 'px');
+    };
+    const onUp = () => {
+      resizer.classList.remove('is-dragging');
+      if (frameEl) frameEl.style.pointerEvents = '';
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  });
+
+  if (PDF_PREVIEW.customWidth){
+    document.documentElement.style.setProperty('--pdf-pane-w', PDF_PREVIEW.customWidth + 'px');
+  }
+
+  const roleBadge = activeRole === 'ref'
+    ? h('span', { class: 'badge info small' }, 'Pembanding')
+    : (activeRole === 'test' ? h('span', { class: 'badge ok small' }, 'Uji') : null);
+
+  let selEl = null;
+  if (allPdfs.length > 1){
+    const curIdx = allPdfs.findIndex(p =>
+      (PDF_PREVIEW.entryId && p.id === PDF_PREVIEW.entryId) ||
+      (p.name === activeName && (!activeRole || p.role === activeRole))
+    );
+    selEl = h('select', {
+      class: 'pdf-pane-sel',
+      title: 'Pilih file PDF lain',
+      'aria-label': 'Pilih file PDF lain',
+      onchange: e => {
+        const chosen = allPdfs[parseInt(e.target.value, 10)];
+        if (chosen) openPdfPreview(chosen.name, chosen.role);
+      }
+    }, allPdfs.map((p, idx) =>
+      h('option', { value: String(idx), selected: idx === curIdx },
+        (p.role === 'ref' ? '[Ref] ' : '[Uji] ') + p.name
+      )
+    ));
+  }
+
+  const head = h('div', { class: 'pdf-pane-head' },
+    h('div', { class: 'pdf-pane-title' },
+      roleBadge,
+      h('span', { class: 'pdf-pane-name', title: activeName }, activeName)
+    ),
+    h('div', { class: 'pdf-pane-actions' },
+      selEl,
+      entry && entry.blobUrl
+        ? h('a', { class: 'btn btn-sm', href: entry.blobUrl, target: '_blank', rel: 'noopener', title: 'Buka file PDF di tab baru' }, 'Tab Baru')
+        : null,
+      h('button', { type: 'button', class: 'btn btn-sm', onclick: closePdfPreview, 'aria-label': 'Tutup panel pratinjau PDF' }, 'Tutup')
+    )
+  );
+
+  const body = h('div', { class: 'pdf-pane-body' });
+  if (entry && entry.blobUrl){
+    frameEl = h('iframe', {
+      class: 'pdf-pane-frame',
+      src: entry.blobUrl + '#navpanes=0&view=FitH',
+      title: 'Pratinjau PDF: ' + activeName
+    });
+    body.append(frameEl);
+  } else {
+    body.append(
+      h('div', { class: 'pdf-pane-empty' },
+        h('b', { style: 'display:block;margin-bottom:6px;color:var(--fg)' }, activeName),
+        h('p', { style: 'margin:0' }, 'Pratinjau PDF langsung hanya tersedia untuk file PDF yang diunggah pada sesi browser ini. Silakan unggah ulang file PDF di Langkah 1 bila diperlukan.')
+      )
+    );
+  }
+  pane.append(resizer, head, body);
+}
+
+function openPdfPreview(fileName, role){
+  const entry = findPdfEntry(fileName, role);
+  PDF_PREVIEW.active = true;
+  PDF_PREVIEW.fileName = entry ? entry.name : String(fileName || '').trim();
+  PDF_PREVIEW.role = entry ? (entry.role || role || '') : (role || '');
+  PDF_PREVIEW.entryId = entry ? (entry.id || '') : '';
+  if (typeof document !== 'undefined' && document.body && document.body.classList){
+    document.body.classList.add('has-pdf-preview');
+  }
+  renderPdfPreviewPane();
+  syncPdfPreviewBtns();
+}
+
+function closePdfPreview(){
+  PDF_PREVIEW.active = false;
+  PDF_PREVIEW.fileName = '';
+  PDF_PREVIEW.role = '';
+  PDF_PREVIEW.entryId = '';
+  if (typeof document !== 'undefined' && document.body && document.body.classList){
+    document.body.classList.remove('has-pdf-preview');
+  }
+  renderPdfPreviewPane();
+  syncPdfPreviewBtns();
+}
+
+function makePdfPreviewBtn(fileName, role, opts){
+  opts = opts || {};
+  const rawName = String(fileName || '').trim();
+  const entry = opts.entry || findPdfEntry(rawName, role);
+  if (!entry && !/\.pdf$/i.test(rawName)) return null;
+  const targetName = entry ? entry.name : rawName;
+  const targetRole = entry ? (entry.role || role || '') : (role || '');
+  const isActive = PDF_PREVIEW.active && PDF_PREVIEW.fileName === targetName && (!PDF_PREVIEW.role || !targetRole || PDF_PREVIEW.role === targetRole);
+  const cls = 'pdf-preview-btn' + (opts.isXs ? ' is-xs' : '') + (isActive ? ' is-active' : '');
+  const btn = h('button', {
+    type: 'button',
+    class: cls,
+    'data-pdf-file': targetName,
+    'data-pdf-role': targetRole,
+    title: opts.title || ('Lihat PDF sumber: ' + targetName),
+    onclick: e => {
+      if (e && e.preventDefault) e.preventDefault();
+      if (e && e.stopPropagation) e.stopPropagation();
+      const same = PDF_PREVIEW.active && PDF_PREVIEW.fileName === targetName && (!PDF_PREVIEW.role || !targetRole || PDF_PREVIEW.role === targetRole);
+      if (same) closePdfPreview();
+      else openPdfPreview(targetName, targetRole);
+    }
+  });
+  if (typeof document !== 'undefined' && btn){
+    try {
+      btn.innerHTML = '<svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 1.5H4A1.5 1.5 0 0 0 2.5 3v10A1.5 1.5 0 0 0 4 14.5h8a1.5 1.5 0 0 0 1.5-1.5V5.5L9.5 1.5z"/><polyline points="9.5 1.5 9.5 5.5 13.5 5.5"/></svg>';
+      btn.append(h('span', null, opts.label || 'Preview PDF'));
+    } catch(_){
+      btn.textContent = opts.label || 'Preview PDF';
+    }
+  }
+  return btn;
+}
+
+if (typeof window !== 'undefined' && typeof window.addEventListener === 'function' && !window.__udtPdfEscBound){
+  window.__udtPdfEscBound = true;
+  window.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && PDF_PREVIEW.active){
+      closePdfPreview();
+    }
+  });
+}
+
 function removeFile(id, role){
   const targetArr = role === 'ref' ? S.refFiles : S.testFiles;
   const rem = targetArr.find(f => f.id === id);
   if(role === 'ref') S.refFiles=S.refFiles.filter(f=>f.id!==id);
   else S.testFiles=S.testFiles.filter(f=>f.id!==id);
+  if (rem && rem.blobUrl && typeof URL !== 'undefined' && typeof URL.revokeObjectURL === 'function'){
+    try { URL.revokeObjectURL(rem.blobUrl); } catch(_) {}
+  }
+  if (rem && PDF_PREVIEW.active && (PDF_PREVIEW.entryId === rem.id || (PDF_PREVIEW.fileName === rem.name && (!PDF_PREVIEW.role || PDF_PREVIEW.role === role)))){
+    const nextPdf = getAllPdfEntries()[0];
+    if (nextPdf) openPdfPreview(nextPdf.name, nextPdf.role);
+    else closePdfPreview();
+  }
   if (rem && S.ignoredFiles){
     const k = (role || '') + '::' + rem.name;
     S.ignoredFiles = S.ignoredFiles.filter(x => x !== k);
@@ -3267,7 +3777,13 @@ function renderFileList(boxEl, files, role){
     if(ignored){
       cells.push(h('button',{class:'link',onclick:()=>toggleIgnoreFile(role, f.name, false)},'aktifkan'));
     }
-    cells.push(h('button',{class:'link',onclick:()=>removeFile(f.id, role)},'hapus'));
+    const actWrap=h('span',{style:'display:inline-flex;align-items:center;gap:8px;justify-content:flex-end'});
+    if (f.kind==='pdf'){
+      const pBtn=makePdfPreviewBtn(f.name, role, { label:'Preview PDF', entry:f });
+      if (pBtn) actWrap.append(pBtn);
+    }
+    actWrap.append(h('button',{class:'link',onclick:()=>removeFile(f.id, role)},'hapus'));
+    cells.push(actWrap);
     const div=h('div',{class:'file'+(ignored?' is-ignored':'')},cells);
     if(f.kind==='csv'){
       const sel=(key,opt)=>{
@@ -3639,7 +4155,22 @@ function renderMediumSection(id){
             h('b',{style:'font-size:14px'},s.name),
             roleBadge
           ),
-          h('div',{class:'small muted'},(s.runDate ? 'Tanggal CDS: '+s.runDate+' · ' : '') + 'Sumber: ' + s.file)
+          h('div',{class:'small muted',style:'display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:2px'},
+            s.runDate ? h('span',null,'Tanggal CDS: ' + s.runDate + ' ·') : null,
+            h('span',null,'Sumber:'),
+            ...((() => {
+              const srcList = (s.sourceFiles && s.sourceFiles.length) ? s.sourceFiles : (s.file && s.file !== 'Manual' ? [s.file] : []);
+              if (!srcList.length) return [h('span',null,s.file || '-')];
+              const parts = [];
+              srcList.forEach((fn, fIdx) => {
+                if (fIdx > 0) parts.push(h('span',null,'+'));
+                parts.push(h('span',{style:'word-break:break-word'},fn));
+                const pBtn = makePdfPreviewBtn(fn, s.role, { label:'Preview PDF', isXs:true });
+                if (pBtn) parts.push(pBtn);
+              });
+              return parts;
+            })())
+          )
         ),
         stdVals.length >= 2 ? h('span',{class:'badge ' + (isStdOk ? 'ok' : (stdRsd > 2.0 ? 'warn' : 'info'))},
           `RSD Std: ${fmt(stdRsd, 2)}% ${isStdOk ? '(Lolos ≤ 2.0%)' : (stdRsd > 2.0 ? '(> 2.0%)' : '')}`
@@ -3774,7 +4305,52 @@ function renderBatchTable(M, B, title, mId){
   const V = Math.max(3, B.vessels.length ? Math.max(...B.vessels) : 0);
   const times = M.times.slice();
   const wrap = h('div');
-  wrap.append(h('h3',null,title));
+  const allSrcFiles = (B.files && B.files.length) ? B.files : (B.file ? [B.file] : []);
+  const pdfSrcFiles = allSrcFiles.filter(fn => !!findPdfEntry(fn, B.role) || /\.pdf$/i.test(String(fn || '')));
+  const headBar = h('div',{class:'batch-head-bar'}, h('h3',null,title));
+  if (pdfSrcFiles.length){
+    const srcBar = h('div',{class:'batch-src-bar'});
+    if (pdfSrcFiles.length <= 2){
+      srcBar.append(h('span',null,'Sumber:'));
+      pdfSrcFiles.forEach((fn, fIdx) => {
+        if (fIdx > 0) srcBar.append(h('span',null,'·'));
+        srcBar.append(h('span',{title:fn, style:'max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap'},fn));
+        const pBtn = makePdfPreviewBtn(fn, B.role, { label:'Preview PDF', isXs:true });
+        if (pBtn) srcBar.append(pBtn);
+      });
+    } else {
+      srcBar.append(h('span',null,`Sumber (${pdfSrcFiles.length} PDF):`));
+      let openSelBtn = null;
+      const selSrc = h('select',{
+        class:'batch-src-select',
+        'aria-label':`Pilih sumber PDF ${title}`,
+        onchange:() => {
+          if (openSelBtn){
+            openSelBtn.setAttribute('data-pdf-file', selSrc.value);
+            syncPdfPreviewBtns();
+          }
+          if (PDF_PREVIEW.active) openPdfPreview(selSrc.value, B.role);
+        }
+      }, pdfSrcFiles.map(fn => h('option',{value:fn},fn)));
+      srcBar.append(selSrc);
+      openSelBtn = makePdfPreviewBtn(pdfSrcFiles[0], B.role, { label:'Preview PDF', isXs:true });
+      if (openSelBtn){
+        openSelBtn.onclick = e => {
+          if (e && e.preventDefault) e.preventDefault();
+          if (e && e.stopPropagation) e.stopPropagation();
+          const chosen = selSrc.value || pdfSrcFiles[0];
+          const same = PDF_PREVIEW.active && PDF_PREVIEW.fileName === chosen && (!PDF_PREVIEW.role || !B.role || PDF_PREVIEW.role === B.role);
+          if (same) closePdfPreview();
+          else openPdfPreview(chosen, B.role);
+        };
+        srcBar.append(openSelBtn);
+      }
+    }
+    headBar.append(srcBar);
+  } else if (allSrcFiles.length){
+    headBar.append(h('div',{class:'batch-src-bar'}, h('span',{title:allSrcFiles.join(', ')}, 'Sumber: ' + allSrcFiles.join(', '))));
+  }
+  wrap.append(headBar);
 
   const tbl = h('table',{class:'tbl'});
   tbl.append(h('thead',null,h('tr',null,h('th',null,'Vessel'), times.map(t=>h('th',null,t+"'")))));
@@ -3832,7 +4408,12 @@ function renderUnassignedSection(openByDefault = false){
         h('tbody',null,
           u.map((x, idx) => h('tr',null,
             h('td',{class:'muted small'}, String(idx + 1)),
-            h('td',{class:'small'}, x.file || '-'),
+            h('td',{class:'small'},
+              h('div',{style:'display:flex;align-items:center;gap:6px;flex-wrap:wrap'},
+                h('span',null, x.file || '-'),
+                x.file ? makePdfPreviewBtn(x.file, x.role || '', { label:'Preview PDF', isXs:true }) : null
+              )
+            ),
             h('td',null, h('code',null, x.name)),
             h('td',null, h('span',{class:`badge ${x.role==='ref'?'info':'ok'} small`}, x.role==='ref'?'Pembanding':'Uji')),
             h('td',{class:'num'}, isFinite(x.area) ? pad4(x.area) : '-'),
@@ -4338,10 +4919,21 @@ function renderWeightsForRole(containerEl, role='all'){
           s.runDate ? h('span',{class:'small muted',style:'font-size:10px'}, s.runDate) : null
         ),
         h('div',{
-          class:'small muted',
-          style:'font-size:10.5px;text-overflow:ellipsis;overflow:hidden;white-space:nowrap',
-          title:s.file
-        }, `Sumber: ${s.file}`),
+          style:'display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-width:0'
+        },
+          h('span',{
+            class:'small muted',
+            style:'font-size:10.5px;text-overflow:ellipsis;overflow:hidden;white-space:nowrap;flex:1 1 120px;min-width:0',
+            title:s.file
+          }, `Sumber: ${s.file}`),
+          ...((() => {
+            const wsSrc = (s.sourceFiles && s.sourceFiles.length) ? s.sourceFiles : (s.file ? [s.file] : []);
+            return wsSrc.map((fn, fIdx) => makePdfPreviewBtn(fn, s.role, {
+              label: wsSrc.length > 1 ? `PDF ${fIdx + 1}` : 'Preview PDF',
+              isXs: true
+            })).filter(Boolean);
+          })())
+        ),
         h('label',{class:'f',style:'margin-top:2px'},
           h('span',{style:'font-size:11.5px;color:var(--muted)'}, 'Bobot WS (mg)'),
           inp
@@ -7341,7 +7933,7 @@ function openPreStep2Modal(pending){
   const expandedFiles = {};
   const expandedRows = {};
 
-  const renderResFileList = (files, labelPrefix, expandKey) => {
+  const renderResFileList = (files, labelPrefix, expandKey, roleHint) => {
     if (!files || !files.length) return null;
     const isExp = !expandKey || files.length <= 3 || Boolean(expandedFiles[expandKey]);
     const head = h('div', { class: 'res-file-head' },
@@ -7352,7 +7944,13 @@ function openPreStep2Modal(pending){
       }, isExp ? 'Ringkas' : `Lihat semua (${files.length})`) : null
     );
     const shown = isExp ? files : files.slice(0, 2);
-    const chips = shown.map(fn => h('span', { class: 'res-file-chip', title: fn }, fn));
+    const chips = shown.map(fn => {
+      const pBtn = makePdfPreviewBtn(fn, roleHint || '', { label: 'PDF', isXs: true, title: 'Pratinjau PDF di panel samping: ' + fn });
+      return h('span', { class: 'res-file-chip' + (pBtn ? ' has-btn' : ''), title: fn },
+        h('span', null, fn),
+        pBtn
+      );
+    });
     if (!isExp && files.length > 2){
       chips.push(h('span', { class: 'res-file-chip muted', title: files.slice(2).join('\n') }, `+${files.length - 2} file lainnya (s/d ${files[files.length - 1]})`));
     }
@@ -7456,7 +8054,7 @@ function openPreStep2Modal(pending){
               ),
               h('span', { class: 'small muted' }, pg.files.length > 1 ? `${pg.files.length} file · ~${pg.rowsPerFileLabel} baris/file` : `${pg.files.length} file sumber`)
             ),
-            renderResFileList(pg.files, 'File sumber', 'pref_' + pg.groupKey)
+            renderResFileList(pg.files, 'File sumber', 'pref_' + pg.groupKey, pg.role)
           );
 
           // Pratinjau mini-tabel informatif (File Sumber | Sample Name | RT | Area | [Pemetaan])
@@ -7585,7 +8183,15 @@ function openPreStep2Modal(pending){
               ),
               h('span', { class: 'badge err small' }, `${cg.items.length} titik bentrok`)
             ),
-            h('div', { class: 'res-note is-err' }, 'Titik bentrok: ' + ptSample)
+            h('div', { class: 'res-note is-err', style: 'display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap' },
+              h('span', null, 'Titik bentrok: ' + ptSample),
+              cg.sources.length === 1 && cg.sources[0] && cg.sources[0].file
+                ? h('span', { style: 'display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap' },
+                    h('span', { class: 'small muted' }, cg.sources[0].file),
+                    makePdfPreviewBtn(cg.sources[0].file, cg.role, { label: 'Preview PDF', isXs: true })
+                  )
+                : null
+            )
           );
 
           const optsWrap = h('div', { class: 'res-opts' });
@@ -7602,6 +8208,7 @@ function openPreStep2Modal(pending){
                 h('div', { class: 'res-opt-body' },
                   h('div', { class: 'res-opt-title' },
                     h('b', null, src.file),
+                    makePdfPreviewBtn(src.file, cg.role, { label: 'Preview PDF', isXs: true }),
                     src.runDate ? h('span', { class: 'badge info small' }, 'CDS: ' + src.runDate) : h('span', { class: 'small muted' }, '(tanpa tanggal CDS)'),
                     isRec ? h('span', { class: 'res-badge-rec' }, 'Saran: Tanggal CDS Terbaru') : null
                   ),
@@ -7985,9 +8592,10 @@ function init(){
   go(1);
   initConn();
 }
-window.__udt = {S, rebuild, go, addFilesForRole, textEntry, fileRows, readPdf, itemsToLines, parsePdfText, parseHeaderMeta, extractTimeFromFilename, renderCheck, renderParams, renderResults, renderSend, executeExportCommand, formatTabTitle, lineChart, drawChartCanvas, exportPDF, printReportWindow, parseCSV, classifyName, extractMediumFromString, analyzePendingResolutions, openPreStep2Modal, openAliasManagerModal, checkMediumValidation, statusOf};
+window.__udt = {S, rebuild, go, addFilesForRole, textEntry, fileRows, readPdf, itemsToLines, parsePdfText, parseCaryPdfPages, parseHeaderMeta, extractTimeFromFilename, extractBatchFromFilename, extractBatchAndProductFromPrefix, PDF_PREVIEW, openPdfPreview, closePdfPreview, makePdfPreviewBtn, renderCheck, renderParams, renderResults, renderSend, executeExportCommand, formatTabTitle, lineChart, drawChartCanvas, exportPDF, printReportWindow, parseCSV, classifyName, extractMediumFromString, analyzePendingResolutions, openPreStep2Modal, openAliasManagerModal, checkMediumValidation, statusOf};
 init();
 </script>
 <div id="resModalRoot"></div>
+<aside id="pdfPreviewPane" class="pdf-pane" aria-label="Pratinjau PDF"></aside>
 </body>
 </html>
