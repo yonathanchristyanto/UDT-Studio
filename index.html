@@ -2938,6 +2938,99 @@ function csvToRows(parsed, map){
   return rows;
 }
 
+// --- Helper pengurutan kronologis & penggabungan semua file sampel menjadi Vessel 1..N ---
+function getFileChronoKey(fileName, runDate){
+  if (runDate && /^\d{4}-\d{2}-\d{2}/.test(String(runDate))) return String(runDate).slice(0, 10);
+  const m = String(fileName || '').match(/(?:^|\D)(\d{2})(\d{2})(\d{2})(?:\D|$)/);
+  if (m){
+    const dd = parseInt(m[1], 10), mm = parseInt(m[2], 10);
+    if (dd >= 1 && dd <= 31 && mm >= 1 && mm <= 12){
+      return `20${m[3]}-${String(mm).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
+    }
+  }
+  return '9999-99-99';
+}
+
+function computeCombineAllPlan(rawInjections){
+  const byFileMap = {};
+  (rawInjections || []).forEach(inj => {
+    const fn = inj.file || 'Manual';
+    if (!byFileMap[fn]){
+      byFileMap[fn] = {
+        file: fn,
+        runDate: inj.runDate || '',
+        firstInjIdx: inj.injIdx != null ? inj.injIdx : 0,
+        sortDate: getFileChronoKey(fn, inj.runDate),
+        injs: []
+      };
+    }
+    const fRec = byFileMap[fn];
+    if (!fRec.runDate && inj.runDate){
+      fRec.runDate = inj.runDate;
+      fRec.sortDate = getFileChronoKey(fn, inj.runDate);
+    }
+    if (inj.injIdx != null && inj.injIdx < fRec.firstInjIdx) fRec.firstInjIdx = inj.injIdx;
+    fRec.injs.push(inj);
+  });
+
+  const files = Object.values(byFileMap).sort((a,b) => {
+    if (a.sortDate !== b.sortDate) return a.sortDate.localeCompare(b.sortDate);
+    return a.firstInjIdx - b.firstInjIdx;
+  });
+
+  let vesselOffset = 0;
+  const cells = {};
+  const fileRanges = [];
+
+  for (const f of files){
+    const byTime = {};
+    const distinctSet = new Set();
+    f.injs.forEach(x => {
+      (byTime[x.time] || (byTime[x.time] = [])).push(x);
+      distinctSet.add(x.vessel);
+    });
+    const distinctV = [...distinctSet].sort((a,b) => a - b);
+    let maxPerTime = 0;
+    let hasDupInSameTime = false;
+    Object.values(byTime).forEach(arr => {
+      arr.sort((a,b) => (a.vessel - b.vessel) || ((a.injIdx || 0) - (b.injIdx || 0)));
+      if (arr.length > maxPerTime) maxPerTime = arr.length;
+      if (new Set(arr.map(x => x.vessel)).size < arr.length) hasDupInSameTime = true;
+    });
+
+    const useSeqMode = hasDupInSameTime || maxPerTime > distinctV.length;
+    const fileVesselSpan = useSeqMode ? maxPerTime : distinctV.length;
+
+    Object.values(byTime).forEach(arr => {
+      arr.forEach((x, j) => {
+        const localV = useSeqMode ? (j + 1) : (distinctV.indexOf(x.vessel) + 1);
+        const newV = vesselOffset + localV;
+        cells[newV + '|' + x.time] = {
+          area: x.area,
+          areaStr: x.areaStr,
+          file: x.file,
+          runDate: x.runDate,
+          origVessel: x.vessel,
+          combinedFromConflict: true
+        };
+      });
+    });
+
+    fileRanges.push({
+      file: f.file,
+      runDate: f.runDate,
+      sortDate: f.sortDate,
+      startVessel: vesselOffset + 1,
+      endVessel: vesselOffset + fileVesselSpan,
+      vesselCount: fileVesselSpan,
+      pointCount: f.injs.length
+    });
+    vesselOffset += fileVesselSpan;
+  }
+
+  return { cells, fileRanges, totalVessels: vesselOffset };
+}
+
 // --- Data Model with Standard Sets, Fail-Proof Inferred Medium, and Auto-Merge BS ---
 function buildUnifiedModel(injections, fileMetaMap){
   const media = {};
@@ -3119,11 +3212,13 @@ function buildUnifiedModel(injections, fileMetaMap){
         role: inj.role,
         cells: {},
         cellCandidates: {},
+        rawInjections: [],
         file: inj.file
       });
       const k = c.vessel + '|' + c.time;
       const fMeta = fileMetaMap[inj.file] || {};
       if (!B.cellCandidates[k]) B.cellCandidates[k] = [];
+      const fnNorm = inj.file || 'Manual';
       B.cellCandidates[k].push({
         seq: B.cellCandidates[k].length,
         injIdx: idx,
@@ -3131,9 +3226,23 @@ function buildUnifiedModel(injections, fileMetaMap){
         areaStr: inj.areaStr,
         rt: inj.rt,
         name: inj.name,
-        file: inj.file || 'Manual',
+        file: fnNorm,
         runDate: fMeta.runDate || ''
       });
+      const isExactDup = B.rawInjections.some(r => r.file === fnNorm && r.vessel === c.vessel && r.time === c.time && r.area === inj.area);
+      if (!isExactDup){
+        B.rawInjections.push({
+          injIdx: idx,
+          vessel: c.vessel,
+          time: c.time,
+          area: inj.area,
+          areaStr: inj.areaStr,
+          rt: inj.rt,
+          name: inj.name,
+          file: fnNorm,
+          runDate: fMeta.runDate || ''
+        });
+      }
     } else if (c.type === 'other'){
       unassigned.push(inj);
     }
@@ -3197,6 +3306,24 @@ function buildUnifiedModel(injections, fileMetaMap){
         }
         const groupFilesSig = [...allConfFiles].sort().join('|');
         const filesInBatch = new Set();
+        const groupKey = mId + '|' + role + '|' + batchName;
+        const groupChoice = conflictChoices[groupKey];
+
+        if (groupChoice && groupChoice.mode === 'combineAll' && (!groupChoice.groupFilesSig || groupChoice.groupFilesSig === groupFilesSig)){
+          const plan = computeCombineAllPlan(B.rawInjections || []);
+          B.cells = plan.cells;
+          plan.fileRanges.forEach(fr => { if (fr.file) filesInBatch.add(fr.file); });
+          Object.keys(B.cells).forEach(k => {
+            const [v, t] = k.split('|').map(Number);
+            M.resolvedConflicts.push({
+              batch: batchName, role, vessel: v, time: t,
+              key: k, chosen: B.cells[k], mode: 'combineAll'
+            });
+          });
+          B.files = [...filesInBatch];
+          if (filesInBatch.size === 1) B.file = B.files[0];
+          continue;
+        }
 
         for (const k of Object.keys(B.cellCandidates || {})){
           const cands = B.cellCandidates[k];
@@ -8245,6 +8372,9 @@ function analyzePendingResolutions(){
     }
   }
   const conflictGroups = Object.values(confMap).map(cg => {
+    const med = model.media[cg.mId];
+    const batchObj = med ? ((cg.role === 'ref' ? med.refBatches : med.testBatches)[cg.batch]) : null;
+    const combinePlan = computeCombineAllPlan((batchObj && batchObj.rawInjections) || []);
     const sources = Object.values(cg.sourcesMap).sort((a,b) => {
       const da = a.runDate || '';
       const db = b.runDate || '';
@@ -8261,6 +8391,7 @@ function analyzePendingResolutions(){
     return {
       ...cg,
       sources,
+      combinePlan,
       hasDateDiff,
       recFile,
       otherFilesHaveDupStd,
@@ -8561,10 +8692,23 @@ function openPreStep2Modal(pending){
 
       // Seksi 3: Konflik Area Duplikat
       if (pending.conflictGroups.length){
+        const hasCombinable = pending.conflictGroups.some(cg => cg.combinePlan && cg.combinePlan.totalVessels > 0);
         const sec = h('div', { class: 'res-sec' },
           h('div', { class: 'res-sec-head' },
             h('h4', null, h('span', { class: 'badge err small' }, 'Duplikat Area'), 'Konflik Area Sampel Sama (' + pending.conflictGroups.length + ' batch)'),
-            h('span', { class: 'small muted' }, 'Pilih run/file sumber yang benar agar tidak ada area ganda')
+            h('div', { style: 'display:flex;align-items:center;gap:10px;flex-wrap:wrap' },
+              h('span', { class: 'small muted' }, 'Pilih run/file sumber yang benar agar tidak ada area ganda'),
+              hasCombinable ? h('button', {
+                type: 'button',
+                class: 'res-link-btn',
+                onclick: () => {
+                  pending.conflictGroups.forEach(cg => {
+                    if (conflictDraft[cg.groupKey]) conflictDraft[cg.groupKey].mode = 'combineAll';
+                  });
+                  renderModal();
+                }
+              }, 'Pakai Semua & Urutkan Vessel 1..N (Semua Batch)') : null
+            )
           )
         );
         pending.conflictGroups.forEach(cg => {
@@ -8630,6 +8774,26 @@ function openPreStep2Modal(pending){
                 )
               ));
             });
+          }
+
+          const cPlan = cg.combinePlan;
+          if (cPlan && cPlan.totalVessels > 0){
+            const orderText = 'Urutan: ' + cPlan.fileRanges.map((fr, idx) =>
+              `${idx + 1}) ${fr.file} (${fr.runDate || fr.sortDate} -> Vessel ${fr.startVessel === fr.endVessel ? fr.startVessel : (fr.startVessel + '–' + fr.endVessel)})`
+            ).join(' -> ');
+            optsWrap.append(h('label', { class: 'res-opt' + (st.mode === 'combineAll' ? ' is-selected' : '') },
+              h('input', {
+                type: 'radio', name: 'conf_' + cg.groupKey, checked: st.mode === 'combineAll',
+                onchange: () => { st.mode = 'combineAll'; renderModal(); }
+              }),
+              h('div', { class: 'res-opt-body' },
+                h('div', { class: 'res-opt-title' },
+                  h('b', null, 'Pakai semuanya & urutkan otomatis dari Vessel 1 (mulai tanggal paling awal)'),
+                  h('span', { class: 'badge ok small' }, `Gabung ${cPlan.totalVessels} Vessel (Vessel 1–${cPlan.totalVessels})`)
+                ),
+                h('div', { class: 'small muted' }, orderText)
+              )
+            ));
           }
 
           optsWrap.append(h('label', { class: 'res-opt' + (st.mode === 'perCell' ? ' is-selected' : '') },
@@ -8749,6 +8913,8 @@ function openPreStep2Modal(pending){
                   if (!S.ignoredFiles.includes(ik)) S.ignoredFiles.push(ik);
                 });
               }
+            } else if (st.mode === 'combineAll'){
+              S.conflictChoices[cg.groupKey] = { mode: 'combineAll', groupFilesSig: cg.groupFilesSig };
             } else {
               S.conflictChoices[cg.groupKey] = { mode: st.mode, groupFilesSig: cg.groupFilesSig };
             }
