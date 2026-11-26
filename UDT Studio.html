@@ -4291,6 +4291,13 @@ function evalSimilarityF2(times, refMeans, testMeans, refStats, testStats){
     }
   }
 
+  // Ketentuan BPOM: perhitungan f2 wajib menggunakan minimal 3 titik waktu (n >= 3, tidak boleh < 3 selama T >= 3),
+  // termasuk pada Very Rapid Dissolution (saat >= 85% sudah tercapai di titik ke-1 atau ke-2).
+  if (T >= 3 && cutoffIdx < 2){
+    cutoffIdx = 2;
+    reason = `Menggunakan 3 titik waktu pertama (${times.slice(0, 3).map(t => t + "'").join(', ')}) — ketentuan BPOM minimal n = 3`;
+  }
+
   const n = cutoffIdx + 1;
   const usedTimes = times.slice(0, n);
   const usedRef = refMeans.slice(0, n);
@@ -6883,8 +6890,8 @@ function buildF2ConclusionBox(f2Res, testFullName, refFullName){
     f2Res.usedTimes && f2Res.usedTimes.length
       ? h('span',{class:'small muted'}, `Titik waktu: ${f2Res.usedTimes.map(t=>t+"'").join(', ')}`)
       : null,
-    (f2Res.n > 0 && !f2Res.minPointsValid && !f2Res.both85at15)
-      ? h('span',{class:'small',style:'color:var(--warn);font-weight:600'}, 'Peringatan: Regulasi mensyaratkan minimal 3 titik waktu.')
+    (f2Res.n > 0 && !f2Res.minPointsValid)
+      ? h('span',{class:'small',style:'color:var(--warn);font-weight:600'}, 'Peringatan: Regulasi BPOM mensyaratkan minimal 3 titik waktu (n ≥ 3).')
       : null
   ));
 
