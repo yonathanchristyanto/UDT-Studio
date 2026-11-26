@@ -2184,7 +2184,19 @@ function getSessionMediaMap(){ return (typeof S !== 'undefined' && S && S.sessio
 function getPrefixAliasesMap(){ return (typeof S !== 'undefined' && S && S.prefixAliases) ? S.prefixAliases : {}; }
 function getSessionPrefixMap(){ return (typeof S !== 'undefined' && S && S.sessionPrefixMap) ? S.sessionPrefixMap : {}; }
 function getSessionAiNameMap(){ return (typeof S !== 'undefined' && S && S.sessionAiNameMap) ? S.sessionAiNameMap : {}; }
+function getSessionFileOverridesMap(){ return (typeof S !== 'undefined' && S && S.sessionFileOverrides) ? S.sessionFileOverrides : {}; }
 function escapeRegExp(s){ return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+function isValidPhNumber(numStr, marker = '', spaceAfter = ''){
+  const raw = String(numStr || '').trim();
+  if (!raw) return false;
+  const isRange = /^[1-9]-[0-9]$/.test(raw);
+  const hasDecimal = /[.,]/.test(raw) || isRange;
+  // "MD" tanpa spasi diikuti angka bulat (misal MD3492, MD12, MD08) adalah kode batch, bukan pH
+  if (/^md$/i.test(marker) && !spaceAfter && !hasDecimal) return false;
+  const val = parseFloat(raw.replace('-', '.').replace(',', '.'));
+  return isFinite(val) && val >= 0.5 && val <= 14.0;
+}
 
 function applyMediaAlias(rawMed, applyAlias = true){
   if (!rawMed) return null;
@@ -2248,8 +2260,11 @@ function extractMediumFromString(str, applyAlias = true){
   const raw = String(str).replace(/\s+/g, ' ').trim();
   if(!raw) return null;
 
+  const phCandidates = [...raw.matchAll(/(?:^|[\s_\-+,(])(MD|pH|ph)(\s*)([0-9]+(?:[.,][0-9]+)?|[1-9]-[0-9])(?=$|[\s_\-+,.)])/ig)];
+  const firstValidPh = phCandidates.find(m => isValidPhNumber(m[3], m[1], m[2]));
+  const hasExplicitNumPH = Boolean(firstValidPh);
+
   // 1. Kamus alias kustom user (terpanjang didahulukan; jangan timpa MD/pH eksplisit oleh kata "release"/"air")
-  const hasExplicitNumPH = /(?:MD|pH|ph)\s*[0-9]+(?:[.,][0-9]+)?/i.test(raw);
   if (applyAlias){
     const per = getMediaAliasesMap();
     const keys = Object.keys(per).sort((a,b) => b.length - a.length);
@@ -2262,9 +2277,8 @@ function extractMediumFromString(str, applyAlias = true){
     }
   }
 
-  // 2. Prioritas tertinggi: penanda MD / pH diikuti angka eksplisit (mis. "Immediate Release MD 1,2")
-  const m1 = raw.match(/(?:MD|pH|ph)\s*([0-9]+(?:[.,][0-9]+)?|[1-9]-[0-9])(?=$|[\s_\-+,.)])/i);
-  if(m1) return applyMediaAlias(m1[1].replace('-', ','), applyAlias);
+  // 2. Prioritas tertinggi: penanda MD / pH diikuti angka pH valid (0,5–14,0; mengabaikan kode batch seperti MD3492)
+  if(firstValidPh) return applyMediaAlias(firstValidPh[3].replace('-', ','), applyAlias);
 
   // 3. Air / Water / Aquadest
   const mAir = raw.match(/(?:^|[\s_\-+,(])(Air|Water|Aquades|Aquadest)(?=$|[\s_\-+,.)])/i);
@@ -2283,12 +2297,24 @@ function extractMediumFromString(str, applyAlias = true){
   const mRel = raw.match(/(?:^|[\s_\-+,(])(Release|Rilis)(?=$|[\s_\-+,.)])/i);
   if(mRel) return applyMediaAlias('Release', applyAlias);
 
-  // 6. Desimal pH polos setelah konteks dosis/persentase/tanggal dibersihkan (hindari "0,35%" atau "5-10")
+  // 6. Desimal pH polos (0,5–14,0) setelah konteks dosis/persentase/tanggal dibersihkan
   const cleaned = cleanContextForBareMedium(raw);
-  const m2 = cleaned.match(/(?:^|[^0-9A-Za-z])([0-9]{1,2}[.,][0-9]{1,2})(?=$|[^0-9A-Za-z])/);
-  if(m2) return applyMediaAlias(m2[1], applyAlias);
+  for (const m2 of cleaned.matchAll(/(?:^|[^0-9A-Za-z])([0-9]{1,2}[.,][0-9]{1,2})(?=$|[^0-9A-Za-z])/g)){
+    if (isValidPhNumber(m2[1])) return applyMediaAlias(m2[1], applyAlias);
+  }
 
   return null;
+}
+
+function resolveBestMedium(sampleStr, fileName = ''){
+  const sMed = extractMediumFromString(sampleStr);
+  const fMed = extractMediumFromString(fileName);
+  if (sMed && fMed && sMed !== fMed){
+    const sIsStd = STANDARD_MEDIA_IDS.includes(sMed) || isValidPhNumber(sMed);
+    const fIsStd = STANDARD_MEDIA_IDS.includes(fMed) || isValidPhNumber(fMed);
+    if (!sIsStd && fIsStd) return fMed;
+  }
+  return sMed || fMed;
 }
 
 function extractBatchFromFilename(fn){
@@ -2370,11 +2396,12 @@ function extractBatchAndProductFromPrefix(prefix, fileName = ''){
     .replace(/(?:\+|&|dengan|with)\s*\d+(?:[.,]\d+)?\s*%(?:\s*(?:w\/v|v\/v|b\/v))?/ig, ' ');
 
   cleaned = cleaned
-    .replace(/(?:^|[\s_-])(?:(?:MD|Buffer|Dapar)\s+)?(?:MD|pH|ph)\s*(?:[0-9]+(?:[.,][0-9]+)?|[1-9]-[0-9])(?=$|[\s_-])/ig, ' ')
+    .replace(/(^|[\s_-])((?:MD|Buffer|Dapar)\s+)?(MD|pH|ph)(\s*)([0-9]+(?:[.,][0-9]+)?|[1-9]-[0-9])(?=$|[\s_-])/ig,
+      (full, lead, _grp, marker, sp, numStr) => isValidPhNumber(numStr, marker, sp) ? ' ' : full)
     .replace(/(?:^|[\s_-])(?:Buffer|Dapar)\s+(?:Asetat|Acetate|Fosfat|Phosphate|Sitrat|Citrate|Borat|Borate)(?=$|[\s_-])/ig, ' ')
     .replace(/(?:^|[\s_-])HCl\s*0[.,]1\s*[NM](?=$|[\s_-])/ig, ' ')
     .replace(/(?:^|[\s_-])(?:MD|pH|ph|Buffer|Dapar|Air|Water|Aquades|Aquadest|Release|Rilis|SGF|FaSSGF|FeSSGF|SIF|FaSSIF|FeSSIF)(?=$|[\s_-])/ig, ' ')
-    .replace(/(?:^|\s)[0-9]{1,2}[.,][0-9]{1,2}(?=$|\s)/g, ' ')
+    .replace(/(^|\s)([0-9]{1,2}[.,][0-9]{1,2})(?=$|\s)/g, (full, lead, numStr) => isValidPhNumber(numStr) ? ' ' : full)
     .replace(/[+]/g, ' ')
     .replace(/\s+/g, ' ').trim();
 
@@ -2506,23 +2533,32 @@ function classifyName(raw, fileName = '', injRole = ''){
     }
   }
 
-  // 0b. Override resolusi AI per nama injeksi untuk pola non-standar
+  // 0b. Override resolusi AI per file / per nama injeksi untuk pola non-standar & koreksi konflik palsu
+  const sesFileOv = getSessionFileOverridesMap();
+  const fileOv = (fileName ? ((injRole ? sesFileOv[injRole + '::' + fileName] : null) || sesFileOv[fileName]) : null) || null;
   const sesAi = getSessionAiNameMap();
-  const aiRule = (injRole ? sesAi[injRole + '::' + n] : null) || sesAi[n];
+  const aiRule = (fileName && injRole ? sesAi[injRole + '::' + fileName + '::' + n] : null)
+    || (fileName ? sesAi[fileName + '::' + n] : null)
+    || (injRole ? sesAi[injRole + '::' + n] : null)
+    || sesAi[n];
   if (aiRule){
     if (aiRule.type === 'ignore') return { type: 'ignored', name: n, prefixKey: rawPref, fromAi: true };
-    const medAi = aiRule.medium ? applyMediaAlias(aiRule.medium) : (extractMediumFromString(n) || extractMediumFromString(fileName));
+    const medAi = aiRule.medium
+      ? applyMediaAlias(aiRule.medium)
+      : ((fileOv && fileOv.medium) ? applyMediaAlias(fileOv.medium) : resolveBestMedium(n, fileName));
     if (aiRule.type === 'std' || aiRule.type === 'bsMid' || aiRule.type === 'bsEnd'){
       return { type: aiRule.type, medium: medAi, name: n, fromAi: true };
     }
-    if (aiRule.type === 'sample' && isFinite(aiRule.time) && isFinite(aiRule.vessel)){
+    const resolvedTime = isFinite(aiRule.time) ? Number(aiRule.time) : (exactTV ? exactTV.time : (looseTV ? looseTV.time : extractTimeFromFilename(fileName)));
+    const resolvedVessel = isFinite(aiRule.vessel) ? parseInt(aiRule.vessel, 10) : (exactTV ? exactTV.vessel : (looseTV ? looseTV.vessel : NaN));
+    if (aiRule.type === 'sample' && resolvedTime !== null && isFinite(resolvedTime) && isFinite(resolvedVessel)){
       return {
         type: 'sample',
-        product: (matchedAlias && matchedAlias.product) || aiRule.product || '',
-        batch: (matchedAlias && matchedAlias.batch) || aiRule.batch || extractBatchFromFilename(fileName) || '',
+        product: (matchedAlias && matchedAlias.product) || aiRule.product || (fileOv && fileOv.product) || '',
+        batch: (matchedAlias && matchedAlias.batch) || aiRule.batch || (fileOv && fileOv.batch) || extractBatchFromFilename(fileName) || '',
         medium: (matchedAlias && matchedAlias.medium) ? applyMediaAlias(matchedAlias.medium) : medAi,
-        time: Number(aiRule.time),
-        vessel: parseInt(aiRule.vessel, 10),
+        time: resolvedTime,
+        vessel: resolvedVessel,
         name: n,
         fromAi: true
       };
@@ -2532,35 +2568,36 @@ function classifyName(raw, fileName = '', injRole = ''){
   // 1. Deteksi Standar Kalibrasi & Bracketing (prioritaskan BS Mid / BS End sebelum Standar umum, baik di nama injeksi maupun nama file khusus BS)
   const fnOnlyBsMid = !exactTV && /(?:^|[\s_(-])(?:bs\s*[-_]?\s*mid|bracketing\s*[-_]?\s*mid)\b/i.test(fileName) && !/(?:^|[\s_(-])(?:standar|standard|std)\b/i.test(fileName);
   const fnOnlyBsEnd = !exactTV && /(?:^|[\s_(-])(?:bs\s*[-_]?\s*end|bracketing\s*[-_]?\s*end)\b/i.test(fileName) && !/(?:^|[\s_(-])(?:standar|standard|std)\b/i.test(fileName);
+  const fileOvMed = (fileOv && fileOv.medium) ? applyMediaAlias(fileOv.medium) : null;
   if (/^bs\s*[-_]?\s*mid\b/i.test(n) || (!exactTV && /(?:^|[\s_-])(?:bs\s*[-_]?\s*mid|bracketing\s*[-_]?\s*mid)\b/i.test(n))){
-    return {type:'bsMid', medium: extractMediumFromString(n) || extractMediumFromString(fileName), name:n};
+    return {type:'bsMid', medium: fileOvMed || resolveBestMedium(n, fileName), name:n};
   }
   if (/^bs\s*[-_]?\s*end\b/i.test(n) || (!exactTV && /(?:^|[\s_-])(?:bs\s*[-_]?\s*end|bracketing\s*[-_]?\s*end)\b/i.test(n))){
-    return {type:'bsEnd', medium: extractMediumFromString(n) || extractMediumFromString(fileName), name:n};
+    return {type:'bsEnd', medium: fileOvMed || resolveBestMedium(n, fileName), name:n};
   }
   if (/^(?:standar|standard|std)\b/i.test(n) || (!exactTV && /(?:^|[\s_-])(?:standar|standard|std)\b/i.test(n))){
     const inferredStdType = fnOnlyBsMid ? 'bsMid' : (fnOnlyBsEnd ? 'bsEnd' : 'std');
-    return {type:inferredStdType, medium: extractMediumFromString(n) || extractMediumFromString(fileName), name:n};
+    return {type:inferredStdType, medium: fileOvMed || resolveBestMedium(n, fileName), name:n};
   }
   if (fnOnlyBsMid || fnOnlyBsEnd){
-    return {type: fnOnlyBsMid ? 'bsMid' : 'bsEnd', medium: extractMediumFromString(n) || extractMediumFromString(fileName), name:n};
+    return {type: fnOnlyBsMid ? 'bsMid' : 'bsEnd', medium: fileOvMed || resolveBestMedium(n, fileName), name:n};
   }
 
   // 2. Layer 1: Tail-First Parser (<Waktu>' <Vessel> dari belakang)
   if (exactTV){
     if (/^(?:blank|blanks|wash|sst|system\s*suitability|diluent|pengencer|placebo|plasebo|mobile\s*phase)\b/i.test(exactTV.prefix)){
-      return {type:'other', medium: extractMediumFromString(n) || extractMediumFromString(fileName), name:n};
+      return {type:'other', medium: fileOvMed || resolveBestMedium(n, fileName), name:n};
     }
-    const rawMed = exactTV.forcedMedium
+    const rawMed = fileOvMed || (exactTV.forcedMedium
       ? applyMediaAlias(exactTV.forcedMedium)
-      : (extractMediumFromString(exactTV.prefix) || extractMediumFromString(fileName));
+      : resolveBestMedium(exactTV.prefix, fileName));
     const bp = exactTV.forcedBatch
       ? { batch: exactTV.forcedBatch, product: '' }
       : extractBatchAndProductFromPrefix(exactTV.prefix, fileName);
     return {
       type: 'sample',
-      product: bp.product || '',
-      batch: bp.batch || '',
+      product: (fileOv && fileOv.product) || bp.product || '',
+      batch: (fileOv && fileOv.batch) || bp.batch || '',
       medium: rawMed || null,
       time: exactTV.time,
       vessel: exactTV.vessel,
@@ -2568,7 +2605,7 @@ function classifyName(raw, fileName = '', injRole = ''){
     };
   }
 
-  return {type:'other', medium: extractMediumFromString(n) || extractMediumFromString(fileName), name:n};
+  return {type:'other', medium: fileOvMed || resolveBestMedium(n, fileName), name:n};
 }
 
 // --- PDF parser ---
@@ -3281,6 +3318,7 @@ function computeCombineAllPlan(rawInjections, selectedFiles){
   });
 
   let vesselOffset = 0;
+  const tracks = [];
   const cells = {};
   const fileRanges = [];
 
@@ -3302,11 +3340,26 @@ function computeCombineAllPlan(rawInjections, selectedFiles){
 
     const useSeqMode = hasDupInSameTime || maxPerTime > distinctV.length;
     const fileVesselSpan = useSeqMode ? maxPerTime : distinctV.length;
+    const fTimes = Object.keys(byTime).map(Number);
+
+    // Jika file adalah pecahan per titik waktu (mis. 5'.pdf, 10'.pdf) tanpa tumpang-tindih waktu, gabungkan ke track vessel yang sama
+    let track = tracks.find(tr => tr.span === fileVesselSpan && fTimes.every(t => !tr.times.has(t)));
+    if (!track){
+      track = {
+        startVessel: vesselOffset + 1,
+        endVessel: vesselOffset + fileVesselSpan,
+        span: fileVesselSpan,
+        times: new Set()
+      };
+      tracks.push(track);
+      vesselOffset += fileVesselSpan;
+    }
+    fTimes.forEach(t => track.times.add(t));
 
     Object.values(byTime).forEach(arr => {
       arr.forEach((x, j) => {
         const localV = useSeqMode ? (j + 1) : (distinctV.indexOf(x.vessel) + 1);
-        const newV = vesselOffset + localV;
+        const newV = (track.startVessel - 1) + localV;
         cells[newV + '|' + x.time] = {
           area: x.area,
           areaStr: x.areaStr,
@@ -3322,12 +3375,11 @@ function computeCombineAllPlan(rawInjections, selectedFiles){
       file: f.file,
       runDate: f.runDate,
       sortDate: f.sortDate,
-      startVessel: vesselOffset + 1,
-      endVessel: vesselOffset + fileVesselSpan,
+      startVessel: track.startVessel,
+      endVessel: track.endVessel,
       vesselCount: fileVesselSpan,
       pointCount: f.injs.length
     });
-    vesselOffset += fileVesselSpan;
   }
 
   return { cells, fileRanges, totalVessels: vesselOffset };
@@ -5025,6 +5077,8 @@ function removeFile(id, role){
     S.sessionMediaMap = {};
     S.sessionPrefixMap = {};
     S.sessionAiNameMap = {};
+    S.sessionFileOverrides = {};
+    S.aiAutoResolvedBanner = '';
     S.ignoredFiles = [];
     S.stdMapping = {};
     S.stdMappingByFile = {};
@@ -5273,6 +5327,12 @@ function renderCheck(){
     root.append(h('div',{class:'card'},h('h2',null,'Belum ada data terbaca'),
       h('p',{class:'muted'},'Silakan unggah PDF atau CSV Produk Uji dan Produk Pembanding di Langkah 1.')));
     return;
+  }
+  if (S.aiAutoResolvedBanner){
+    root.append(h('div',{class:'banner ok',style:'display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px'},
+      h('span',null, h('b',null,'✨ Dirapikan Otomatis oleh AI Gemini: '), S.aiAutoResolvedBanner),
+      h('button',{type:'button',class:'btn small',onclick:()=>{ S.aiAutoResolvedBanner=''; renderCheck(); }},'Tutup')
+    ));
   }
   if(S.badDec) root.append(h('div',{class:'banner warn'},S.badDec+' nilai area tidak berformat 4 desimal. Periksa file ekspor CDS.'));
 
@@ -9852,12 +9912,24 @@ function analyzePendingResolutions(){
       else if (/^(sif|fassif|fessif)|fosfat|phosphate|usus/i.test(mId)) suggestedTarget = '6,8';
       else if (/air|water|aquades|milli/i.test(mId)) suggestedTarget = 'Air';
       else if (/release|rilis/i.test(mId)) suggestedTarget = 'Release';
+      const sampleExamples = [];
+      for (const rl of ['test', 'ref']){
+        const bDict = rl === 'ref' ? M.refBatches : M.testBatches;
+        for (const bKey of Object.keys(bDict || {})){
+          for (const inj of (bDict[bKey].rawInjections || [])){
+            if (sampleExamples.length < 18 && !sampleExamples.some(x => x.file === inj.file)){
+              sampleExamples.push({ role: rl, file: inj.file || '', name: inj.name || '' });
+            }
+          }
+        }
+      }
       mediaIssues.push({
         mId,
         st,
         batchCount: Object.keys(M.testBatches).length + Object.keys(M.refBatches).length,
         stdCount: stdSets.length,
         files: [...M.files],
+        sampleExamples,
         issues: checks.filter(c => c.level !== 'ok').map(c => c.msg),
         suggestedTarget
       });
@@ -9960,11 +10032,15 @@ function analyzePendingResolutions(){
           file: cd.file,
           runDate: cd.runDate || (fileMetaByKey[(c.role||'test') + '::' + cd.file]?.runDate || ''),
           pointCount: 0,
-          examples: []
+          examples: [],
+          sampleNames: []
         });
         sm.pointCount++;
         if (sm.examples.length < 3){
           sm.examples.push({ label: `v${c.vessel}@${c.time}'`, area: cd.area });
+        }
+        if (cd.name && sm.sampleNames.length < 3 && !sm.sampleNames.includes(cd.name)){
+          sm.sampleNames.push(cd.name);
         }
       }
     }
@@ -9986,6 +10062,19 @@ function analyzePendingResolutions(){
     const stdFileSet = new Set();
     stdSets.forEach(s => (s.sourceFiles || [s.file]).forEach(fn => stdFileSet.add(fn)));
     const otherFilesHaveDupStd = sources.slice(1).some(s => stdFileSet.has(s.file)) && stdSets.length > 1;
+    const hasReinjHint = sources.some(s => /re[-_\s]?inj|ulang|repeat|rev|revisi/i.test(s.file));
+    const distinctTrackStarts = combinePlan && Array.isArray(combinePlan.fileRanges)
+      ? [...new Set(combinePlan.fileRanges.map(fr => fr.startVessel))]
+      : [];
+    const isLikelyVesselContinuation = Boolean(
+      sources.length > 1 &&
+      !hasReinjHint &&
+      combinePlan &&
+      combinePlan.totalVessels >= 4 &&
+      combinePlan.totalVessels <= 12 &&
+      distinctTrackStarts.length >= 2 &&
+      new Set(combinePlan.fileRanges.map(fr => fr.vesselCount)).size === 1
+    );
     return {
       ...cg,
       sources,
@@ -9993,7 +10082,7 @@ function analyzePendingResolutions(){
       hasDateDiff,
       recFile,
       otherFilesHaveDupStd,
-      recommendedMode: sources.length > 1 ? 'file' : 'last'
+      recommendedMode: isLikelyVesselContinuation ? 'combineAll' : (sources.length > 1 ? 'file' : 'last')
     };
   });
 
@@ -10026,53 +10115,86 @@ async function handleAutoResolveWithAI(unassignedList, opts = {}){
     const list = Array.isArray(unassignedList) && unassignedList.length
       ? unassignedList
       : (ctx ? ctx.pending.prefixGroups.flatMap(g => g.items) : []);
-    const unknownMedia = ctx && Array.isArray(ctx.pending.mediaIssues)
-      ? ctx.pending.mediaIssues.filter(mi => mi.suggestedTarget === '__keep__').map(mi => mi.mId)
-      : [];
+    const hasHolisticIssues = Boolean(ctx && (
+      (Array.isArray(ctx.pending.mediaIssues) && ctx.pending.mediaIssues.length > 0) ||
+      (Array.isArray(ctx.pending.conflictGroups) && ctx.pending.conflictGroups.length > 0)
+    ));
 
-    if (!list.length && !unknownMedia.length){
-      if (ctx) ctx.setStatus('info', 'Tidak ada baris injeksi atau media non-standar yang perlu dirapikan AI.');
+    if (!list.length && !hasHolisticIssues){
+      if (ctx) ctx.setStatus('info', 'Tidak ada anomali penamaan, media, atau konflik yang perlu dianalisis AI.');
       return [];
     }
-    const uniqueNames = [];
-    const seenNames = new Set();
-    for (const item of list){
-      const nm = String((item && item.name) || item || '').replace(/\s+/g, ' ').trim();
-      if (!nm || seenNames.has(nm)) continue;
-      seenNames.add(nm);
-      uniqueNames.push(nm);
-    }
+
     if (ctx){
-      ctx.setBusy(true, opts.isAuto ? '⏳ AI Gemini sedang merapikan pola nama & media secara otomatis…' : '');
+      ctx.setBusy(true, opts.isAuto
+        ? '⏳ AI Gemini sedang menganalisis konteks nama file, kode batch, media & potensi konflik palsu…'
+        : '⏳ AI Gemini sedang menganalisis & merapikan seluruh anomali…');
     }
-    try{
-      const [sampleRes, mediaRes] = await Promise.all([
-        uniqueNames.length ? callGoogleScriptTool('resolve_samples_ai', { names: uniqueNames }) : Promise.resolve([]),
-        unknownMedia.length ? callGoogleScriptTool('resolve_media_ai', { mediaNames: unknownMedia }).catch(() => []) : Promise.resolve([])
-      ]);
-      if (ctx && Array.isArray(mediaRes) && mediaRes.length && typeof ctx.applyMedia === 'function'){
-        ctx.applyMedia(mediaRes);
+
+    try {
+      // Jika hanya daftar nama unassigned eksplisit (tanpa mediaIssues / conflictGroups), gunakan jalur cepat resolve_samples_ai
+      if (!hasHolisticIssues || Array.isArray(unassignedList)){
+        const uniqueNames = [];
+        const seenNames = new Set();
+        for (const item of list){
+          const nm = String((item && item.name) || item || '').replace(/\s+/g, ' ').trim();
+          if (!nm || seenNames.has(nm)) continue;
+          seenNames.add(nm);
+          uniqueNames.push(nm);
+        }
+        const sampleRes = uniqueNames.length ? await callGoogleScriptTool('resolve_samples_ai', { names: uniqueNames }) : [];
+        if (uniqueNames.length) applyAiSuggestionsToModal(sampleRes);
+        return sampleRes;
       }
-      if (uniqueNames.length){
-        applyAiSuggestionsToModal(sampleRes);
-      } else if (ctx){
-        ctx.setStatus('ok', 'AI Gemini berhasil menyarankan pemetaan media secara otomatis.');
+
+      // Supervisor Parser menyeluruh (Media Non-Standar + Pola Nama + Audit Konflik Palsu dari Nama File)
+      const auditPayload = {
+        mediaIssues: (ctx.pending.mediaIssues || []).map(mi => ({
+          mId: mi.mId,
+          files: (mi.files || []).slice(0, 30),
+          sampleExamples: (mi.sampleExamples || []).slice(0, 18)
+        })),
+        prefixGroups: (ctx.pending.prefixGroups || []).filter(pg => !pg.isCtrl).map(pg => ({
+          groupKey: pg.groupKey,
+          role: pg.role,
+          files: (pg.files || []).slice(0, 15),
+          names: [...new Set((pg.items || []).map(it => it.name))].slice(0, 20)
+        })),
+        conflictGroups: (ctx.pending.conflictGroups || []).map(cg => ({
+          groupKey: cg.groupKey,
+          mId: cg.mId,
+          role: cg.role,
+          batch: cg.batch,
+          totalPoints: cg.items.length,
+          combineTotalVessels: (cg.combinePlan && cg.combinePlan.totalVessels) || 0,
+          sources: (cg.sources || []).slice(0, 30).map(s => ({
+            file: s.file,
+            runDate: s.runDate,
+            pointCount: s.pointCount,
+            sampleNames: (s.sampleNames || []).slice(0, 2)
+          }))
+        }))
+      };
+
+      const auditRes = await callGoogleScriptTool('audit_resolutions_ai', auditPayload);
+      if (ctx && typeof ctx.applyAudit === 'function'){
+        await ctx.applyAudit(auditRes, opts);
       }
-      return sampleRes;
+      return Array.isArray(auditRes && auditRes.rowOverrides) ? auditRes.rowOverrides : auditRes;
     } catch (err){
       const msg = err && err.message ? err.message : String(err);
-      if (ctx){
+      if (_activeModalAiCtx){
         if (!opts.isAuto){
-          ctx.setStatus('err', 'Gagal merapikan dengan AI: ' + msg);
+          _activeModalAiCtx.setStatus('err', 'Gagal menganalisis dengan AI: ' + msg);
         } else {
-          ctx.setStatus('info', 'Saran otomatis AI belum aktif (' + msg + '). Anda tetap dapat memilih pemetaan manual di bawah.');
+          _activeModalAiCtx.setStatus('info', 'Analisis otomatis AI belum aktif (' + msg + '). Anda tetap dapat memilih penyesuaian manual di bawah.');
         }
       } else if (!opts.isAuto){
-        alert('Gagal merapikan dengan AI: ' + msg);
+        alert('Gagal menganalisis dengan AI: ' + msg);
       }
       return null;
     } finally {
-      if (ctx) ctx.setBusy(false);
+      if (_activeModalAiCtx) _activeModalAiCtx.setBusy(false);
     }
   };
 
@@ -10091,7 +10213,7 @@ function closeResModal(){
   if (root) root.innerHTML = '';
 }
 
-function openPreStep2Modal(pending){
+function openPreStep2Modal(pending, modalOpts = {}){
   const root = $('#resModalRoot');
   if (!root) return;
 
@@ -10167,16 +10289,113 @@ function openPreStep2Modal(pending){
         if (!item || !item.originalMedia || !item.targetMedia) return;
         const orig = String(item.originalMedia).trim();
         const st = mediaDraft[orig];
-        if (!st || st.target !== '__keep__') return;
+        if (!st) return;
         const tgt = item.targetMedia === '__keep__' ? '__keep__' : normMedium(item.targetMedia);
         if (tgt && tgt !== '__keep__' && allMedChoices.includes(tgt)){
           st.target = tgt;
           st.savePerm = true;
+          if (item.reason) st.aiReason = String(item.reason).trim();
           count++;
         }
       });
       if (count > 0) renderModal();
       return count;
+    },
+    async applyAudit(auditObj, opts = {}){
+      if (!auditObj || typeof auditObj !== 'object') return 0;
+      const fileOvs = Array.isArray(auditObj.fileOverrides) ? auditObj.fileOverrides : [];
+      const rowOvs = Array.isArray(auditObj.rowOverrides) ? auditObj.rowOverrides : [];
+      const mediaFixes = Array.isArray(auditObj.mediaFixes) ? auditObj.mediaFixes : [];
+      const conflictFixes = Array.isArray(auditObj.conflictFixes) ? auditObj.conflictFixes : [];
+      const summaryTxt = String(auditObj.summary || '').trim();
+
+      // 1. Jika AI menemukan kesalahan klasifikasi level file (misal batch MD3492 terbaca media / konflik palsu lintas media di nama file),
+      // terapkan ke S.sessionFileOverrides, rebuild model, dan periksa apakah seluruh masalah palsu sudah hilang!
+      let appliedStructural = 0;
+      S.sessionFileOverrides = S.sessionFileOverrides || {};
+      fileOvs.forEach(fo => {
+        const fn = String((fo && fo.file) || '').trim();
+        const med = normMedium(String((fo && fo.medium) || '').trim());
+        if (!fn || !med) return;
+        const rl = String(fo.role || '').trim();
+        const rec = {
+          product: String(fo.product || '').trim(),
+          batch: String(fo.batch || '').trim(),
+          medium: med
+        };
+        if (rl) S.sessionFileOverrides[rl + '::' + fn] = rec;
+        S.sessionFileOverrides[fn] = rec;
+        appliedStructural++;
+      });
+
+      const prefixNamesSet = new Set(pending.prefixGroups.flatMap(pg => pg.items.map(it => String(it.name || '').replace(/\s+/g, ' ').trim())));
+      S.sessionAiNameMap = S.sessionAiNameMap || {};
+      rowOvs.forEach(ro => {
+        const origN = String((ro && ro.originalName) || '').replace(/\s+/g, ' ').trim();
+        if (!origN || prefixNamesSet.has(origN)) return;
+        const fn = String(ro.file || '').trim();
+        const rl = String(ro.role || '').trim();
+        const rec = {
+          type: ro.type || 'sample',
+          product: String(ro.product || '').trim(),
+          batch: String(ro.batch || '').trim(),
+          medium: ro.medium ? normMedium(String(ro.medium)) : '',
+          time: ro.time !== null && ro.time !== undefined && ro.time !== '' ? Number(ro.time) : NaN,
+          vessel: ro.vessel !== null && ro.vessel !== undefined && ro.vessel !== '' ? parseInt(ro.vessel, 10) : NaN
+        };
+        if (rl && fn) S.sessionAiNameMap[rl + '::' + fn + '::' + origN] = rec;
+        else if (fn) S.sessionAiNameMap[fn + '::' + origN] = rec;
+        else if (rl) S.sessionAiNameMap[rl + '::' + origN] = rec;
+        else S.sessionAiNameMap[origN] = rec;
+        appliedStructural++;
+      });
+
+      if (appliedStructural > 0){
+        S.manualStdMapping = {};
+        S.stdMappingByFile = {};
+        S.splitSharedMap = {};
+        rebuild();
+        const nextPending = analyzePendingResolutions();
+        if (!nextPending.hasIssues){
+          S.aiAutoResolvedBanner = summaryTxt || `Pemetaan batch & media otomatis diperbaiki pada ${appliedStructural} file/sampel tanpa konflik tersisa.`;
+          S.lastSkippedSig = '';
+          closeResModal();
+          go(2, { skipResolver: true });
+          return appliedStructural;
+        }
+        if (nextPending.sig !== pending.sig){
+          openPreStep2Modal(nextPending, {
+            skipAutoAi: true,
+            initialAiStatus: {
+              kind: 'ok',
+              msg: summaryTxt || `AI Gemini telah memperbaiki ${appliedStructural} pemetaan file/sampel. Silakan tinjau sisa konfirmasi di bawah.`
+            },
+            conflictFixes,
+            mediaFixes,
+            rowOverrides: rowOvs
+          });
+          return appliedStructural;
+        }
+      }
+
+      if (mediaFixes.length) this.applyMedia(mediaFixes);
+      if (rowOvs.length) this.apply(rowOvs);
+      conflictFixes.forEach(cf => {
+        const st = cf && conflictDraft[cf.groupKey];
+        if (!st) return;
+        if (cf.action === 'combineAll') st.mode = 'combineAll';
+        else if (cf.action === 'file'){
+          st.mode = 'file';
+          if (cf.preferredFile) st.file = cf.preferredFile;
+        } else if (cf.action === 'last') st.mode = 'last';
+        if (cf.reason) st.aiReason = String(cf.reason).trim();
+      });
+      aiStatus = {
+        kind: 'ok',
+        msg: summaryTxt || 'AI Gemini selesai menganalisis dan memilihkan opsi terbaik pada kartu di bawah.'
+      };
+      renderModal();
+      return appliedStructural + mediaFixes.length + conflictFixes.length + rowOvs.length;
     },
     apply(aiResult){
       const arr = Array.isArray(aiResult) ? aiResult : (aiResult && Array.isArray(aiResult.items) ? aiResult.items : []);
@@ -10289,17 +10508,39 @@ function openPreStep2Modal(pending){
     const backdrop = h('div', { class: 'udt-modal-backdrop', onclick: e => { if (e.target === backdrop) closeResModal(); } });
     const modal = h('div', { class: 'udt-modal', role: 'dialog', 'aria-modal': 'true' });
 
+    const topAiBtn = h('button', {
+      type: 'button',
+      id: 'aiResolveBtn',
+      class: 'btn btn-sm',
+      style: 'background:var(--accent-soft, #eef2ff); color:var(--accent, #2563eb); border:1px solid var(--accent, #2563eb); font-weight:600; display:inline-flex; align-items:center; gap:5px;',
+      disabled: aiBusy ? true : null,
+      title: 'Gunakan AI Gemini untuk menganalisis nama file, kode batch, media, dan memastikan apakah konflik benar-benar duplikat',
+      onclick: () => handleAutoResolveWithAI()
+    }, aiBusy ? '⏳ Menganalisis dengan AI…' : '✨ Analisis & Rapikan dengan AI');
+
     modal.append(
       h('div', { class: 'udt-modal-head' },
         h('div', null,
           h('h3', null, 'Konfirmasi & Penyesuaian Sebelum Masuk Langkah 2'),
           h('p', null, `Terdeteksi ${pending.totalCount} kelompok penyesuaian agar semua kartu di Verifikasi Langkah 2 menjadi hijau (Siap).`)
         ),
-        h('button', { type: 'button', class: 'btn btn-sm', onclick: closeResModal }, 'Tutup')
+        h('div', { style: 'display:flex;align-items:center;gap:8px;flex-wrap:wrap' },
+          activeTab === 'resolve' ? topAiBtn : null,
+          h('button', { type: 'button', class: 'btn btn-sm', onclick: closeResModal }, 'Tutup')
+        )
       )
     );
 
     const body = h('div', { class: 'udt-modal-body' });
+    if (activeTab === 'resolve' && aiStatus && aiStatus.msg){
+      const bg = aiStatus.kind === 'err' ? '#fef2f2' : (aiStatus.kind === 'ok' ? '#f0fdf4' : '#eff6ff');
+      const bdr = aiStatus.kind === 'err' ? '#fecaca' : (aiStatus.kind === 'ok' ? '#bbf7d0' : '#bfdbfe');
+      const clr = aiStatus.kind === 'err' ? '#991b1b' : (aiStatus.kind === 'ok' ? '#166534' : '#1e40af');
+      body.append(h('div', {
+        id: 'aiResolveStatus',
+        style: `margin-bottom:12px; padding:9px 12px; border-radius:8px; font-size:12.5px; line-height:1.45; background:${bg}; border:1px solid ${bdr}; color:${clr};`
+      }, aiStatus.msg));
+    }
     if (activeTab === 'resolve'){
       // Seksi 0: Penyatuan Kode Batch Terpotong / Typo dalam 1 File
       if (pending.batchMerges && pending.batchMerges.length){
@@ -10441,35 +10682,12 @@ function openPreStep2Modal(pending){
 
       // Seksi 2: Baris Belum Terpetakan dikelompokkan per Awalan
       if (pending.prefixGroups.length){
-        const allUnassignedItems = pending.prefixGroups.flatMap(g => g.items);
-        const aiBtn = h('button', {
-          type: 'button',
-          id: 'aiResolveBtn',
-          class: 'btn btn-sm',
-          style: 'background:var(--accent-soft, #eef2ff); color:var(--accent, #2563eb); border:1px solid var(--accent, #2563eb); font-weight:600; display:inline-flex; align-items:center; gap:5px;',
-          disabled: aiBusy ? true : null,
-          title: 'Gunakan AI Gemini (via Backend Bridge) untuk mengenali & merapikan nama sampel non-standar secara otomatis',
-          onclick: () => handleAutoResolveWithAI(allUnassignedItems)
-        }, aiBusy ? '⏳ Merapikan dengan AI…' : '✨ Rapikan dengan AI');
-
         const sec = h('div', { class: 'res-sec' },
           h('div', { class: 'res-sec-head' },
             h('h4', null, h('span', { class: 'badge warn small' }, 'Pola Nama'), 'Injeksi Belum Terpetakan (' + pending.prefixGroups.length + ' kelompok awalan)'),
-            h('div', { style: 'display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end;' },
-              h('span', { class: 'small muted' }, 'Satu pilihan otomatis berlaku ke seluruh baris dengan awalan sama'),
-              aiBtn
-            )
+            h('span', { class: 'small muted' }, 'Satu pilihan otomatis berlaku ke seluruh baris dengan awalan sama')
           )
         );
-        if (aiStatus && aiStatus.msg){
-          const bg = aiStatus.kind === 'err' ? '#fef2f2' : (aiStatus.kind === 'ok' ? '#f0fdf4' : '#eff6ff');
-          const bdr = aiStatus.kind === 'err' ? '#fecaca' : (aiStatus.kind === 'ok' ? '#bbf7d0' : '#bfdbfe');
-          const clr = aiStatus.kind === 'err' ? '#991b1b' : (aiStatus.kind === 'ok' ? '#166534' : '#1e40af');
-          sec.append(h('div', {
-            id: 'aiResolveStatus',
-            style: `margin-bottom:10px; padding:8px 11px; border-radius:8px; font-size:12px; background:${bg}; border:1px solid ${bdr}; color:${clr};`
-          }, aiStatus.msg));
-        }
         pending.prefixGroups.forEach(pg => {
           const st = prefixDraft[pg.groupKey];
           const isSampleAct = st.action === 'sample' || st.action === 'sampleFromFile';
@@ -10639,7 +10857,8 @@ function openPreStep2Modal(pending){
                     makePdfPreviewBtn(cg.sources[0].file, cg.role, { label: 'Preview PDF', isXs: true })
                   )
                 : null
-            )
+            ),
+            st.aiReason ? h('div', { class: 'res-note is-info' }, '✨ Analisis AI: ' + st.aiReason) : null
           );
 
           const optsWrap = h('div', { class: 'res-opts' });
@@ -10927,12 +11146,29 @@ function openPreStep2Modal(pending){
     if (prevScroll > 0) body.scrollTop = prevScroll;
   };
 
+  if (modalOpts.initialAiStatus) aiStatus = modalOpts.initialAiStatus;
+  if (Array.isArray(modalOpts.mediaFixes) && modalOpts.mediaFixes.length) _activeModalAiCtx.applyMedia(modalOpts.mediaFixes);
+  if (Array.isArray(modalOpts.rowOverrides) && modalOpts.rowOverrides.length) _activeModalAiCtx.apply(modalOpts.rowOverrides);
+  if (Array.isArray(modalOpts.conflictFixes)){
+    modalOpts.conflictFixes.forEach(cf => {
+      const st = cf && conflictDraft[cf.groupKey];
+      if (!st) return;
+      if (cf.action === 'combineAll') st.mode = 'combineAll';
+      else if (cf.action === 'file'){
+        st.mode = 'file';
+        if (cf.preferredFile) st.file = cf.preferredFile;
+      } else if (cf.action === 'last') st.mode = 'last';
+      if (cf.reason) st.aiReason = String(cf.reason).trim();
+    });
+  }
+
   renderModal();
 
-  // Otomatis jalankan AI Gemini saat ada pola nama sampel atau media asing agar analis tinggal klik Terapkan
-  const needsAutoAi = (S.backendUrl || S.gasUrl) && (
+  // Otomatis jalankan Supervisor AI Gemini saat ada media asing, pola nama belum terpetakan, atau potensi konflik area
+  const needsAutoAi = !modalOpts.skipAutoAi && (S.backendUrl || S.gasUrl) && (
     pending.prefixGroups.some(pg => !pg.isCtrl) ||
-    pending.mediaIssues.some(mi => mi.suggestedTarget === '__keep__')
+    pending.mediaIssues.length > 0 ||
+    pending.conflictGroups.length > 0
   );
   if (needsAutoAi){
     handleAutoResolveWithAI(undefined, { isAuto: true });
@@ -11029,7 +11265,7 @@ function buildAliasManagerContent(onRefresh){
 
   // Bagian C: File Dikecualikan & Resolusi Sesi
   const ignoredList = S.ignoredFiles || [];
-  const sesCount = Object.keys(S.sessionMediaMap || {}).length + Object.keys(S.sessionPrefixMap || {}).length + Object.keys(S.sessionAiNameMap || {}).length + Object.keys(S.conflictChoices || {}).length + Object.keys(S.batchMergeChoices || {}).length;
+  const sesCount = Object.keys(S.sessionMediaMap || {}).length + Object.keys(S.sessionPrefixMap || {}).length + Object.keys(S.sessionAiNameMap || {}).length + Object.keys(S.sessionFileOverrides || {}).length + Object.keys(S.conflictChoices || {}).length + Object.keys(S.batchMergeChoices || {}).length;
   const sesSec = h('div', { class: 'res-sec' },
     h('div', { class: 'res-sec-head' },
       h('h4', null, 'File Dikecualikan & Resolusi Sesi Aktif'),
@@ -11039,6 +11275,8 @@ function buildAliasManagerContent(onRefresh){
           S.sessionMediaMap = {};
           S.sessionPrefixMap = {};
           S.sessionAiNameMap = {};
+          S.sessionFileOverrides = {};
+          S.aiAutoResolvedBanner = '';
           S.conflictChoices = {};
           S.batchMergeChoices = {};
           S.stdMappingByFile = {};

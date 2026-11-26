@@ -460,6 +460,93 @@ async function resolveMediaWithGemini(env, mediaNames) {
   return await callGeminiJson(env, prompt, schema);
 }
 
+async function auditResolutionsWithGemini(env, input = {}) {
+  const mediaIssues = Array.isArray(input.mediaIssues) ? input.mediaIssues.slice(0, 30) : [];
+  const prefixGroups = Array.isArray(input.prefixGroups) ? input.prefixGroups.slice(0, 40) : [];
+  const conflictGroups = Array.isArray(input.conflictGroups) ? input.conflictGroups.slice(0, 20) : [];
+  if (!mediaIssues.length && !prefixGroups.length && !conflictGroups.length) {
+    return { summary: '', fileOverrides: [], rowOverrides: [], mediaFixes: [], conflictFixes: [] };
+  }
+
+  const prompt =
+    'Anda adalah Supervisor Parser Cerdas untuk aplikasi Uji Disolusi Terbanding (UDT Studio) di laboratorium R&D/QC farmasi.\n' +
+    'Parser regex deterministik menemukan kebingungan berikut (media asing, pola nama belum terpetakan, atau dugaan duplikat area). Analisis konteks NAMA FILE (`file`) dan NAMA SAMPEL (`sampleNames`) secara menyeluruh:\n\n' +
+    'KAIDAH DOMAIN FARMASI PENTING:\n' +
+    '1. KODE BATCH vs MEDIA: Kode seperti `MD3492`, `PH1024`, `F0008I126A`, `26T001` adalah NOMOR BATCH produk uji/pembanding (misal Lyrica batch MD3492), BUKAN pH/media! Media baku UDT Studio hanyalah: `1,2`, `4,5`, `6,8`, `Air`, `Release`, `1,0`, `7,2`, `7,5` (atau angka pH riil antara 0,5 s/d 14,0).\n' +
+    '2. BUKAN DUPLIKAT AREA (KONFLIK PALSU): Periksa `conflictGroups`. Jika file-file yang dianggap bentrok sebenarnya memiliki media berbeda di nama filenya (misal `Lyrica MD 1,2 5\'.pdf` vs `Lyrica MD 4,5 5\'.pdf` vs `Lyrica MD Release 10\'.pdf`), atau batch berbeda di nama filenya, itu BUKAN duplikat area! Keluarkan `fileOverrides` untuk setiap file tersebut dengan `medium` dan `batch` yang benar, serta isi `conflictFixes` dengan `action: "reclassify"`.\n' +
+    '3. PENGGABUNGAN VESSEL BERTAHAP (`combineAll`): Jika 2+ file pada batch & media yang sama merupakan kelanjutan vessel antar-run (misal masing-masing 3 vessel menjadi 6 vessel, atau 6+6 menjadi 12 vessel, `combineTotalVessels <= 12`, tanpa kata `Re-inject`/`Ulang` di nama file), pilih `action: "combineAll"`.\n' +
+    '4. RE-INJEKSI ASLI (`file`): Jika salah satu file jelas merupakan pengulangan/re-injeksi yang menggantikan run lama, pilih `action: "file"` dan isi `preferredFile`.\n' +
+    '5. BARIS BELUM TERPETAKAN (`prefixGroups`): Ekstrak `rowOverrides` (`type`: `sample`|`std`|`bsMid`|`bsEnd`|`ignore`, `batch`, `medium`, `time`, `vessel`).\n\n' +
+    `DATA ANOMALI PARSER:\n${JSON.stringify({ mediaIssues, prefixGroups, conflictGroups })}`;
+
+  const schema = {
+    type: 'OBJECT',
+    properties: {
+      summary: { type: 'STRING' },
+      fileOverrides: {
+        type: 'ARRAY',
+        items: {
+          type: 'OBJECT',
+          properties: {
+            role: { type: 'STRING' },
+            file: { type: 'STRING' },
+            product: { type: 'STRING' },
+            batch: { type: 'STRING' },
+            medium: { type: 'STRING' }
+          },
+          required: ['file', 'medium']
+        }
+      },
+      rowOverrides: {
+        type: 'ARRAY',
+        items: {
+          type: 'OBJECT',
+          properties: {
+            role: { type: 'STRING' },
+            file: { type: 'STRING' },
+            originalName: { type: 'STRING' },
+            type: { type: 'STRING', enum: ['sample', 'std', 'bsMid', 'bsEnd', 'ignore'] },
+            product: { type: 'STRING' },
+            batch: { type: 'STRING' },
+            medium: { type: 'STRING' },
+            time: { type: 'NUMBER', nullable: true },
+            vessel: { type: 'INTEGER', nullable: true }
+          },
+          required: ['originalName', 'type', 'batch', 'medium']
+        }
+      },
+      mediaFixes: {
+        type: 'ARRAY',
+        items: {
+          type: 'OBJECT',
+          properties: {
+            originalMedia: { type: 'STRING' },
+            targetMedia: { type: 'STRING' },
+            reason: { type: 'STRING' }
+          },
+          required: ['originalMedia', 'targetMedia']
+        }
+      },
+      conflictFixes: {
+        type: 'ARRAY',
+        items: {
+          type: 'OBJECT',
+          properties: {
+            groupKey: { type: 'STRING' },
+            action: { type: 'STRING', enum: ['reclassify', 'combineAll', 'file', 'last'] },
+            preferredFile: { type: 'STRING' },
+            reason: { type: 'STRING' }
+          },
+          required: ['groupKey', 'action', 'reason']
+        }
+      }
+    },
+    required: ['summary', 'fileOverrides', 'rowOverrides', 'mediaFixes', 'conflictFixes']
+  };
+
+  return await callGeminiJson(env, prompt, schema);
+}
+
 async function parseRawTableWithGemini(env, input = {}) {
   const fileName = String(input.fileName || '').trim();
   const rawText = String(input.text || '').slice(0, 40000);
@@ -760,6 +847,10 @@ async function handleTool(tool, input = {}, env) {
 
   if (tool === 'resolve_media_ai') {
     return await resolveMediaWithGemini(env, input.mediaNames);
+  }
+
+  if (tool === 'audit_resolutions_ai') {
+    return await auditResolutionsWithGemini(env, input);
   }
 
   if (tool === 'parse_raw_table_ai') {
