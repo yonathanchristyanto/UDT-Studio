@@ -94,7 +94,7 @@ function assertGoogleId(val, label = 'ID Google') {
 function requireComposioKey(env) {
   const key = String((env && env.COMPOSIO_API_KEY) || '').trim();
   if (!key) {
-    throw new Error('COMPOSIO_API_KEY belum diset pada Secrets Cloudflare Worker.');
+    throw new Error('COMPOSIO_API_KEY belum diset pada Secrets Backend / Cloudflare Worker.');
   }
   return key;
 }
@@ -314,48 +314,17 @@ async function proxyGoogle(env, toolkit, endpointUrl, method = 'GET', { body, pa
   return data;
 }
 
-async function resolveSamplesWithGemini(env, names) {
+async function callGeminiJson(env, promptText, responseSchema) {
   const apiKey = String((env && env.GEMINI_API_KEY) || '').trim();
   if (!apiKey) {
-    throw new Error('GEMINI_API_KEY belum diset pada Secrets Cloudflare Worker.');
+    throw new Error('GEMINI_API_KEY belum diset pada Secrets Backend / Cloudflare Worker.');
   }
-  const rawNames = Array.isArray(names) ? names : [];
-  if (!rawNames.length) return [];
-
-  const systemInstruction =
-    'Anda adalah asisten laboratorium farmasi untuk uji disolusi terbanding (UDT). ' +
-    'Tugas Anda mengekstrak informasi dari setiap nama sampel kromatogram non-standar menjadi JSON array dengan panjang dan urutan yang sama persis dengan daftar input. ' +
-    'Untuk setiap entri, kembalikan objek dengan field: ' +
-    'originalName (string nama persis dari input), ' +
-    "type ('sample'|'std'|'bsMid'|'bsEnd'|'ignore'), " +
-    'batch (string kode batch jika ada, atau string kosong "" jika tidak ada—jangan isi \'N/A\'), ' +
-    "medium ('1,2'|'4,5'|'6,8'|'Air'|'Release' atau string kosong \"\" jika tidak disebut), " +
-    'time (angka menit sampling atau null jika bukan sampel/tidak ada), ' +
-    'vessel (angka nomor vessel 1-12 atau null jika bukan sampel/tidak ada).';
-
   const payload = {
-    contents: [{
-      parts: [{
-        text: `${systemInstruction}\n\nBerikut daftar nama sampel mentah yang perlu dirapikan:\n${JSON.stringify(rawNames)}`
-      }]
-    }],
+    contents: [{ parts: [{ text: promptText }] }],
     generationConfig: {
+      temperature: 0.1,
       responseMimeType: 'application/json',
-      responseSchema: {
-        type: 'ARRAY',
-        items: {
-          type: 'OBJECT',
-          properties: {
-            originalName: { type: 'STRING' },
-            type: { type: 'STRING', enum: ['sample', 'std', 'bsMid', 'bsEnd', 'ignore'] },
-            batch: { type: 'STRING' },
-            medium: { type: 'STRING' },
-            time: { type: 'NUMBER', nullable: true },
-            vessel: { type: 'INTEGER', nullable: true }
-          },
-          required: ['originalName', 'type', 'batch', 'medium']
-        }
-      }
+      responseSchema
     }
   };
 
@@ -384,6 +353,187 @@ async function resolveSamplesWithGemini(env, names) {
     }
   }
   throw new Error(lastErr || 'Gagal memanggil Gemini API.');
+}
+
+function canonNumericToken(raw) {
+  let s = String(raw || '').trim().replace(/^[+-]/, '').replace(/\s+/g, '');
+  if (!s || !/\d/.test(s)) return '';
+  const hasComma = s.includes(',');
+  const hasDot = s.includes('.');
+  if (hasComma && hasDot) {
+    if (s.lastIndexOf(',') > s.lastIndexOf('.')) {
+      s = s.replace(/\./g, '').replace(',', '.');
+    } else {
+      s = s.replace(/,/g, '');
+    }
+  } else if (hasComma) {
+    const parts = s.split(',');
+    if (parts.length > 2) s = parts.join('');
+    else s = parts[0] + '.' + parts[1];
+  } else if (hasDot) {
+    const parts = s.split('.');
+    if (parts.length > 2) s = parts.join('');
+  }
+  return s;
+}
+
+function buildTextNumberLookup(rawText) {
+  const exact = new Set();
+  const canon = new Set();
+  const matches = String(rawText || '').match(/\d+(?:[.,]\d+)*/g) || [];
+  for (const tok of matches) {
+    exact.add(tok);
+    const c = canonNumericToken(tok);
+    if (c) canon.add(c);
+  }
+  return { exact, canon };
+}
+
+function isVerifiedAreaInText(areaStr, lookup) {
+  const trimmed = String(areaStr || '').trim();
+  if (!trimmed || !/^[+-]?\d[\d.,]*$/.test(trimmed)) return false;
+  const c = canonNumericToken(trimmed);
+  if (!c) return false;
+  const n = Number(c);
+  if (!Number.isFinite(n)) return false;
+  const unsigned = trimmed.replace(/^[+-]/, '');
+  return lookup.exact.has(unsigned) || lookup.canon.has(c);
+}
+
+async function resolveSamplesWithGemini(env, names) {
+  const rawNames = Array.isArray(names) ? names.slice(0, 300) : [];
+  if (!rawNames.length) return [];
+
+  const systemInstruction =
+    'Anda adalah asisten laboratorium farmasi untuk uji disolusi terbanding (UDT). ' +
+    'Tugas Anda mengekstrak informasi dari setiap nama sampel kromatogram/spektro non-standar menjadi JSON array dengan panjang dan urutan yang sama persis dengan daftar input. ' +
+    'Untuk setiap entri, kembalikan objek dengan field: ' +
+    'originalName (string nama persis dari input), ' +
+    "type ('sample'|'std'|'bsMid'|'bsEnd'|'ignore'), " +
+    'batch (string kode batch jika ada, atau string kosong "" jika tidak ada—jangan isi \'N/A\'), ' +
+    "medium ('1,2'|'4,5'|'6,8'|'Air'|'Release'|'1,0'|'7,2'|'7,5' atau string kosong \"\" jika tidak disebut), " +
+    'time (angka menit sampling atau null jika bukan sampel/tidak ada), ' +
+    'vessel (angka nomor vessel 1-12 atau null jika bukan sampel/tidak ada).';
+
+  const schema = {
+    type: 'ARRAY',
+    items: {
+      type: 'OBJECT',
+      properties: {
+        originalName: { type: 'STRING' },
+        type: { type: 'STRING', enum: ['sample', 'std', 'bsMid', 'bsEnd', 'ignore'] },
+        batch: { type: 'STRING' },
+        medium: { type: 'STRING' },
+        time: { type: 'NUMBER', nullable: true },
+        vessel: { type: 'INTEGER', nullable: true }
+      },
+      required: ['originalName', 'type', 'batch', 'medium']
+    }
+  };
+
+  return await callGeminiJson(
+    env,
+    `${systemInstruction}\n\nBerikut daftar nama sampel mentah yang perlu dirapikan:\n${JSON.stringify(rawNames)}`,
+    schema
+  );
+}
+
+async function resolveMediaWithGemini(env, mediaNames) {
+  const list = Array.isArray(mediaNames) ? mediaNames.slice(0, 50) : [];
+  if (!list.length) return [];
+  const prompt =
+    'Anda adalah analis disolusi farmasi. Petakan setiap nama media disolusi non-standar berikut ke kode baku UDT Studio: ' +
+    "'1,2' (HCl 0.1N / SGF / pH 1.2), '4,5' (Buffer Asetat / Acetate pH 4.5), '6,8' (Buffer Fosfat / Phosphate / SIF pH 6.8), " +
+    "'Air' (Water / Aquades / Purified Water), 'Release' (Media QC Release), '1,0', '7,2', '7,5', atau '__keep__' jika benar-benar media khusus lain (mis. pH 5,5 atau surfaktan khusus yang harus terpisah). " +
+    `Daftar nama media:\n${JSON.stringify(list)}`;
+  const schema = {
+    type: 'ARRAY',
+    items: {
+      type: 'OBJECT',
+      properties: {
+        originalMedia: { type: 'STRING' },
+        targetMedia: { type: 'STRING' }
+      },
+      required: ['originalMedia', 'targetMedia']
+    }
+  };
+  return await callGeminiJson(env, prompt, schema);
+}
+
+async function parseRawTableWithGemini(env, input = {}) {
+  const fileName = String(input.fileName || '').trim();
+  const rawText = String(input.text || '').slice(0, 40000);
+  if (rawText.trim().length < 10) {
+    return { rows: [], rejectedCount: 0, meta: {} };
+  }
+
+  const prompt =
+    'Anda adalah parser laporan instrumen laboratorium farmasi (HPLC / UHPLC / UV-Vis Spectrophotometer) untuk uji disolusi. ' +
+    'Ekstrak seluruh baris injeksi standar dan sampel dari teks laporan mentah berikut. ' +
+    'ATURAN KETAT ANTI-HALUSINASI:\n' +
+    '1. Salin `areaStr` (nilai Peak Area / Absorbance / Height utama analit) PERSIS karakter-per-karakter sesuai angka yang tertulis di dokumen. DILARANG membulatkan, menghitung, atau mengarang angka.\n' +
+    '2. Abaikan baris statistik/ringkasan seperti Sum, Mean, Average, StdDev, SD, RSD, %RSD, Min, Max, atau Total.\n' +
+    '3. Isi `rtStr` dengan waktu retensi (RT menit) persis dari teks bila ada, atau "" jika instrumen UV/tanpa RT.\n' +
+    '4. Ekstrak metadata header bila tertulis: `compound` (nama zat aktif), `operator` (nama analis), `runDate` (format YYYY-MM-DD bila ada, selain itu "").\n\n' +
+    `Nama File: ${fileName}\n--- MULAI TEKS DOKUMEN ---\n${rawText}\n--- AKHIR TEKS DOKUMEN ---`;
+
+  const schema = {
+    type: 'OBJECT',
+    properties: {
+      meta: {
+        type: 'OBJECT',
+        properties: {
+          compound: { type: 'STRING' },
+          operator: { type: 'STRING' },
+          runDate: { type: 'STRING' }
+        }
+      },
+      rows: {
+        type: 'ARRAY',
+        items: {
+          type: 'OBJECT',
+          properties: {
+            name: { type: 'STRING' },
+            rtStr: { type: 'STRING' },
+            areaStr: { type: 'STRING' }
+          },
+          required: ['name', 'areaStr']
+        }
+      }
+    },
+    required: ['rows']
+  };
+
+  const parsed = await callGeminiJson(env, prompt, schema);
+  const lookup = buildTextNumberLookup(rawText);
+  const summaryRe = /^(sum|mean|average|avg|stddev|std\s*dev|sd|rsd|%rsd|total|min|max|minimum|maximum)$/i;
+  const rawRows = Array.isArray(parsed && parsed.rows) ? parsed.rows : [];
+  const verifiedRows = [];
+  let rejectedCount = 0;
+
+  for (const r of rawRows) {
+    const name = String((r && r.name) || '').replace(/\s+/g, ' ').trim();
+    const areaStr = String((r && r.areaStr) || '').trim();
+    const rtStr = String((r && r.rtStr) || '').trim();
+    if (!name || summaryRe.test(name)) continue;
+    if (!isVerifiedAreaInText(areaStr, lookup)) {
+      rejectedCount++;
+      continue;
+    }
+    const validRt = rtStr && isVerifiedAreaInText(rtStr, lookup) ? rtStr : '';
+    verifiedRows.push({ name, rtStr: validRt, areaStr });
+  }
+
+  const m = (parsed && parsed.meta) || {};
+  return {
+    rows: verifiedRows,
+    rejectedCount,
+    meta: {
+      compound: String(m.compound || '').trim(),
+      operator: String(m.operator || '').trim(),
+      runDate: /^\d{4}-\d{2}-\d{2}$/.test(String(m.runDate || '').trim()) ? String(m.runDate).trim() : ''
+    }
+  };
 }
 
 async function handleTool(tool, input = {}, env) {
@@ -608,7 +758,15 @@ async function handleTool(tool, input = {}, env) {
     return await resolveSamplesWithGemini(env, input.names);
   }
 
-  throw new Error(`Alat '${tool}' tidak dikenali pada Cloudflare Worker.`);
+  if (tool === 'resolve_media_ai') {
+    return await resolveMediaWithGemini(env, input.mediaNames);
+  }
+
+  if (tool === 'parse_raw_table_ai') {
+    return await parseRawTableWithGemini(env, input);
+  }
+
+  throw new Error(`Alat '${tool}' tidak dikenali pada Backend Bridge.`);
 }
 
 export default {
