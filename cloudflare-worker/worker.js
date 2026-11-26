@@ -348,7 +348,11 @@ async function callGeminiJson(env, promptText, responseSchema) {
       return JSON.parse(aiText.replace(/^```json\s*/i, '').replace(/```$/i, '').trim());
     }
     lastErr = jsonRes?.error?.message || `HTTP ${response.status}`;
-    if (response.status !== 404 && response.status !== 429) {
+    if (response.status === 429) {
+      await new Promise(r => setTimeout(r, 650));
+      continue;
+    }
+    if (response.status !== 404) {
       break;
     }
   }

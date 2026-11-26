@@ -573,12 +573,12 @@ section.panel.active { display: block; }
 .drop {
   border: 1.5px dashed var(--line-strong);
   border-radius: var(--radius);
-  padding: 26px 16px;
+  padding: 22px 16px;
   text-align: center;
   background: var(--card-subtle);
   cursor: pointer;
   transition: border-color 0.15s ease, background-color 0.15s ease;
-  flex: 1;
+  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -617,19 +617,49 @@ section.panel.active { display: block; }
 }
 
 /* Files */
-.files { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+.files {
+  display: flex; flex-direction: column; gap: 6px; margin-top: 10px;
+  max-height: 440px; overflow-y: auto; padding-right: 2px;
+}
 .file {
-  display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center;
-  padding: 8px 12px; border: 1px solid var(--line); border-radius: var(--radius-sm);
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 7px 10px; border: 1px solid var(--line); border-radius: var(--radius-sm);
   background: var(--card); font-size: 12.5px;
-  transition: border-color 0.14s ease;
+  transition: border-color 0.14s ease, background-color 0.14s ease;
 }
 .file.is-test { border-color: var(--test-line); border-left: 3px solid var(--test-tint); }
 .file.is-ref { border-color: var(--ref-line); border-left: 3px solid var(--ref-tint); }
+.file.is-active-pdf { background: var(--accent-soft); border-color: var(--accent-line); }
 .file:hover { border-color: var(--line-strong); }
 .file.is-test:hover { border-color: var(--test-tint); }
 .file.is-ref:hover { border-color: var(--ref-tint); }
-.file .nm { font-weight: 500; word-break: break-all; flex: 1 1 180px; }
+.file-main {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; min-width: 0;
+}
+.file-info {
+  display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1 1 auto;
+}
+.file .nm {
+  font-weight: 600; font-size: 12.5px; color: var(--fg);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.file-sub {
+  font-size: 11px; color: var(--muted);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.file-right {
+  display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0; margin-left: auto;
+}
+.file-del-btn {
+  width: 22px; height: 22px; padding: 0; border-radius: 5px;
+  border: 1px solid transparent; background: transparent; color: var(--muted);
+  font-size: 15px; line-height: 1; display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer; flex-shrink: 0;
+  transition: background-color 0.14s ease, color 0.14s ease, border-color 0.14s ease;
+}
+.file-del-btn:hover {
+  background: var(--err-soft); color: var(--err); border-color: var(--err-line);
+}
 
 /* Upload loading indicator */
 .upload-loading {
@@ -1770,6 +1800,9 @@ body.has-pdf-preview:has(.udt-modal-backdrop) .pdf-pane { top: 0; z-index: 10010
   body.has-pdf-preview .media-sidebar { width: 100%; position: static; flex-direction: row; overflow-x: auto; padding: 8px; }
   body.has-pdf-preview .media-nav-btn { min-width: 170px; flex-shrink: 0; }
 }
+@media (max-width: 1560px) {
+  body.has-pdf-preview .dual-drop { grid-template-columns: 1fr; }
+}
 @media (max-width: 1024px) {
   body.has-pdf-preview .wrap,
   body.has-pdf-preview .stepper-wrap { margin-right: 0; }
@@ -1814,6 +1847,7 @@ body.has-pdf-preview:has(.udt-modal-backdrop) .pdf-pane { top: 0; z-index: 10010
       <div class="drop-box is-test">
         <div class="drop-box-header">
           <h3>Produk Uji</h3>
+          <div id="fileMetaTest" style="display:inline-flex;align-items:center;gap:8px"></div>
         </div>
         <div class="drop" id="dropTest" tabindex="0">
           <div class="drop-icon" aria-hidden="true">
@@ -1834,6 +1868,7 @@ body.has-pdf-preview:has(.udt-modal-backdrop) .pdf-pane { top: 0; z-index: 10010
       <div class="drop-box is-ref">
         <div class="drop-box-header">
           <h3>Produk Pembanding</h3>
+          <div id="fileMetaRef" style="display:inline-flex;align-items:center;gap:8px"></div>
         </div>
         <div class="drop" id="dropRef" tabindex="0">
           <div class="drop-icon" aria-hidden="true">
@@ -2168,7 +2203,7 @@ function normMedium(s){
   if (!s) return '';
   const str = String(s).trim();
   if (/^(air|water|aquades|aquadest|purified\s*water|milli[\s-]*q)$/i.test(str)) return 'Air';
-  if (/^(release|rilis|qc\s*release|media\s*release)$/i.test(str)) return 'Release';
+  if (/^(release|realese|relase|relaese|relese|releas|rilis|qc\s*release|media\s*release)$/i.test(str)) return 'Release';
   if (/^hcl\s*0[.,]1\s*[nm]$/i.test(str)) return str.replace(/^hcl/i,'HCl').replace(/\./g,',').replace(/\s+/g,' ');
   return str.replace(/\./g, ',');
 }
@@ -2293,8 +2328,8 @@ function extractMediumFromString(str, applyAlias = true){
     return applyMediaAlias(canon, applyAlias);
   }
 
-  // 5. Release / Rilis (setelah MD/pH angka eksplisit & buffer bernama)
-  const mRel = raw.match(/(?:^|[\s_\-+,(])(Release|Rilis)(?=$|[\s_\-+,.)])/i);
+  // 5. Release / Rilis beserta variasi salah ketik umum (Realese, Relase, Relaese)
+  const mRel = raw.match(/(?:^|[\s_\-+,(])(Release|Realese|Relase|Relaese|Relese|Releas|Rilis)(?=$|[\s_\-+,.)])/i);
   if(mRel) return applyMediaAlias('Release', applyAlias);
 
   // 6. Desimal pH polos (0,5–14,0) setelah konteks dosis/persentase/tanggal dibersihkan
@@ -2400,7 +2435,7 @@ function extractBatchAndProductFromPrefix(prefix, fileName = ''){
       (full, lead, _grp, marker, sp, numStr) => isValidPhNumber(numStr, marker, sp) ? ' ' : full)
     .replace(/(?:^|[\s_-])(?:Buffer|Dapar)\s+(?:Asetat|Acetate|Fosfat|Phosphate|Sitrat|Citrate|Borat|Borate)(?=$|[\s_-])/ig, ' ')
     .replace(/(?:^|[\s_-])HCl\s*0[.,]1\s*[NM](?=$|[\s_-])/ig, ' ')
-    .replace(/(?:^|[\s_-])(?:MD|pH|ph|Buffer|Dapar|Air|Water|Aquades|Aquadest|Release|Rilis|SGF|FaSSGF|FeSSGF|SIF|FaSSIF|FeSSIF)(?=$|[\s_-])/ig, ' ')
+    .replace(/(?:^|[\s_-])(?:MD|pH|ph|Buffer|Dapar|Air|Water|Aquades|Aquadest|Release|Realese|Relase|Relaese|Relese|Releas|Rilis|SGF|FaSSGF|FeSSGF|SIF|FaSSIF|FeSSIF)(?=$|[\s_-])/ig, ' ')
     .replace(/(^|\s)([0-9]{1,2}[.,][0-9]{1,2})(?=$|\s)/g, (full, lead, numStr) => isValidPhNumber(numStr) ? ' ' : full)
     .replace(/[+]/g, ' ')
     .replace(/\s+/g, ' ').trim();
@@ -2834,6 +2869,12 @@ const ROW_PATTERNS = [
   /^(.*?)\s+(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)$/
 ];
 
+function stripDetectorSignalSuffix(s){
+  return String(s || '')
+    .replace(/[\s,;-]+(?:VWD|DAD|MWD|FLD|RID|ELSD|CAD|TCD|FID|UV)\s*\d+[A-Z]?(?:\s*,\s*[^0-9\s].*|\s*\d*\s*nm)?$/i, '')
+    .trim();
+}
+
 function parseRowsFromLines(lines){
   const datePatterns = ROW_PATTERNS.slice(0, 5);
   const fullNonDatePatterns = ROW_PATTERNS.slice(5, 7);
@@ -2863,12 +2904,12 @@ function parseRowsFromLines(lines){
       const s = String(ln||'').trim();
       if (!s) continue;
       if (/^(sum|mean|average|stddev|std\.?\s*dev|standard\s+deviation|deviation|rsd)\b/i.test(s)) continue;
-      if (/time\s*\[min\]|vwd\d|\bmAU\b|Theoretical Plates|Peak Tail|Acquired Date/i.test(s)) continue;
+      if (/time\s*\[min\]|(?:^|\bSignal\s*:?\s*)(?:vwd|dad|mwd)\d|\bwavelength\s*=|\bmAU\b|Theoretical Plates|Peak Tail|Acquired Date/i.test(s)) continue;
       if (/^(?:Data file|Instrument|Sample Name|Injection\s+date|Acq\.|Analysis|Injection|Column|Serial)\b/i.test(s)) continue;
 
       const tabIdx = s.indexOf('\t');
       if (tabIdx > 0){
-        const tName = s.slice(0, tabIdx).trim();
+        const tName = stripDetectorSignalSuffix(s.slice(0, tabIdx).trim());
         const tRight = s.slice(tabIdx + 1).replace(/\t+/g, ' ').trim();
         if (!tName || /^[\d\s.,]+$/.test(tName) || /^(sum|mean|average|stddev|std\.?\s*dev|standard\s+deviation|deviation|rsd)\b/i.test(tName)) continue;
         if (/\b(Name|RT|Area|Plates|Tail)\b/i.test(tName) && tName.split(/\s+/).length <= 2) continue;
@@ -2893,7 +2934,7 @@ function parseRowsFromLines(lines){
       for (const p of targetPatterns){
         const m = s.match(p);
         if (m){
-          const name = m[1].trim();
+          const name = stripDetectorSignalSuffix(m[1].trim());
           if (!name || /^[\d\s.,]+$/.test(name) || /^(sum|mean|average|stddev|std\.?\s*dev|standard\s+deviation|deviation|rsd)\b/i.test(name)) continue;
           if (/\b(Name|RT|Area|Plates|Tail)\b/i.test(name) && name.split(/\s+/).length <= 2) continue;
           const { tail, plates } = resolveMetrics(m[4], m[5]);
@@ -2935,8 +2976,8 @@ function parseRowsFromStream(text){
     let name = t.slice(last, m.index).trim();
     last = m.index + m[0].length;
     if (!name || /^(sum|mean|stddev|rsd)\b/i.test(name)) continue;
-    if (/^[\d\s.,]+$/.test(name) || /time\s*\[min\]/i.test(name) || /vwd\d/i.test(name) || /\bmAU\b/i.test(name)) continue;
-    name = name.replace(/^.*?(?:Acquired Date|Plates USP|Tail Factor)\s*/i, '').replace(/^\d{4}[-/]\d{1,2}[-/]\d{1,2}[^\r\n]*\s*/, '').trim();
+    if (/^[\d\s.,]+$/.test(name) || /time\s*\[min\]/i.test(name) || /^(?:signal\s*:?\s*)?(?:vwd|dad|mwd)\d/i.test(name) || /\bwavelength\s*=/i.test(name) || /\bmAU\b/i.test(name)) continue;
+    name = stripDetectorSignalSuffix(name.replace(/^.*?(?:Acquired Date|Plates USP|Tail Factor)\s*/i, '').replace(/^\d{4}[-/]\d{1,2}[-/]\d{1,2}[^\r\n]*\s*/, '').trim());
     if (!name) continue;
     let rt = parseFloat(m[1].replace(',','.'));
     let area = parseFloat(m[2].replace(',','.'));
@@ -4691,6 +4732,10 @@ function textEntry(name, text, role, isPaste=false){
       }
     }
   }
+  const csvRows = map.area >= 0 ? csvToRows(parsed, map) : [];
+  if (pr.length > 0 && csvRows.length === 0){
+    return {role, kind:'text', name, rawText:text, rows:pr, meta};
+  }
   return {role, kind:'csv', name, rawText:text, parsed, map, meta};
 }
 
@@ -4838,9 +4883,21 @@ async function addFilesForRole(list, role){
           });
         }
         entry.id=Math.random().toString(36).slice(2);
-        arr.push(entry);
+        const existIdx = arr.findIndex(x => x && x.name === entry.name);
+        if (existIdx >= 0){
+          const prev = arr[existIdx];
+          if (prev && prev.blobUrl && typeof URL !== 'undefined' && typeof URL.revokeObjectURL === 'function'){
+            try { URL.revokeObjectURL(prev.blobUrl); } catch(_){}
+          }
+          arr[existIdx] = entry;
+        } else {
+          arr.push(entry);
+        }
       }catch(err){
-        arr.push({role, id:Math.random().toString(36).slice(2), kind:'error', name:f.name, error:String(err.message||err), rows:[]});
+        const errEntry = {role, id:Math.random().toString(36).slice(2), kind:'error', name:f.name, error:String(err.message||err), rows:[]};
+        const existIdx = arr.findIndex(x => x && x.name === f.name);
+        if (existIdx >= 0) arr[existIdx] = errEntry;
+        else arr.push(errEntry);
       }
     }
     S.manualStdMapping = {};
@@ -4880,6 +4937,8 @@ function syncPdfPreviewBtns(){
     const rl = btn.getAttribute('data-pdf-role') || '';
     const isMatch = PDF_PREVIEW.active && fn === PDF_PREVIEW.fileName && (!PDF_PREVIEW.role || !rl || rl === PDF_PREVIEW.role);
     btn.classList.toggle('is-active', isMatch);
+    const rowEl = btn.closest ? btn.closest('.file') : null;
+    if (rowEl && rowEl.classList) rowEl.classList.toggle('is-active-pdf', isMatch);
   });
 }
 
@@ -5092,36 +5151,137 @@ function removeFile(id, role){
   rebuild();
 }
 
+function clearRoleFiles(role){
+  const rKey = role === 'ref' ? 'ref' : 'test';
+  const arr = rKey === 'ref' ? S.refFiles : S.testFiles;
+  if (!arr.length) return;
+  if (!confirm(`Hapus semua ${arr.length} file pada ${rKey === 'ref' ? 'Produk Pembanding' : 'Produk Uji'}?`)) return;
+  arr.forEach(f => {
+    if (f && f.blobUrl && typeof URL !== 'undefined' && typeof URL.revokeObjectURL === 'function'){
+      try { URL.revokeObjectURL(f.blobUrl); } catch(_) {}
+    }
+  });
+  if (rKey === 'ref') S.refFiles = [];
+  else S.testFiles = [];
+  if (PDF_PREVIEW.active && PDF_PREVIEW.role === rKey){
+    const nextPdf = getAllPdfEntries()[0];
+    if (nextPdf) openPdfPreview(nextPdf.name, nextPdf.role);
+    else closePdfPreview();
+  }
+  if (S.ignoredFiles){
+    S.ignoredFiles = S.ignoredFiles.filter(x => !x.startsWith(rKey + '::'));
+  }
+  if (!S.testFiles.length && !S.refFiles.length){
+    S.conflictChoices = {};
+    S.batchMergeChoices = {};
+    S.sessionMediaMap = {};
+    S.sessionPrefixMap = {};
+    S.sessionAiNameMap = {};
+    S.sessionFileOverrides = {};
+    S.aiAutoResolvedBanner = '';
+    S.ignoredFiles = [];
+    S.stdMapping = {};
+    S.stdMappingByFile = {};
+    S.splitSharedMap = {};
+    S.omittedBracketing = {};
+    S.manualBracketingOpen = {};
+  }
+  S.lastSkippedSig = '';
+  S.manualStdMapping = {};
+  S.splitSharedMap = {};
+  rebuild();
+}
+
+async function retryAiForFile(fileId, role){
+  const rKey = role === 'ref' ? 'ref' : 'test';
+  const arr = rKey === 'ref' ? S.refFiles : S.testFiles;
+  const f = arr.find(x => x && x.id === fileId);
+  if (!f || fileRows(f).length > 0) return;
+  UPLOAD_PENDING[rKey]++;
+  setUploadLoading(rKey, true, `Menganalisis ulang tabel dengan AI Gemini: ${f.name}...`);
+  try {
+    await tryAiTableFallback(f);
+    S.lastSkippedSig = '';
+    rebuild();
+  } finally {
+    UPLOAD_PENDING[rKey] = Math.max(0, UPLOAD_PENDING[rKey] - 1);
+    if (UPLOAD_PENDING[rKey] === 0) setUploadLoading(rKey, false);
+  }
+}
+
 function renderFileList(boxEl, files, role){
   boxEl.innerHTML='';
+  const metaEl = typeof document !== 'undefined' ? document.getElementById(role === 'ref' ? 'fileMetaRef' : 'fileMetaTest') : null;
+  if (metaEl){
+    metaEl.innerHTML = '';
+    if (files.length > 0){
+      const totalRows = files.reduce((acc, f) => acc + (isFileIgnored(role, f.name) ? 0 : fileRows(f).length), 0);
+      metaEl.append(
+        h('span', { class: 'badge info small' }, `${files.length} file · ${totalRows} baris`),
+        files.length > 1 ? h('button', { type: 'button', class: 'link small', onclick: () => clearRoleFiles(role) }, 'Hapus semua') : null
+      );
+    }
+  }
   if(!files.length){ boxEl.append(h('span',{class:'muted small'},'Belum ada file.')); return; }
   for(const f of files){
     const ignored = isFileIgnored(role, f.name);
-    const rows=fileRows(f);
-    const cells=[h('span',{class:'nm'},f.name)];
-    if(f.kind==='error'){
-      cells.push(h('span',{class:'badge err'},'Gagal dibaca'), h('span',{class:'small muted'},f.error));
+    const rows = fileRows(f);
+    const isPdfActive = PDF_PREVIEW.active && PDF_PREVIEW.fileName === f.name && (!PDF_PREVIEW.role || PDF_PREVIEW.role === role);
+
+    const subParts = [];
+    if (f.kind === 'error'){
+      subParts.push(f.error || 'Format tidak terbaca');
     } else {
-      cells.push(h('span',{class:'badge '+(rows.length?'ok':'err')},rows.length+' baris'));
-      const fmtBadge = f.kind==='pdf'
-        ? ('PDF · '+f.pages+' hal')
-        : (f.kind==='csv' ? ('CSV · baris '+(f.parsed?.startRow||11)) : (f.wasCsv ? 'CSV' : 'Teks'));
-      cells.push(h('span',{class:'badge info'},fmtBadge));
-      if(f.aiParsed) cells.push(h('span',{class:'badge shared',title:'Diekstrak otomatis oleh AI Gemini & terverifikasi pada teks dokumen'},'AI Parser'));
-      if(f.meta&&f.meta.runDate) cells.push(h('span',{class:'badge info'},f.meta.runDate));
-      if(ignored) cells.push(h('span',{class:'badge warn'},'Dikecualikan'));
+      if (f.kind === 'pdf') subParts.push(`PDF · ${f.pages} hal`);
+      else if (f.kind === 'csv') subParts.push(`CSV · baris ${f.parsed?.startRow || 11}`);
+      else subParts.push(f.wasCsv ? 'CSV' : 'Teks');
+      if (f.meta && f.meta.runDate) subParts.push(f.meta.runDate);
     }
-    if(ignored){
-      cells.push(h('button',{class:'link',onclick:()=>toggleIgnoreFile(role, f.name, false)},'aktifkan'));
+
+    const infoLeft = h('div', { class: 'file-info' },
+      h('span', { class: 'nm', title: f.name }, f.name),
+      subParts.length ? h('span', { class: 'file-sub' }, subParts.join(' · ')) : null
+    );
+
+    const rightControls = h('div', { class: 'file-right' });
+    if (f.kind === 'error'){
+      rightControls.append(h('span', { class: 'badge err' }, 'Gagal'));
+    } else {
+      rightControls.append(h('span', { class: 'badge ' + (rows.length ? 'ok' : 'err') }, rows.length + ' baris'));
+      if (!rows.length && f.rawText && (S.backendUrl || S.gasUrl)){
+        rightControls.append(h('button', {
+          type: 'button',
+          class: 'btn small',
+          style: 'padding:2px 7px;font-size:11px',
+          title: 'Coba ekstrak ulang tabel dokumen ini menggunakan AI Gemini',
+          onclick: () => retryAiForFile(f.id, role)
+        }, '↻ AI'));
+      }
+      if (f.aiParsed){
+        rightControls.append(h('span', { class: 'badge shared', title: 'Diekstrak otomatis oleh AI Gemini & terverifikasi pada teks dokumen' }, 'AI Parser'));
+      }
+      if (ignored){
+        rightControls.append(
+          h('span', { class: 'badge warn' }, 'Dikecualikan'),
+          h('button', { type: 'button', class: 'link small', onclick: () => toggleIgnoreFile(role, f.name, false) }, 'aktifkan')
+        );
+      }
     }
-    const actWrap=h('span',{style:'display:inline-flex;align-items:center;gap:8px;justify-content:flex-end'});
-    if (f.kind==='pdf'){
-      const pBtn=makePdfPreviewBtn(f.name, role, { label:'Preview PDF', entry:f });
-      if (pBtn) actWrap.append(pBtn);
+    if (f.kind === 'pdf'){
+      const pBtn = makePdfPreviewBtn(f.name, role, { label: 'PDF', entry: f });
+      if (pBtn) rightControls.append(pBtn);
     }
-    actWrap.append(h('button',{class:'link',onclick:()=>removeFile(f.id, role)},'hapus'));
-    cells.push(actWrap);
-    const div=h('div',{class:'file '+(role==='ref'?'is-ref':'is-test')+(ignored?' is-ignored':'')},cells);
+    rightControls.append(h('button', {
+      type: 'button',
+      class: 'file-del-btn',
+      title: 'Hapus file ' + f.name,
+      'aria-label': 'Hapus file ' + f.name,
+      onclick: () => removeFile(f.id, role)
+    }, '×'));
+
+    const div = h('div', {
+      class: 'file ' + (role === 'ref' ? 'is-ref' : 'is-test') + (ignored ? ' is-ignored' : '') + (isPdfActive ? ' is-active-pdf' : '')
+    }, h('div', { class: 'file-main' }, infoLeft, rightControls));
     if(f.kind==='csv'){
       const sel=(key,opt)=>{
         const s=h('select',{onchange:e=>{f.map[key]=parseInt(e.target.value,10);rebuild();}});
