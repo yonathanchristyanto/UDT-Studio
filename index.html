@@ -2060,21 +2060,21 @@ body.has-pdf-preview:has(.udt-modal-backdrop) .pdf-pane { top: 0; z-index: 10010
 
   <!-- STEP 3: PARAMETER -->
   <section class="panel" id="p3">
-    <div class="section-header">
-      <h2>Parameter Pengujian</h2>
-      <p>Atur kondisi disolusi, identitas produk, dan parameter perhitungan.</p>
+    <div class="section-header" style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
+      <div>
+        <h2>Parameter Pengujian</h2>
+        <p>Isi kondisi disolusi, identitas produk, dan parameter perhitungan.</p>
+      </div>
+      <button class="btn small danger-outline" type="button" onclick="resetAllParams()" title="Kosongkan seluruh isian parameter">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+        <span>Kosongkan Isian</span>
+      </button>
     </div>
 
     <!-- Kondisi Disolusi & Instrumen -->
     <div class="card" style="margin-bottom:16px">
-      <div class="mhead" style="margin-bottom:10px;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
-        <div>
-          <h2>Kondisi Disolusi &amp; Instrumen</h2>
-        </div>
-        <button class="btn small danger-outline" type="button" onclick="resetAllParams()" title="Kosongkan seluruh isian kolom parameter &amp; perhitungan">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-          <span>Kosongkan Semua Parameter</span>
-        </button>
+      <div class="mhead" style="margin-bottom:10px">
+        <h2>Kondisi Disolusi &amp; Instrumen</h2>
       </div>
       <div id="pCondBox"></div>
     </div>
@@ -4589,57 +4589,16 @@ const fmt=(n,d=2)=>(typeof n==='number'&&isFinite(n))?n.toFixed(d).replace('.','
 const fmtF2=(v)=>{ if(!(typeof v==='number'&&isFinite(v))) return '–'; const r=Math.round(v); return String((v<50&&r>=50)?49:r); };
 
 function store(){
-  try{
-    localStorage.setItem('udt.v4', JSON.stringify({
-      testParams: S.testParams,
-      refParams: S.refParams,
-      condParams: S.condParams,
-      mediaConfig: S.mediaConfig,
-      wsWeights: S.wsWeights,
-      useMr: S.useMr
-    }));
-  }catch(e){}
+  // Kolom isian Tahap 3 sengaja tidak disimpan ke localStorage lintas sesi agar selalu mulai bersih tanpa prefill
 }
 function restore(){
   try{
     localStorage.removeItem('udt_google_token');
-    // Bersihkan semua legacy storage yang menyimpan mock default lama
+    localStorage.removeItem('udt.v4');
     localStorage.removeItem('udt.v3');
     localStorage.removeItem('udt.v2');
     localStorage.removeItem('udt.v1');
     localStorage.removeItem('udt_mock_data');
-  }catch(e){}
-  try{
-    const j = JSON.parse(localStorage.getItem('udt.v4') || 'null');
-    if(j){
-      if(j.testParams) Object.assign(S.testParams, j.testParams);
-      if(j.refParams) Object.assign(S.refParams, j.refParams);
-      if(j.condParams) Object.assign(S.condParams, j.condParams);
-      delete S.testParams.tabPrefix;
-      delete S.refParams.tabPrefix;
-      S.mediaConfig = j.mediaConfig || {};
-      S.wsWeights = j.wsWeights || {};
-      if(j.useMr !== undefined) S.useMr = j.useMr;
-      S.stdMapping = {};
-      S.stdMappingByFile = {};
-      S.manualStdMapping = {};
-      S.splitSharedMap = {};
-      S.omittedBracketing = {};
-      S.manualBracketingOpen = {};
-
-      // Sanitasi menyeluruh: bersihkan jika ada sisa mock Rosuvastatin / Crestor lama
-      if(S.testParams.product && S.testParams.product.includes('Rosuvastatin 20 mg')) S.testParams.product = '';
-      if(S.testParams.batch === 'F0048J26A') S.testParams.batch = '';
-      if(S.testParams.manufacturer === 'PT Pharos Indonesia') S.testParams.manufacturer = '';
-      if(S.testParams.analyst === 'Kania') S.testParams.analyst = '';
-      if(S.testParams.pctWS === 98.23) S.testParams.pctWS = null;
-      if(S.refParams.product && S.refParams.product.includes('Crestor')) S.refParams.product = '';
-      if(S.refParams.batch === 'F0006H26A') S.refParams.batch = '';
-      if(S.refParams.manufacturer === 'PT Meiji Indonesia') S.refParams.manufacturer = '';
-      if(S.refParams.analyst === 'Kania') S.refParams.analyst = '';
-      if(S.refParams.pctWS === 98.23) S.refParams.pctWS = null;
-      if(S.condParams.api === 'Rosuvastatin Calcium') S.condParams.api = '';
-    }
   }catch(e){}
 }
 
@@ -5338,61 +5297,10 @@ function rebuild(){
   collect(activeRefFiles, 'ref');
 
   const model = buildUnifiedModel(allInjections, fileMetaMap);
-  
-  if(!S.testParams.runDate){
-    const d = activeTestFiles.map(f=>f.meta&&f.meta.runDate).filter(Boolean).sort()[0];
-    if(d) S.testParams.runDate = d;
-  }
-  if(!S.refParams.runDate){
-    const d = activeRefFiles.map(f=>f.meta&&f.meta.runDate).filter(Boolean).sort()[0];
-    if(d) S.refParams.runDate = d;
-  }
-  if(!S.testParams.analyst){
-    const op = activeTestFiles.map(f=>f.meta&&f.meta.operator).filter(Boolean)[0];
-    if(op) S.testParams.analyst = op;
-  }
-  if(!S.refParams.analyst){
-    const op = activeRefFiles.map(f=>f.meta&&f.meta.operator).filter(Boolean)[0];
-    if(op) S.refParams.analyst = op;
-  }
-  if(!S.condParams.api){
-    const cmp = [...activeTestFiles, ...activeRefFiles].map(f=>f.meta&&f.meta.compound).filter(Boolean)[0];
-    if(cmp) S.condParams.api = cmp;
-  }
-  // Deteksi otomatis instrumen dari ada/tidaknya RT pada injeksi
-  if(allInjections.length && !S.condParams._userSetInstrument){
-    const hasRT = allInjections.some(inj => isFinite(inj.rt) && inj.rt > 0);
-    S.condParams.instrumentPreset = hasRT ? 'HPLC' : 'Spektrofotometer UV';
-    S.condParams.instrument = S.condParams.instrumentPreset;
-  }
 
   for(const m of Object.keys(model.media)){
-    // Inisialisasi konfigurasi media otomatis dari sampel yang diinput bila belum ada
+    // Inisialisasi konfigurasi label/deskripsi media dari media yang terdeteksi
     getMedConfig(m);
-    const inferProdFromBatch = (b) => {
-      let p = String(b.productDetected || '').replace(/^\d{6}[\s_-]*/, '').trim();
-      if(!p && b.file && b.name){
-        const idx = b.file.toLowerCase().indexOf(b.name.toLowerCase());
-        if(idx > 0){
-          const pref = b.file.slice(0, idx).replace(/[\s_-]+$/, '').replace(/^\d{6}[\s_-]*/, '').trim();
-          if(pref && !/^(standar|standard|std|bs)/i.test(pref)) p = pref;
-        }
-      }
-      return p;
-    };
-    for(const b of Object.values(model.media[m].testBatches)){
-      const detP = inferProdFromBatch(b);
-      if(detP && !S.testParams.product) S.testParams.product = detP;
-      if(b.name && !S.testParams.batch) S.testParams.batch = b.name;
-    }
-    for(const b of Object.values(model.media[m].refBatches)){
-      const detP = inferProdFromBatch(b);
-      if(detP && !S.refParams.product) S.refParams.product = detP;
-      if(b.name && !S.refParams.batch) S.refParams.batch = b.name;
-    }
-  }
-  if(!S.condParams.api && S.testParams.product){
-    S.condParams.api = S.testParams.product.split(/\s+/)[0] || '';
   }
 
   // Auto-map larutan standar ke batch & per file/run sumber (multi-hari) secara sinkron dan akurat berdasarkan role (test vs ref)
@@ -6306,59 +6214,59 @@ function renderCondSection(){
   if(!box) return;
   box.innerHTML = '';
 
-  // 1. Apparatus (Dropdown + Input Manual) & Instrument (Dropdown + Input Manual) & API & RPM
-  const topGrid = h('div',{class:'grid',style:'grid-template-columns:repeat(auto-fill,minmax(220px,1fr));margin-bottom:14px'});
+  const topGrid = h('div',{class:'grid',style:'grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px 14px'});
 
-  // Apparatus dropdown + manual input (kosong dari awal jika belum dipilih)
+  // Apparatus: 1 dropdown bersih; kotak ketik manual hanya muncul jika memilih "Input Manual..."
   const appKnown = APPARATUS_PRESETS.some(p => p.value === S.condParams.apparatus);
-  const appPresetVal = appKnown ? S.condParams.apparatus : (S.condParams.apparatus ? '__custom__' : '');
+  const isAppCustom = S.condParams.apparatusPreset === '__custom__' || Boolean(S.condParams.apparatus && !appKnown);
+  const appPresetVal = isAppCustom ? '__custom__' : (appKnown ? S.condParams.apparatus : '');
   const appManualInp = h('input',{
     type:'text',
-    value: S.condParams.apparatus || '',
-    placeholder:'Ketik apparatus manual (mis. 2 (Paddle))',
+    value: isAppCustom ? (S.condParams.apparatus || '') : '',
+    style: `display:${isAppCustom ? 'block' : 'none'};margin-top:6px`,
     oninput: e => {
       S.condParams.apparatus = e.target.value;
-      S.condParams.apparatusPreset = APPARATUS_PRESETS.some(p=>p.value===e.target.value) ? e.target.value : (e.target.value ? '__custom__' : '');
+      S.condParams.apparatusPreset = '__custom__';
       store();
+      renderResults();
     }
   });
   const appSelect = h('select',{
     onchange: e => {
       const val = e.target.value;
       S.condParams.apparatusPreset = val;
-      if(val && val !== '__custom__'){
-        S.condParams.apparatus = val;
-        appManualInp.value = val;
-      } else if(val === '__custom__'){
+      if(val === '__custom__'){
+        if(appKnown) S.condParams.apparatus = '';
+        appManualInp.value = S.condParams.apparatus || '';
+        appManualInp.style.display = 'block';
         appManualInp.focus();
       } else {
-        S.condParams.apparatus = '';
-        appManualInp.value = '';
+        S.condParams.apparatus = val || '';
+        appManualInp.style.display = 'none';
       }
       store();
+      renderResults();
     }
   },
-    h('option',{value:'', selected:!appPresetVal}, '— Pilih Apparatus —'),
+    h('option',{value:'', selected:!appPresetVal}, '— Pilih —'),
     APPARATUS_PRESETS.map(p => h('option',{value:p.value, selected:appPresetVal===p.value}, p.label)),
     h('option',{value:'__custom__', selected:appPresetVal==='__custom__'},'Input Manual...')
   );
-  topGrid.append(
-    h('label',{class:'f'},'Apparatus', appSelect),
-    h('label',{class:'f'},'Kustom / Teks Apparatus', appManualInp)
-  );
 
-  // Instrument dropdown + manual input (kosong dari awal kecuali terdeteksi otomatis dari berkas raw data)
+  // Instrumen: 1 dropdown bersih; kotak ketik manual hanya muncul jika memilih "Input Manual..."
   const instKnown = INSTRUMENT_PRESETS.some(p => p.value === S.condParams.instrument);
-  const instPresetVal = instKnown ? S.condParams.instrument : (S.condParams.instrument ? '__custom__' : '');
+  const isInstCustom = S.condParams.instrumentPreset === '__custom__' || Boolean(S.condParams.instrument && !instKnown);
+  const instPresetVal = isInstCustom ? '__custom__' : (instKnown ? S.condParams.instrument : '');
   const instManualInp = h('input',{
     type:'text',
-    value: S.condParams.instrument || '',
-    placeholder:'Ketik instrumen manual (mis. HPLC / Spektro UV)',
+    value: isInstCustom ? (S.condParams.instrument || '') : '',
+    style: `display:${isInstCustom ? 'block' : 'none'};margin-top:6px`,
     oninput: e => {
       S.condParams._userSetInstrument = true;
       S.condParams.instrument = e.target.value;
-      S.condParams.instrumentPreset = INSTRUMENT_PRESETS.some(p=>p.value===e.target.value) ? e.target.value : (e.target.value ? '__custom__' : '');
+      S.condParams.instrumentPreset = '__custom__';
       store();
+      renderResults();
     }
   });
   const instSelect = h('select',{
@@ -6366,53 +6274,60 @@ function renderCondSection(){
       const val = e.target.value;
       S.condParams._userSetInstrument = true;
       S.condParams.instrumentPreset = val;
-      if(val && val !== '__custom__'){
-        S.condParams.instrument = val;
-        instManualInp.value = val;
-      } else if(val === '__custom__'){
+      if(val === '__custom__'){
+        if(instKnown) S.condParams.instrument = '';
+        instManualInp.value = S.condParams.instrument || '';
+        instManualInp.style.display = 'block';
         instManualInp.focus();
       } else {
-        S.condParams.instrument = '';
-        instManualInp.value = '';
+        S.condParams.instrument = val || '';
+        instManualInp.style.display = 'none';
       }
       store();
+      renderResults();
     }
   },
-    h('option',{value:'', selected:!instPresetVal}, '— Pilih Instrumen —'),
+    h('option',{value:'', selected:!instPresetVal}, '— Pilih —'),
     INSTRUMENT_PRESETS.map(p => h('option',{value:p.value, selected:instPresetVal===p.value}, p.label)),
     h('option',{value:'__custom__', selected:instPresetVal==='__custom__'},'Input Manual...')
   );
-  topGrid.append(
-    h('label',{class:'f'},'Instrumen', instSelect),
-    h('label',{class:'f'},'Kustom / Teks Instrumen', instManualInp)
-  );
 
-  // Zat Aktif (API), Kecepatan Putar, & Method Reference
+  // Kolom Referensi Metode dibuat lebar penuh (grid-column: 1 / -1)
+  const refField = paramField(S.condParams, 'Referensi Metode', 'methodRef');
+  refField.style.gridColumn = '1 / -1';
+
   topGrid.append(
-    paramField(S.condParams, 'Zat Aktif (API)', 'api', {ph:'mis. Empagliflozin / Rosuvastatin Calcium'}),
-    paramField(S.condParams, 'Kecepatan Putar (RPM)', 'rpm', {ph:'mis. 50 rpm / 75 rpm / 100 rpm'}),
-    paramField(S.condParams, 'Method Reference', 'methodRef', {ph:'mis. Farmakope Indonesia (FI) VI / USP'})
+    paramField(S.condParams, 'Zat Aktif (API)', 'api'),
+    h('label',{class:'f'},'Apparatus', appSelect, appManualInp),
+    paramField(S.condParams, 'Kecepatan Putar (RPM)', 'rpm'),
+    h('label',{class:'f'},'Instrumen', instSelect, instManualInp),
+    refField
   );
 
   box.append(topGrid);
 
-  // 2. Jenis Media per Medium yang Terdeteksi (Dropdown + Input Manual)
+  // Media Disolusi: 1 dropdown ringkas per media; input label/deskripsi kustom hanya muncul bila "Input Manual..." dipilih
   const mIds = S.model ? sortedMediaIds(S.model) : [];
   if(mIds.length){
-    box.append(h('h3',{style:'margin-top:8px'},'Media Disolusi'));
+    const medWrap = h('div',{style:'margin-top:14px;padding-top:12px;border-top:1px dashed var(--line)'});
+    medWrap.append(h('h3',{style:'margin:0 0 8px'},'Media Disolusi'));
+    const medGrid = h('div',{class:'grid',style:'grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px 14px'});
+
     mIds.forEach(mId => {
       const cfg = getMedConfig(mId);
-      const medRow = h('div',{class:'grid',style:'grid-template-columns:repeat(auto-fill,minmax(220px,1fr));padding:10px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;background:var(--surface)'});
       const refreshMedDependentViews = () => {
         store();
         if($('#pwsBox')) renderWeightsForRole($('#pwsBox'), 'all');
         renderResults();
       };
 
+      const isCustomMed = cfg.preset === '__custom__';
+      const customFieldsWrap = h('div',{
+        style:`display:${isCustomMed ? 'grid' : 'none'};grid-template-columns:1fr 2fr;gap:8px;margin-top:6px`
+      });
       const codeInp = h('input',{
         type:'text',
-        value: cfg.tabName || formatMedLabel(mId),
-        placeholder:'mis. pH 1,2 / pH 4,5 / Air',
+        value: isCustomMed ? (cfg.tabName || '') : '',
         oninput: e => {
           cfg.tabName = e.target.value;
           cfg.preset = '__custom__';
@@ -6421,14 +6336,17 @@ function renderCondSection(){
       });
       const descInp = h('input',{
         type:'text',
-        value: cfg.desc || '',
-        placeholder:'mis. Simulated Gastric Fluid Without Enzyme (Buffer pH 1,2)',
+        value: isCustomMed ? (cfg.desc || '') : '',
         oninput: e => {
           cfg.desc = e.target.value;
           cfg.preset = '__custom__';
           refreshMedDependentViews();
         }
       });
+      customFieldsWrap.append(
+        h('label',{class:'f'},'Label Tab', codeInp),
+        h('label',{class:'f'},'Deskripsi Media', descInp)
+      );
 
       const presetSel = h('select',{
         onchange: e => {
@@ -6439,9 +6357,11 @@ function renderCondSection(){
             cfg.code = found.code;
             cfg.tabName = found.label;
             cfg.desc = found.desc;
-            codeInp.value = found.label;
-            descInp.value = found.desc;
+            customFieldsWrap.style.display = 'none';
           } else {
+            codeInp.value = cfg.tabName || '';
+            descInp.value = cfg.desc || '';
+            customFieldsWrap.style.display = 'grid';
             descInp.focus();
           }
           refreshMedDependentViews();
@@ -6451,13 +6371,13 @@ function renderCondSection(){
         h('option',{value:'__custom__', selected:cfg.preset==='__custom__'},'Input Manual...')
       );
 
-      medRow.append(
-        h('label',{class:'f'},`Jenis Media (${formatMedLabel(mId)})`, presetSel),
-        h('label',{class:'f'},'Label Tab Media', codeInp),
-        h('label',{class:'f'},'Deskripsi Media', descInp)
-      );
-      box.append(medRow);
+      medGrid.append(h('div',null,
+        h('label',{class:'f'},`Media ${formatMedLabel(mId)}`, presetSel),
+        customFieldsWrap
+      ));
     });
+    medWrap.append(medGrid);
+    box.append(medWrap);
   }
 }
 
@@ -6469,11 +6389,11 @@ function renderParams(){
   if(gTest){
     gTest.innerHTML = '';
     gTest.append(
-      paramField(S.testParams, 'Nama Produk Uji', 'product', {ph:'mis. Rosuvastatin 20 mg Tablet'}),
-      paramField(S.testParams, 'Nomor Batch Uji', 'batch', {ph:'mis. F0048J26A'}),
-      paramField(S.testParams, 'Manufaktur / Produsen Uji', 'manufacturer', {ph:'mis. PT Pharos Indonesia'}),
-      paramField(S.testParams, 'MD / ED (Mfg & Exp Date)', 'mdEd', {ph:'mis. Okt26/Okt28'}),
-      paramField(S.testParams, 'Nama Analis', 'analyst', {ph:'mis. Kania'}),
+      paramField(S.testParams, 'Nama Produk', 'product'),
+      paramField(S.testParams, 'Nomor Batch', 'batch'),
+      paramField(S.testParams, 'Manufaktur', 'manufacturer'),
+      paramField(S.testParams, 'MD / ED', 'mdEd'),
+      paramField(S.testParams, 'Nama Analis', 'analyst'),
       h('label',{class:'f'},'Tanggal Pengujian',
         h('input',{type:'date', value:S.testParams.runDate||'', oninput:e=>{S.testParams.runDate=e.target.value; store(); renderResults();}}))
     );
@@ -6484,17 +6404,17 @@ function renderParams(){
   if(gRef){
     gRef.innerHTML = '';
     gRef.append(
-      paramField(S.refParams, 'Nama Produk Pembanding', 'product', {ph:'mis. Crestor 20 mg Tablet (Inovator)'}),
-      paramField(S.refParams, 'Nomor Batch Pembanding', 'batch', {ph:'mis. F0006H26A'}),
-      paramField(S.refParams, 'Manufaktur / Produsen Pembanding', 'manufacturer', {ph:'mis. PT Meiji Indonesia'}),
-      paramField(S.refParams, 'MD / ED (Mfg & Exp Date)', 'mdEd', {ph:'mis. Nov24/Nov26'}),
-      paramField(S.refParams, 'Nama Analis', 'analyst', {ph:'mis. Kania'}),
+      paramField(S.refParams, 'Nama Produk', 'product'),
+      paramField(S.refParams, 'Nomor Batch', 'batch'),
+      paramField(S.refParams, 'Manufaktur', 'manufacturer'),
+      paramField(S.refParams, 'MD / ED', 'mdEd'),
+      paramField(S.refParams, 'Nama Analis', 'analyst'),
       h('label',{class:'f'},'Tanggal Pengujian',
         h('input',{type:'date', value:S.refParams.runDate||'', oninput:e=>{S.refParams.runDate=e.target.value; store(); renderResults();}}))
     );
   }
 
-  // --- C. Parameter Perhitungan Terpadu (Sinkron Otomatis Uji & Pembanding) ---
+  // --- C. Parameter Perhitungan Terpadu ---
   const cCommon = $('#pcalcCommon');
   if(cCommon){
     cCommon.innerHTML = '';
@@ -6505,7 +6425,6 @@ function renderParams(){
         type: 'text',
         inputmode: opts.num ? 'decimal' : 'text',
         value: displayVal,
-        placeholder: opts.ph || '',
         oninput: e => {
           const raw = e.target.value.trim();
           let v = e.target.value;
@@ -6521,15 +6440,15 @@ function renderParams(){
           renderResults();
         }
       });
-      return h('label',{class:'f'},label,inp,opts.hint?h('span',{class:'small muted'},opts.hint):null);
+      return h('label',{class:'f'},label,inp);
     };
 
     cCommon.append(
-      syncParamField('Label Claim (mg)', 'lc', {num:1, ph:'mis. 20'}),
-      syncParamField('Volume Media (mL)', 'volMedia', {num:1, ph:'mis. 900'}),
-      syncParamField('Volume Media Replace (mL)', 'volRep', {num:1, ph:'mis. 10'}),
-      syncParamField('Faktor Pengenceran Standar', 'dilStd', {num:1, ph:'mis. 500'}),
-      syncParamField('Faktor Pengenceran Sampel', 'dilSample', {num:1, ph:'mis. 900'})
+      syncParamField('Label Claim (mg)', 'lc', {num:1}),
+      syncParamField('Volume Media (mL)', 'volMedia', {num:1}),
+      syncParamField('Volume Media Replace (mL)', 'volRep', {num:1}),
+      syncParamField('Faktor Pengenceran Standar', 'dilStd', {num:1}),
+      syncParamField('Faktor Pengenceran Sampel', 'dilSample', {num:1})
     );
   }
 
@@ -6586,7 +6505,6 @@ function renderWeightsForRole(containerEl, role='all'){
   const pctInp = h('input',{
     type:'text',
     inputmode:'decimal',
-    placeholder:'mis. 99,5',
     value: (curPctWS !== null && curPctWS !== undefined && isFinite(curPctWS)) ? String(curPctWS).replace('.', ',') : '',
     style:'width:110px;font-weight:600',
     oninput: e => {
@@ -6612,11 +6530,10 @@ function renderWeightsForRole(containerEl, role='all'){
   const mrCaVal = (S.testParams.mrCa !== undefined && S.testParams.mrCa !== null) ? S.testParams.mrCa : 1;
   const mrVal = (S.testParams.mr !== undefined && S.testParams.mr !== null) ? S.testParams.mr : 1;
 
-  const makeMrInput = (key, curVal, placeholder) => {
+  const makeMrInput = (key, curVal) => {
     const inp = h('input',{
       type:'text',
       inputmode:'decimal',
-      placeholder,
       value: (isMrActive && curVal !== 1 && isFinite(curVal)) ? String(curVal).replace('.', ',') : '',
       oninput: e => {
         const raw = e.target.value.trim();
@@ -6631,8 +6548,8 @@ function renderWeightsForRole(containerEl, role='all'){
     });
     return inp;
   };
-  const mrCaInp = makeMrInput('mrCa', mrCaVal, 'mis. 1001,14');
-  const mrInp = makeMrInput('mr', mrVal, 'mis. 481,54');
+  const mrCaInp = makeMrInput('mrCa', mrCaVal);
+  const mrInp = makeMrInput('mr', mrVal);
 
   mrToggleWrap.append(
     h('label',{class:'f'},'Mr Bentuk Garam / Standar', mrCaInp),
@@ -6682,7 +6599,6 @@ function renderWeightsForRole(containerEl, role='all'){
         id:'inpBulkWS',
         type:'text',
         inputmode:'decimal',
-        placeholder:'mis. 20',
         style:'width:80px;padding:4px 8px;font-size:12px;font-weight:600'
       }),
       h('button',{
@@ -6693,7 +6609,7 @@ function renderWeightsForRole(containerEl, role='all'){
           const raw = ($('#inpBulkWS')?.value || '').trim();
           const v = toNum(raw);
           if(!isFinite(v) || v <= 0) {
-            alert('Masukkan angka bobot WS yang valid (mis. 20 atau 20,5)');
+            alert('Masukkan angka bobot WS yang valid.');
             return;
           }
           relevantSets.forEach(s => { S.wsWeights[s.id] = v; });
@@ -6709,7 +6625,7 @@ function renderWeightsForRole(containerEl, role='all'){
   // Grid Kartu Media Disolusi
   const mediaGrid = h('div',{
     class:'grid',
-    style:'grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;align-items:start'
+    style:'grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;align-items:start'
   });
 
   ids.forEach(mId => {
@@ -6719,42 +6635,32 @@ function renderWeightsForRole(containerEl, role='all'){
 
     const cfg = getMedConfig(mId);
     const medTitle = formatMedLabel(mId, cfg);
-    const medDesc = formatMedDesc(mId, cfg);
 
     const mCard = h('div',{
       style:'border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--surface);display:flex;flex-direction:column;gap:10px'
     });
 
-    // Header Kartu Media
     mCard.append(
-      h('div',{style:'display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);padding-bottom:8px'},
-        h('div',null,
-          h('b',{style:'font-size:14px;color:var(--primary)'}, medTitle),
-          h('div',{class:'small muted',style:'font-size:11px'}, medDesc)
-        ),
-        h('span',{class:'badge ' + (mSets.length > 1 ? 'info' : 'ok'), style:'font-size:11px'}, `${mSets.length} Standar`)
+      h('div',{style:'display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);padding-bottom:7px'},
+        h('b',{style:'font-size:13.5px;color:var(--primary)'}, medTitle),
+        mSets.length > 1 ? h('span',{class:'badge info', style:'font-size:11px'}, `${mSets.length} Standar`) : null
       )
     );
 
-    // List Standar dalam Media Ini
     mSets.forEach(s => {
       const usage = getStdSetUsage(mId, s);
       const isRef = !usage.usedByTest && (usage.usedByRef || s.role === 'ref');
       const roleCls = usage.isShared ? 'is-shared' : (isRef ? 'is-ref' : 'is-test');
       const roleBadgeCls = usage.isShared ? 'shared' : (isRef ? 'ref' : 'test');
       const roleLabel = usage.isShared ? 'Standar Bersama' : (isRef ? 'Pembanding' : 'Produk Uji');
-      const prodName = usage.isShared
-        ? `${S.testParams.product || 'Produk Uji'} & ${S.refParams.product || 'Komparator'}`
-        : (isRef ? (S.refParams.product || 'Produk Komparator') : (S.testParams.product || 'Produk Uji'));
 
       const curW = S.wsWeights[s.id];
       const displayW = (curW !== null && curW !== undefined && isFinite(curW)) ? String(curW).replace('.', ',') : '';
       const inp = h('input',{
         type:'text',
         inputmode:'decimal',
-        placeholder:'mis. 20',
         value: displayW,
-        style:'font-weight:bold;font-size:13px;width:100%',
+        style:'font-weight:600;font-size:13px;width:100%',
         oninput:e=>{
           const raw = e.target.value.trim();
           const val = raw === '' ? null : toNum(raw);
@@ -6765,48 +6671,26 @@ function renderWeightsForRole(containerEl, role='all'){
         }
       });
 
+      const wsSrc = (s.sourceFiles && s.sourceFiles.length) ? s.sourceFiles : (s.file ? [s.file] : []);
       const sRow = h('div',{
         class:'role-card ' + roleCls,
-        style:'border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:6px'
+        style:'border-radius:8px;padding:9px 10px;display:flex;flex-direction:column;gap:6px'
       },
-        h('div',{class:'row',style:'justify-content:space-between;align-items:center'},
-          h('div',{style:'display:flex;align-items:center;gap:5px;flex-wrap:wrap'},
-            usage.isShared ? h('span',{class:'badge test',style:'font-size:9.5px'},'Uji') : null,
-            usage.isShared ? h('span',{class:'small muted',style:'font-weight:700;font-size:10px'},'+') : null,
-            usage.isShared ? h('span',{class:'badge ref',style:'font-size:9.5px'},'Ref') : null,
-            h('span',{class:`badge ${roleBadgeCls}`,style:'font-size:10px'}, roleLabel),
-            h('b',{style:'font-size:12px;color:var(--text)'}, prodName)
-          ),
-          s.runDate ? h('span',{class:'small muted',style:'font-size:10px'}, s.runDate) : null
-        ),
-        h('div',{
-          style:'display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-width:0'
-        },
-          h('span',{
-            class:'small muted',
-            style:'font-size:10.5px;text-overflow:ellipsis;overflow:hidden;white-space:nowrap;flex:1 1 120px;min-width:0',
-            title:s.file
-          }, `Sumber: ${s.file}`),
-          ...((() => {
-            const wsSrc = (s.sourceFiles && s.sourceFiles.length) ? s.sourceFiles : (s.file ? [s.file] : []);
-            return wsSrc.map((fn, fIdx) => makePdfPreviewBtn(fn, s.role, {
-              label: wsSrc.length > 1 ? `PDF ${fIdx + 1}` : 'Preview PDF',
+        h('div',{style:'display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap'},
+          h('span',{class:`badge ${roleBadgeCls}`,style:'font-size:10.5px'}, roleLabel),
+          h('div',{style:'display:inline-flex;align-items:center;gap:5px;min-width:0'},
+            s.file ? h('span',{
+              class:'small muted',
+              style:'font-size:10.5px;max-width:150px;text-overflow:ellipsis;overflow:hidden;white-space:nowrap',
+              title:s.file
+            }, s.file) : null,
+            ...wsSrc.map((fn, fIdx) => makePdfPreviewBtn(fn, s.role, {
+              label: wsSrc.length > 1 ? `PDF ${fIdx + 1}` : 'PDF',
               isXs: true
-            })).filter(Boolean);
-          })())
+            })).filter(Boolean)
+          )
         ),
-        (usage.testDetails && usage.testDetails.length) || (usage.refDetails && usage.refDetails.length)
-          ? h('div',{class:'small muted',style:'font-size:10.5px'},
-              'Dipakai: ' + [
-                usage.testDetails && usage.testDetails.length ? ('Uji ' + usage.testDetails.join(', ')) : '',
-                usage.refDetails && usage.refDetails.length ? ('Ref ' + usage.refDetails.join(', ')) : ''
-              ].filter(Boolean).join(' · ')
-            )
-          : null,
-        h('label',{class:'f',style:'margin-top:2px'},
-          h('span',{style:'font-size:11.5px;color:var(--muted)'}, 'Bobot WS (mg)'),
-          inp
-        )
+        inp
       );
       mCard.append(sRow);
     });
